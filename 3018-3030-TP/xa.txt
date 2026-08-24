@@ -1,0 +1,1747 @@
+ELF Header:
+  Magic:   7f 45 4c 46 01 01 01 00 00 00 00 00 00 00 00 00 
+  Class:                             ELF32
+  Data:                              2's complement, little endian
+  Version:                           1 (current)
+  OS/ABI:                            UNIX - System V
+  ABI Version:                       0
+  Type:                              EXEC (Executable file)
+  Machine:                           ARM
+  Version:                           0x1
+  Entry point address:               0x9b38
+  Start of program headers:          52 (bytes into file)
+  Start of section headers:          392084 (bytes into file)
+  Flags:                             0x5000002, has entry point, Version5 EABI
+  Size of this header:               52 (bytes)
+  Size of program headers:           32 (bytes)
+  Number of program headers:         10
+  Size of section headers:           40 (bytes)
+  Number of section headers:         35
+  Section header string table index: 32
+
+Section Headers:
+  [Nr] Name              Type            Addr     Off    Size   ES Flg Lk Inf Al
+  [ 0]                   NULL            00000000 000000 000000 00      0   0  0
+  [ 1] .interp           PROGBITS        00008174 000174 000013 00   A  0   0  1
+  [ 2] .note.ABI-tag     NOTE            00008188 000188 000020 00   A  0   0  4
+  [ 3] .hash             HASH            000081a8 0001a8 000330 04   A  5   0  4
+  [ 4] .gnu.hash         GNU_HASH        000084d8 0004d8 0003ac 04   A  5   0  4
+  [ 5] .dynsym           DYNSYM          00008884 000884 000690 10   A  6   1  4
+  [ 6] .dynstr           STRTAB          00008f14 000f14 0003b5 00   A  0   0  1
+  [ 7] .gnu.version      VERSYM          000092ca 0012ca 0000d2 02   A  5   0  2
+  [ 8] .gnu.version_r    VERNEED         0000939c 00139c 000040 00   A  6   2  4
+  [ 9] .rel.dyn          REL             000093dc 0013dc 000008 08   A  5   0  4
+  [10] .rel.plt          REL             000093e4 0013e4 0002e0 08   A  5  12  4
+  [11] .init             PROGBITS        000096c4 0016c4 000010 00  AX  0   0  4
+  [12] .plt              PROGBITS        000096d4 0016d4 000464 04  AX  0   0  4
+  [13] .text             PROGBITS        00009b38 001b38 059878 00  AX  0   0  4
+  [14] .fini             PROGBITS        000633b0 05b3b0 00000c 00  AX  0   0  4
+  [15] .rodata           PROGBITS        000633bc 05b3bc 001d14 00   A  0   0  4
+  [16] .ARM.exidx        ARM_EXIDX       000650d0 05d0d0 000008 00  AL 13   0  4
+  [17] .eh_frame         PROGBITS        000650d8 05d0d8 000004 00   A  0   0  4
+  [18] .init_array       INIT_ARRAY      0006def4 05def4 000004 00  WA  0   0  4
+  [19] .fini_array       FINI_ARRAY      0006def8 05def8 000004 00  WA  0   0  4
+  [20] .jcr              PROGBITS        0006defc 05defc 000004 00  WA  0   0  4
+  [21] .dynamic          DYNAMIC         0006df00 05df00 000100 08  WA  6   0  4
+  [22] .got              PROGBITS        0006e000 05e000 000180 04  WA  0   0  4
+  [23] .data             PROGBITS        0006e180 05e180 00085c 00  WA  0   0  4
+  [24] .bss              NOBITS          0006e9dc 05e9dc 009eec 00  WA  0   0  4
+  [25] .ARM.attributes   ARM_ATTRIBUTES  00000000 05e9dc 000026 00      0   0  1
+  [26] .comment          PROGBITS        00000000 05ea02 000029 01  MS  0   0  1
+  [27] .debug_aranges    PROGBITS        00000000 05ea30 0000e0 00      0   0  8
+  [28] .debug_info       PROGBITS        00000000 05eb10 00071e 00      0   0  1
+  [29] .debug_abbrev     PROGBITS        00000000 05f22e 00008c 00      0   0  1
+  [30] .debug_line       PROGBITS        00000000 05f2ba 000771 00      0   0  1
+  [31] .debug_frame      PROGBITS        00000000 05fa2c 00002c 00      0   0  4
+  [32] .shstrtab         STRTAB          00000000 05fa58 000139 00      0   0  1
+  [33] .symtab           SYMTAB          00000000 06010c 005400 10     34 721  4
+  [34] .strtab           STRTAB          00000000 06550c 0027bb 00      0   0  1
+Key to Flags:
+  W (write), A (alloc), X (execute), M (merge), S (strings)
+  I (info), L (link order), G (group), x (unknown)
+  O (extra OS processing required) o (OS specific), p (processor specific)
+
+There are no section groups in this file.
+
+Program Headers:
+  Type           Offset   VirtAddr   PhysAddr   FileSiz MemSiz  Flg Align
+  EXIDX          0x05d0d0 0x000650d0 0x000650d0 0x00008 0x00008 R   0x4
+  PHDR           0x000034 0x00008034 0x00008034 0x00140 0x00140 R E 0x4
+  INTERP         0x000174 0x00008174 0x00008174 0x00013 0x00013 R   0x1
+      [Requesting program interpreter: /lib/ld-linux.so.3]
+  LOAD           0x000000 0x00008000 0x00008000 0x5d0dc 0x5d0dc R E 0x8000
+  LOAD           0x05def4 0x0006def4 0x0006def4 0x00ae8 0x0a9d4 RW  0x8000
+  DYNAMIC        0x05df00 0x0006df00 0x0006df00 0x00100 0x00100 RW  0x4
+  NOTE           0x000188 0x00008188 0x00008188 0x00020 0x00020 R   0x4
+  GNU_STACK      0x000000 0x00000000 0x00000000 0x00000 0x00000 RWE 0x4
+  GNU_RELRO      0x05def4 0x0006def4 0x0006def4 0x0010c 0x0010c R   0x1
+  PAX_FLAGS      0x000000 0x00000000 0x00000000 0x00000 0x00000     0x4
+
+ Section to Segment mapping:
+  Segment Sections...
+   00     .ARM.exidx 
+   01     
+   02     .interp 
+   03     .interp .note.ABI-tag .hash .gnu.hash .dynsym .dynstr .gnu.version .gnu.version_r .rel.dyn .rel.plt .init .plt .text .fini .rodata .ARM.exidx .eh_frame 
+   04     .init_array .fini_array .jcr .dynamic .got .data .bss 
+   05     .dynamic 
+   06     .note.ABI-tag 
+   07     
+   08     .init_array .fini_array .jcr .dynamic 
+   09     
+
+Dynamic section at offset 0x5df00 contains 27 entries:
+  Tag        Type                         Name/Value
+ 0x00000001 (NEEDED)                     Shared library: [liblinux2440.so]
+ 0x00000001 (NEEDED)                     Shared library: [libpthread.so.0]
+ 0x00000001 (NEEDED)                     Shared library: [libc.so.6]
+ 0x0000000c (INIT)                       0x96c4
+ 0x0000000d (FINI)                       0x633b0
+ 0x00000019 (INIT_ARRAY)                 0x6def4
+ 0x0000001b (INIT_ARRAYSZ)               4 (bytes)
+ 0x0000001a (FINI_ARRAY)                 0x6def8
+ 0x0000001c (FINI_ARRAYSZ)               4 (bytes)
+ 0x00000004 (HASH)                       0x81a8
+ 0x6ffffef5 (GNU_HASH)                   0x84d8
+ 0x00000005 (STRTAB)                     0x8f14
+ 0x00000006 (SYMTAB)                     0x8884
+ 0x0000000a (STRSZ)                      949 (bytes)
+ 0x0000000b (SYMENT)                     16 (bytes)
+ 0x00000015 (DEBUG)                      0x0
+ 0x00000003 (PLTGOT)                     0x6e000
+ 0x00000002 (PLTRELSZ)                   736 (bytes)
+ 0x00000014 (PLTREL)                     REL
+ 0x00000017 (JMPREL)                     0x93e4
+ 0x00000011 (REL)                        0x93dc
+ 0x00000012 (RELSZ)                      8 (bytes)
+ 0x00000013 (RELENT)                     8 (bytes)
+ 0x6ffffffe (VERNEED)                    0x939c
+ 0x6fffffff (VERNEEDNUM)                 2
+ 0x6ffffff0 (VERSYM)                     0x92ca
+ 0x00000000 (NULL)                       0x0
+
+Relocation section '.rel.dyn' at offset 0x13dc contains 1 entries:
+ Offset     Info    Type            Sym.Value  Sym. Name
+0006e17c  00000115 R_ARM_GLOB_DAT    00000000   __gmon_start__
+
+Relocation section '.rel.plt' at offset 0x13e4 contains 92 entries:
+ Offset     Info    Type            Sym.Value  Sym. Name
+0006e00c  00002416 R_ARM_JUMP_SLOT   000096e8   sam_set
+0006e010  00003916 R_ARM_JUMP_SLOT   000096f4   watchdog
+0006e014  00005e16 R_ARM_JUMP_SLOT   00009700   open
+0006e018  00002516 R_ARM_JUMP_SLOT   0000970c   sam_atr
+0006e01c  00000c16 R_ARM_JUMP_SLOT   00009718   strerror
+0006e020  00003516 R_ARM_JUMP_SLOT   00009724   rtc_rd_time
+0006e024  00006516 R_ARM_JUMP_SLOT   00009730   mkdir
+0006e028  00002616 R_ARM_JUMP_SLOT   0000973c   abort
+0006e02c  00005516 R_ARM_JUMP_SLOT   00009748   opendir
+0006e030  00005716 R_ARM_JUMP_SLOT   00009754   memcmp
+0006e034  00000e16 R_ARM_JUMP_SLOT   00009760   __libc_start_main
+0006e038  00000f16 R_ARM_JUMP_SLOT   0000976c   signal
+0006e03c  00003416 R_ARM_JUMP_SLOT   00009778   mcml_select2
+0006e040  00000116 R_ARM_JUMP_SLOT   00000000   __gmon_start__
+0006e044  00005416 R_ARM_JUMP_SLOT   00009790   cfgetispeed
+0006e048  00006816 R_ARM_JUMP_SLOT   0000979c   rename
+0006e04c  00004d16 R_ARM_JUMP_SLOT   000097a8   fclose
+0006e050  00004016 R_ARM_JUMP_SLOT   000097b4   system
+0006e054  00004116 R_ARM_JUMP_SLOT   000097c0   putchar
+0006e058  00005816 R_ARM_JUMP_SLOT   000097cc   toupper
+0006e05c  00003a16 R_ARM_JUMP_SLOT   000097d8   sem_init
+0006e060  00002216 R_ARM_JUMP_SLOT   000097e4   fopen
+0006e064  00004f16 R_ARM_JUMP_SLOT   000097f0   memset
+0006e068  00004516 R_ARM_JUMP_SLOT   000097fc   mcml_select
+0006e06c  00001e16 R_ARM_JUMP_SLOT   00009808   perror
+0006e070  00002e16 R_ARM_JUMP_SLOT   00009814   iconv
+0006e074  00005116 R_ARM_JUMP_SLOT   00009820   __assert_fail
+0006e078  00001016 R_ARM_JUMP_SLOT   0000982c   usleep
+0006e07c  00005f16 R_ARM_JUMP_SLOT   00009838   free
+0006e080  00002a16 R_ARM_JUMP_SLOT   00009844   read
+0006e084  00000316 R_ARM_JUMP_SLOT   00009850   write
+0006e088  00004716 R_ARM_JUMP_SLOT   0000985c   gettimeofday
+0006e08c  00004e16 R_ARM_JUMP_SLOT   00009868   fseek
+0006e090  00000816 R_ARM_JUMP_SLOT   00009874   tcgetattr
+0006e094  00006016 R_ARM_JUMP_SLOT   00009880   tcflush
+0006e098  00000d16 R_ARM_JUMP_SLOT   0000988c   mcml_request2
+0006e09c  00003216 R_ARM_JUMP_SLOT   00009898   ioctl
+0006e0a0  00003316 R_ARM_JUMP_SLOT   000098a4   iconv_close
+0006e0a4  00005616 R_ARM_JUMP_SLOT   000098b0   watchdog_init
+0006e0a8  00002316 R_ARM_JUMP_SLOT   000098bc   strlen
+0006e0ac  00001c16 R_ARM_JUMP_SLOT   000098c8   pthread_create
+0006e0b0  00006116 R_ARM_JUMP_SLOT   000098d4   memcpy
+0006e0b4  00004a16 R_ARM_JUMP_SLOT   000098e0   set_card_type
+0006e0b8  00005a16 R_ARM_JUMP_SLOT   000098ec   getppid
+0006e0bc  00004616 R_ARM_JUMP_SLOT   000098f8   ftell
+0006e0c0  00000a16 R_ARM_JUMP_SLOT   00009904   strcpy
+0006e0c4  00003c16 R_ARM_JUMP_SLOT   00009910   sem_post
+0006e0c8  00005916 R_ARM_JUMP_SLOT   0000991c   waitpid
+0006e0cc  00003b16 R_ARM_JUMP_SLOT   00009928   printf
+0006e0d0  00001d16 R_ARM_JUMP_SLOT   00009934   mcml_anticoll2
+0006e0d4  00003d16 R_ARM_JUMP_SLOT   00009940   raise
+0006e0d8  00000716 R_ARM_JUMP_SLOT   0000994c   ee_write
+0006e0dc  00002b16 R_ARM_JUMP_SLOT   00009958   mcml_anticoll
+0006e0e0  00000616 R_ARM_JUMP_SLOT   00009964   strstr
+0006e0e4  00002c16 R_ARM_JUMP_SLOT   00009970   select
+0006e0e8  00002916 R_ARM_JUMP_SLOT   0000997c   close
+0006e0ec  00003016 R_ARM_JUMP_SLOT   00009988   fwrite
+0006e0f0  00001116 R_ARM_JUMP_SLOT   00009994   closedir
+0006e0f4  00005316 R_ARM_JUMP_SLOT   000099a0   remove
+0006e0f8  00003716 R_ARM_JUMP_SLOT   000099ac   sam_select
+0006e0fc  00006616 R_ARM_JUMP_SLOT   000099b8   mcml_pwr_on
+0006e100  00006216 R_ARM_JUMP_SLOT   000099c4   malloc
+0006e104  00001216 R_ARM_JUMP_SLOT   000099d0   cfsetospeed
+0006e108  00005c16 R_ARM_JUMP_SLOT   000099dc   UL_Anticoll_Select
+0006e10c  00001416 R_ARM_JUMP_SLOT   000099e8   rtc_wr_time
+0006e110  00003f16 R_ARM_JUMP_SLOT   000099f4   mcml_pwr_off
+0006e114  00001916 R_ARM_JUMP_SLOT   00009a00   sleep
+0006e118  00006316 R_ARM_JUMP_SLOT   00009a0c   strcat
+0006e11c  00006416 R_ARM_JUMP_SLOT   00009a18   gled
+0006e120  00004916 R_ARM_JUMP_SLOT   00009a24   puts
+0006e124  00002716 R_ARM_JUMP_SLOT   00009a30   tcsetattr
+0006e128  00004816 R_ARM_JUMP_SLOT   00009a3c   rf_select
+0006e12c  00000b16 R_ARM_JUMP_SLOT   00009a48   fcntl
+0006e130  00004b16 R_ARM_JUMP_SLOT   00009a54   fork
+0006e134  00002d16 R_ARM_JUMP_SLOT   00009a60   mifpro_ats
+0006e138  00005016 R_ARM_JUMP_SLOT   00009a6c   sam_pts
+0006e13c  00002016 R_ARM_JUMP_SLOT   00009a78   rled
+0006e140  00001716 R_ARM_JUMP_SLOT   00009a84   UL_Page_Read
+0006e144  00004416 R_ARM_JUMP_SLOT   00009a90   UL_Page_Write
+0006e148  00005b16 R_ARM_JUMP_SLOT   00009a9c   fread
+0006e14c  00001a16 R_ARM_JUMP_SLOT   00009aa8   realloc
+0006e150  00000516 R_ARM_JUMP_SLOT   00009ab4   iconv_open
+0006e154  00003116 R_ARM_JUMP_SLOT   00009ac0   mifpro_icmd
+0006e158  00004c16 R_ARM_JUMP_SLOT   00009acc   readdir
+0006e15c  00002116 R_ARM_JUMP_SLOT   00009ad8   sem_wait
+0006e160  00001816 R_ARM_JUMP_SLOT   00009ae4   ee_read
+0006e164  00000416 R_ARM_JUMP_SLOT   00009af0   strcmp
+0006e168  00001b16 R_ARM_JUMP_SLOT   00009afc   exit
+0006e16c  00001516 R_ARM_JUMP_SLOT   00009b08   cfsetispeed
+0006e170  00001f16 R_ARM_JUMP_SLOT   00009b14   __errno_location
+0006e174  00006716 R_ARM_JUMP_SLOT   00009b20   sam_apdu
+0006e178  00005d16 R_ARM_JUMP_SLOT   00009b2c   sprintf
+
+There are no unwind sections in this file.
+
+Symbol table '.dynsym' contains 105 entries:
+   Num:    Value  Size Type    Bind   Vis      Ndx Name
+     0: 00000000     0 NOTYPE  LOCAL  DEFAULT  UND 
+     1: 00000000     0 NOTYPE  WEAK   DEFAULT  UND __gmon_start__
+     2: 00000000     0 NOTYPE  WEAK   DEFAULT  UND _Jv_RegisterClasses
+     3: 00009850     0 FUNC    GLOBAL DEFAULT  UND write@GLIBC_2.4 (2)
+     4: 00009af0     0 FUNC    GLOBAL DEFAULT  UND strcmp@GLIBC_2.4 (3)
+     5: 00009ab4     0 FUNC    GLOBAL DEFAULT  UND iconv_open@GLIBC_2.4 (3)
+     6: 00009964     0 FUNC    GLOBAL DEFAULT  UND strstr@GLIBC_2.4 (3)
+     7: 0000994c     0 FUNC    GLOBAL DEFAULT  UND ee_write
+     8: 00009874     0 FUNC    GLOBAL DEFAULT  UND tcgetattr@GLIBC_2.4 (3)
+     9: 0006e9dc     0 NOTYPE  GLOBAL DEFAULT  ABS __bss_start__
+    10: 00009904     0 FUNC    GLOBAL DEFAULT  UND strcpy@GLIBC_2.4 (3)
+    11: 00009a48     0 FUNC    GLOBAL DEFAULT  UND fcntl@GLIBC_2.4 (2)
+    12: 00009718     0 FUNC    GLOBAL DEFAULT  UND strerror@GLIBC_2.4 (3)
+    13: 0000988c     0 FUNC    GLOBAL DEFAULT  UND mcml_request2
+    14: 00009760     0 FUNC    GLOBAL DEFAULT  UND __libc_start_main@GLIBC_2.4 (3)
+    15: 0000976c     0 FUNC    GLOBAL DEFAULT  UND signal@GLIBC_2.4 (3)
+    16: 0000982c     0 FUNC    GLOBAL DEFAULT  UND usleep@GLIBC_2.4 (3)
+    17: 00009994     0 FUNC    GLOBAL DEFAULT  UND closedir@GLIBC_2.4 (3)
+    18: 000099d0     0 FUNC    GLOBAL DEFAULT  UND cfsetospeed@GLIBC_2.4 (3)
+    19: 000788c8     0 NOTYPE  GLOBAL DEFAULT  ABS _bss_end__
+    20: 000099e8     0 FUNC    GLOBAL DEFAULT  UND rtc_wr_time
+    21: 00009b08     0 FUNC    GLOBAL DEFAULT  UND cfsetispeed@GLIBC_2.4 (3)
+    22: 000650d0     0 NOTYPE  GLOBAL DEFAULT  ABS __exidx_start
+    23: 00009a84     0 FUNC    GLOBAL DEFAULT  UND UL_Page_Read
+    24: 00009ae4     0 FUNC    GLOBAL DEFAULT  UND ee_read
+    25: 00009a00     0 FUNC    GLOBAL DEFAULT  UND sleep@GLIBC_2.4 (3)
+    26: 00009aa8     0 FUNC    GLOBAL DEFAULT  UND realloc@GLIBC_2.4 (3)
+    27: 00009afc     0 FUNC    GLOBAL DEFAULT  UND exit@GLIBC_2.4 (3)
+    28: 000098c8     0 FUNC    GLOBAL DEFAULT  UND pthread_create@GLIBC_2.4 (2)
+    29: 00009934     0 FUNC    GLOBAL DEFAULT  UND mcml_anticoll2
+    30: 00009808     0 FUNC    GLOBAL DEFAULT  UND perror@GLIBC_2.4 (3)
+    31: 00009b14     0 FUNC    GLOBAL DEFAULT  UND __errno_location@GLIBC_2.4 (2)
+    32: 00009a78     0 FUNC    GLOBAL DEFAULT  UND rled
+    33: 00009ad8     0 FUNC    GLOBAL DEFAULT  UND sem_wait@GLIBC_2.4 (2)
+    34: 000097e4     0 FUNC    GLOBAL DEFAULT  UND fopen@GLIBC_2.4 (3)
+    35: 000098bc     0 FUNC    GLOBAL DEFAULT  UND strlen@GLIBC_2.4 (3)
+    36: 000096e8     0 FUNC    GLOBAL DEFAULT  UND sam_set
+    37: 0000970c     0 FUNC    GLOBAL DEFAULT  UND sam_atr
+    38: 0000973c     0 FUNC    GLOBAL DEFAULT  UND abort@GLIBC_2.4 (3)
+    39: 00009a30     0 FUNC    GLOBAL DEFAULT  UND tcsetattr@GLIBC_2.4 (3)
+    40: 0006e9dc     0 NOTYPE  GLOBAL DEFAULT  ABS _edata
+    41: 0000997c     0 FUNC    GLOBAL DEFAULT  UND close@GLIBC_2.4 (2)
+    42: 00009844     0 FUNC    GLOBAL DEFAULT  UND read@GLIBC_2.4 (2)
+    43: 00009958     0 FUNC    GLOBAL DEFAULT  UND mcml_anticoll
+    44: 00009970     0 FUNC    GLOBAL DEFAULT  UND select@GLIBC_2.4 (3)
+    45: 00009a60     0 FUNC    GLOBAL DEFAULT  UND mifpro_ats
+    46: 00009814     0 FUNC    GLOBAL DEFAULT  UND iconv@GLIBC_2.4 (3)
+    47: 000788c8     0 NOTYPE  GLOBAL DEFAULT  ABS __end__
+    48: 00009988     0 FUNC    GLOBAL DEFAULT  UND fwrite@GLIBC_2.4 (3)
+    49: 00009ac0     0 FUNC    GLOBAL DEFAULT  UND mifpro_icmd
+    50: 00009898     0 FUNC    GLOBAL DEFAULT  UND ioctl@GLIBC_2.4 (3)
+    51: 000098a4     0 FUNC    GLOBAL DEFAULT  UND iconv_close@GLIBC_2.4 (3)
+    52: 00009778     0 FUNC    GLOBAL DEFAULT  UND mcml_select2
+    53: 00009724     0 FUNC    GLOBAL DEFAULT  UND rtc_rd_time
+    54: 000633b0     0 FUNC    GLOBAL DEFAULT   14 _fini
+    55: 000099ac     0 FUNC    GLOBAL DEFAULT  UND sam_select
+    56: 000096c4     0 FUNC    GLOBAL DEFAULT   11 _init
+    57: 000096f4     0 FUNC    GLOBAL DEFAULT  UND watchdog
+    58: 000097d8     0 FUNC    GLOBAL DEFAULT  UND sem_init@GLIBC_2.4 (2)
+    59: 00009928     0 FUNC    GLOBAL DEFAULT  UND printf@GLIBC_2.4 (3)
+    60: 00009910     0 FUNC    GLOBAL DEFAULT  UND sem_post@GLIBC_2.4 (2)
+    61: 00009940     0 FUNC    GLOBAL DEFAULT  UND raise@GLIBC_2.4 (2)
+    62: 0006e9dc     0 NOTYPE  GLOBAL DEFAULT  ABS __bss_start
+    63: 000099f4     0 FUNC    GLOBAL DEFAULT  UND mcml_pwr_off
+    64: 000097b4     0 FUNC    GLOBAL DEFAULT  UND system@GLIBC_2.4 (2)
+    65: 000097c0     0 FUNC    GLOBAL DEFAULT  UND putchar@GLIBC_2.4 (3)
+    66: 000650d8     0 NOTYPE  GLOBAL DEFAULT  ABS __exidx_end
+    67: 000788c8     0 NOTYPE  GLOBAL DEFAULT  ABS _end
+    68: 00009a90     0 FUNC    GLOBAL DEFAULT  UND UL_Page_Write
+    69: 000097fc     0 FUNC    GLOBAL DEFAULT  UND mcml_select
+    70: 000098f8     0 FUNC    GLOBAL DEFAULT  UND ftell@GLIBC_2.4 (3)
+    71: 0000985c     0 FUNC    GLOBAL DEFAULT  UND gettimeofday@GLIBC_2.4 (3)
+    72: 00009a3c     0 FUNC    GLOBAL DEFAULT  UND rf_select
+    73: 00009a24     0 FUNC    GLOBAL DEFAULT  UND puts@GLIBC_2.4 (3)
+    74: 000098e0     0 FUNC    GLOBAL DEFAULT  UND set_card_type
+    75: 00009a54     0 FUNC    GLOBAL DEFAULT  UND fork@GLIBC_2.4 (2)
+    76: 00009acc     0 FUNC    GLOBAL DEFAULT  UND readdir@GLIBC_2.4 (3)
+    77: 000097a8     0 FUNC    GLOBAL DEFAULT  UND fclose@GLIBC_2.4 (3)
+    78: 00009868     0 FUNC    GLOBAL DEFAULT  UND fseek@GLIBC_2.4 (3)
+    79: 000097f0     0 FUNC    GLOBAL DEFAULT  UND memset@GLIBC_2.4 (3)
+    80: 00009a6c     0 FUNC    GLOBAL DEFAULT  UND sam_pts
+    81: 00009820     0 FUNC    GLOBAL DEFAULT  UND __assert_fail@GLIBC_2.4 (3)
+    82: 000788c8     0 NOTYPE  GLOBAL DEFAULT  ABS __bss_end__
+    83: 000099a0     0 FUNC    GLOBAL DEFAULT  UND remove@GLIBC_2.4 (3)
+    84: 00009790     0 FUNC    GLOBAL DEFAULT  UND cfgetispeed@GLIBC_2.4 (3)
+    85: 00009748     0 FUNC    GLOBAL DEFAULT  UND opendir@GLIBC_2.4 (3)
+    86: 000098b0     0 FUNC    GLOBAL DEFAULT  UND watchdog_init
+    87: 00009754     0 FUNC    GLOBAL DEFAULT  UND memcmp@GLIBC_2.4 (3)
+    88: 000097cc     0 FUNC    GLOBAL DEFAULT  UND toupper@GLIBC_2.4 (3)
+    89: 0000991c     0 FUNC    GLOBAL DEFAULT  UND waitpid@GLIBC_2.4 (2)
+    90: 000098ec     0 FUNC    GLOBAL DEFAULT  UND getppid@GLIBC_2.4 (3)
+    91: 00009a9c     0 FUNC    GLOBAL DEFAULT  UND fread@GLIBC_2.4 (3)
+    92: 000099dc     0 FUNC    GLOBAL DEFAULT  UND UL_Anticoll_Select
+    93: 00009b2c     0 FUNC    GLOBAL DEFAULT  UND sprintf@GLIBC_2.4 (3)
+    94: 00009700     0 FUNC    GLOBAL DEFAULT  UND open@GLIBC_2.4 (2)
+    95: 00009838     0 FUNC    GLOBAL DEFAULT  UND free@GLIBC_2.4 (3)
+    96: 00009880     0 FUNC    GLOBAL DEFAULT  UND tcflush@GLIBC_2.4 (3)
+    97: 000098d4     0 FUNC    GLOBAL DEFAULT  UND memcpy@GLIBC_2.4 (3)
+    98: 000099c4     0 FUNC    GLOBAL DEFAULT  UND malloc@GLIBC_2.4 (3)
+    99: 00009a0c     0 FUNC    GLOBAL DEFAULT  UND strcat@GLIBC_2.4 (3)
+   100: 00009a18     0 FUNC    GLOBAL DEFAULT  UND gled
+   101: 00009730     0 FUNC    GLOBAL DEFAULT  UND mkdir@GLIBC_2.4 (3)
+   102: 000099b8     0 FUNC    GLOBAL DEFAULT  UND mcml_pwr_on
+   103: 00009b20     0 FUNC    GLOBAL DEFAULT  UND sam_apdu
+   104: 0000979c     0 FUNC    GLOBAL DEFAULT  UND rename@GLIBC_2.4 (3)
+
+Symbol table '.symtab' contains 1344 entries:
+   Num:    Value  Size Type    Bind   Vis      Ndx Name
+     0: 00000000     0 NOTYPE  LOCAL  DEFAULT  UND 
+     1: 00008174     0 SECTION LOCAL  DEFAULT    1 
+     2: 00008188     0 SECTION LOCAL  DEFAULT    2 
+     3: 000081a8     0 SECTION LOCAL  DEFAULT    3 
+     4: 000084d8     0 SECTION LOCAL  DEFAULT    4 
+     5: 00008884     0 SECTION LOCAL  DEFAULT    5 
+     6: 00008f14     0 SECTION LOCAL  DEFAULT    6 
+     7: 000092ca     0 SECTION LOCAL  DEFAULT    7 
+     8: 0000939c     0 SECTION LOCAL  DEFAULT    8 
+     9: 000093dc     0 SECTION LOCAL  DEFAULT    9 
+    10: 000093e4     0 SECTION LOCAL  DEFAULT   10 
+    11: 000096c4     0 SECTION LOCAL  DEFAULT   11 
+    12: 000096d4     0 SECTION LOCAL  DEFAULT   12 
+    13: 00009b38     0 SECTION LOCAL  DEFAULT   13 
+    14: 000633b0     0 SECTION LOCAL  DEFAULT   14 
+    15: 000633bc     0 SECTION LOCAL  DEFAULT   15 
+    16: 000650d0     0 SECTION LOCAL  DEFAULT   16 
+    17: 000650d8     0 SECTION LOCAL  DEFAULT   17 
+    18: 0006def4     0 SECTION LOCAL  DEFAULT   18 
+    19: 0006def8     0 SECTION LOCAL  DEFAULT   19 
+    20: 0006defc     0 SECTION LOCAL  DEFAULT   20 
+    21: 0006df00     0 SECTION LOCAL  DEFAULT   21 
+    22: 0006e000     0 SECTION LOCAL  DEFAULT   22 
+    23: 0006e180     0 SECTION LOCAL  DEFAULT   23 
+    24: 0006e9dc     0 SECTION LOCAL  DEFAULT   24 
+    25: 00000000     0 SECTION LOCAL  DEFAULT   25 
+    26: 00000000     0 SECTION LOCAL  DEFAULT   26 
+    27: 00000000     0 SECTION LOCAL  DEFAULT   27 
+    28: 00000000     0 SECTION LOCAL  DEFAULT   28 
+    29: 00000000     0 SECTION LOCAL  DEFAULT   29 
+    30: 00000000     0 SECTION LOCAL  DEFAULT   30 
+    31: 00000000     0 SECTION LOCAL  DEFAULT   31 
+    32: 00000000     0 FILE    LOCAL  DEFAULT  ABS initfini.c
+    33: 00009b70     0 NOTYPE  LOCAL  DEFAULT   13 $a
+    34: 00009b70     0 FUNC    LOCAL  DEFAULT   13 call_gmon_start
+    35: 00009b94     0 NOTYPE  LOCAL  DEFAULT   13 $d
+    36: 000096c4     0 NOTYPE  LOCAL  DEFAULT   11 $a
+    37: 000633b0     0 NOTYPE  LOCAL  DEFAULT   14 $a
+    38: 00008188     0 NOTYPE  LOCAL  DEFAULT    2 $d
+    39: 00009b38     0 NOTYPE  LOCAL  DEFAULT   13 $a
+    40: 000650d0     0 NOTYPE  LOCAL  DEFAULT   16 $d
+    41: 00009b64     0 NOTYPE  LOCAL  DEFAULT   13 $d
+    42: 00000000     0 FILE    LOCAL  DEFAULT  ABS init.c
+    43: 000633bc     0 NOTYPE  LOCAL  DEFAULT   15 $d
+    44: 00000000     0 FILE    LOCAL  DEFAULT  ABS initfini.c
+    45: 000096cc     0 NOTYPE  LOCAL  DEFAULT   11 $a
+    46: 000633b4     0 NOTYPE  LOCAL  DEFAULT   14 $a
+    47: 00000000     0 FILE    LOCAL  DEFAULT  ABS crtstuff.c
+    48: 0006defc     0 OBJECT  LOCAL  DEFAULT   20 __JCR_LIST__
+    49: 0006e184     0 NOTYPE  LOCAL  DEFAULT   23 $d
+    50: 00009b9c     0 NOTYPE  LOCAL  DEFAULT   13 $a
+    51: 00009b9c     0 FUNC    LOCAL  DEFAULT   13 __do_global_dtors_aux
+    52: 00009bb4     0 NOTYPE  LOCAL  DEFAULT   13 $d
+    53: 0006e9dc     1 OBJECT  LOCAL  DEFAULT   24 completed.5511
+    54: 0006def8     0 NOTYPE  LOCAL  DEFAULT   19 $d
+    55: 0006def8     0 OBJECT  LOCAL  DEFAULT   19 __do_global_dtors_aux_fin
+    56: 00009bb8     0 NOTYPE  LOCAL  DEFAULT   13 $a
+    57: 00009bb8     0 FUNC    LOCAL  DEFAULT   13 frame_dummy
+    58: 00009be4     0 NOTYPE  LOCAL  DEFAULT   13 $d
+    59: 0006def4     0 NOTYPE  LOCAL  DEFAULT   18 $d
+    60: 0006def4     0 OBJECT  LOCAL  DEFAULT   18 __frame_dummy_init_array_
+    61: 0006e9dc     0 NOTYPE  LOCAL  DEFAULT   24 $d
+    62: 00000000     0 FILE    LOCAL  DEFAULT  ABS main.c
+    63: 00009bec     0 NOTYPE  LOCAL  DEFAULT   13 $a
+    64: 000633c0     0 NOTYPE  LOCAL  DEFAULT   15 $d
+    65: 0000a06c     0 NOTYPE  LOCAL  DEFAULT   13 $d
+    66: 00000000     0 FILE    LOCAL  DEFAULT  ABS md5.c
+    67: 00063494     0 NOTYPE  LOCAL  DEFAULT   15 $d
+    68: 00063494    64 OBJECT  LOCAL  DEFAULT   15 fillbuf
+    69: 0000a120     0 NOTYPE  LOCAL  DEFAULT   13 $a
+    70: 0000a194     0 NOTYPE  LOCAL  DEFAULT   13 $d
+    71: 0000a1a4     0 NOTYPE  LOCAL  DEFAULT   13 $a
+    72: 0000b2c0     0 NOTYPE  LOCAL  DEFAULT   13 $d
+    73: 0000b3bc     0 NOTYPE  LOCAL  DEFAULT   13 $a
+    74: 0000be90     0 NOTYPE  LOCAL  DEFAULT   13 $d
+    75: 0000be94     0 NOTYPE  LOCAL  DEFAULT   13 $a
+    76: 0000c02c     0 NOTYPE  LOCAL  DEFAULT   13 $d
+    77: 0000c030     0 NOTYPE  LOCAL  DEFAULT   13 $a
+    78: 0000c0c8     0 NOTYPE  LOCAL  DEFAULT   13 $d
+    79: 00000000     0 FILE    LOCAL  DEFAULT  ABS sz_xdr_api.c
+    80: 000634d8     0 NOTYPE  LOCAL  DEFAULT   15 $d
+    81: 0000c0cc     0 NOTYPE  LOCAL  DEFAULT   13 $a
+    82: 0000c20c     0 NOTYPE  LOCAL  DEFAULT   13 $d
+    83: 0000c214     0 NOTYPE  LOCAL  DEFAULT   13 $a
+    84: 0000c34c     0 NOTYPE  LOCAL  DEFAULT   13 $d
+    85: 0000c350     0 NOTYPE  LOCAL  DEFAULT   13 $a
+    86: 0000c5d0     0 NOTYPE  LOCAL  DEFAULT   13 $d
+    87: 0000c5d4     0 NOTYPE  LOCAL  DEFAULT   13 $a
+    88: 00000000     0 FILE    LOCAL  DEFAULT  ABS serial.c
+    89: 0006e188     0 NOTYPE  LOCAL  DEFAULT   23 $d
+    90: 0006e188    60 OBJECT  LOCAL  DEFAULT   23 Len_ST
+    91: 0006e1c4    56 OBJECT  LOCAL  DEFAULT   23 Len_DZP
+    92: 0006e1fc    56 OBJECT  LOCAL  DEFAULT   23 Len_DZR
+    93: 0006e234    64 OBJECT  LOCAL  DEFAULT   23 Len_DZM
+    94: 000634e8     0 NOTYPE  LOCAL  DEFAULT   15 $d
+    95: 0000c64c     0 NOTYPE  LOCAL  DEFAULT   13 $a
+    96: 0000c6b8     0 NOTYPE  LOCAL  DEFAULT   13 $d
+    97: 0000c6c4     0 NOTYPE  LOCAL  DEFAULT   13 $a
+    98: 0000c88c     0 NOTYPE  LOCAL  DEFAULT   13 $d
+    99: 0000c8a4     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   100: 0000c938     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   101: 0000c9f4     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   102: 0000cdc8     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   103: 0000cdcc     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   104: 0000cfa0     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   105: 0000cfa4     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   106: 0000d130     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   107: 0000d134     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   108: 0000d360     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   109: 0000d368     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   110: 0000dc40     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   111: 0006e9e4   600 OBJECT  LOCAL  DEFAULT   24 buff.8493
+   112: 0006ec3c  2048 OBJECT  LOCAL  DEFAULT   24 byttemp.8495
+   113: 0006f43c     1 OBJECT  LOCAL  DEFAULT   24 chCmd.8496
+   114: 0006f43d     1 OBJECT  LOCAL  DEFAULT   24 reslen.8498
+   115: 0006f43e     1 OBJECT  LOCAL  DEFAULT   24 chResCode.8497
+   116: 0000dc88     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   117: 0000dd8c     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   118: 0000dd98     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   119: 0000e21c     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   120: 0006e9e2     1 OBJECT  LOCAL  DEFAULT   24 chResponseCode.8707
+   121: 0000e250     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   122: 0000e3f8     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   123: 0000e414     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   124: 0000e47c     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   125: 0000e88c     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   126: 0000ef08     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   127: 0006e9e0     1 OBJECT  LOCAL  DEFAULT   24 chResponseCode.8848
+   128: 0000ef2c     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   129: 0000f260     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   130: 0000f26c     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   131: 0000f3a0     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   132: 0000f3a4     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   133: 0000fd7c     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   134: 0000fd84     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   135: 00010070     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   136: 0006e9e1     1 OBJECT  LOCAL  DEFAULT   24 chlen.8849
+   137: 0006e9e3     1 OBJECT  LOCAL  DEFAULT   24 chlen.8708
+   138: 0006e9e4     0 NOTYPE  LOCAL  DEFAULT   24 $d
+   139: 0006f43f     1 OBJECT  LOCAL  DEFAULT   24 sendlen.8494
+   140: 00000000     0 FILE    LOCAL  DEFAULT  ABS crc.c
+   141: 00063554     0 NOTYPE  LOCAL  DEFAULT   15 $d
+   142: 0001007c     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   143: 00010134     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   144: 00010138     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   145: 000101e4     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   146: 000101ec     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   147: 00010294     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   148: 00010298     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   149: 0001038c     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   150: 00010394     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   151: 000104dc     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   152: 000104e0     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   153: 000105fc     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   154: 00000000     0 FILE    LOCAL  DEFAULT  ABS xdr_file_manage.c
+   155: 00063d54     0 NOTYPE  LOCAL  DEFAULT   15 $d
+   156: 00063d54    64 OBJECT  LOCAL  DEFAULT   15 fillbuf
+   157: 00010600     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   158: 00011134     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   159: 00000000     0 FILE    LOCAL  DEFAULT  ABS time_tools.c
+   160: 0006e29c     0 NOTYPE  LOCAL  DEFAULT   23 $d
+   161: 0006e29c   200 OBJECT  LOCAL  DEFAULT   23 YearTable
+   162: 0006e364    24 OBJECT  LOCAL  DEFAULT   23 MonthTable1
+   163: 0006e37c    24 OBJECT  LOCAL  DEFAULT   23 MonthTable2
+   164: 0001117c     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   165: 00011410     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   166: 00011418     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   167: 00011690     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   168: 00011698     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   169: 00011820     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   170: 0001182c     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   171: 00011a74     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   172: 00011a80     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   173: 00011f88     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   174: 00063e04    12 OBJECT  LOCAL  DEFAULT   15 C.46.1856
+   175: 00011f8c     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   176: 0001211c     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   177: 00063df8    12 OBJECT  LOCAL  DEFAULT   15 C.47.1917
+   178: 00012120     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   179: 000122e4     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   180: 000122f0     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   181: 00012698     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   182: 000126b0     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   183: 00012794     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   184: 00012798     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   185: 00012b20     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   186: 00012b24     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   187: 00012d34     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   188: 00012d3c     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   189: 00012fac     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   190: 00012fb0     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   191: 00013144     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   192: 00013148     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   193: 0001328c     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   194: 00013294     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   195: 00013460     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   196: 00013468     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   197: 00013778     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   198: 00013788     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   199: 00013848     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   200: 00013858     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   201: 00063df8     0 NOTYPE  LOCAL  DEFAULT   15 $d
+   202: 00000000     0 FILE    LOCAL  DEFAULT  ABS xa_ul_operation.c
+   203: 0006e394     0 NOTYPE  LOCAL  DEFAULT   23 $d
+   204: 0006e394    60 OBJECT  LOCAL  DEFAULT   23 Len_ST
+   205: 0006e3d0    56 OBJECT  LOCAL  DEFAULT   23 Len_DZP
+   206: 0006e408    56 OBJECT  LOCAL  DEFAULT   23 Len_DZR
+   207: 0006e440    64 OBJECT  LOCAL  DEFAULT   23 Len_DZM
+   208: 0006f440    64 OBJECT  LOCAL  DEFAULT   24 ul_data
+   209: 0006f440     0 NOTYPE  LOCAL  DEFAULT   24 $d
+   210: 0006f480    64 OBJECT  LOCAL  DEFAULT   24 ul_data_bak
+   211: 00013a58     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   212: 00013afc     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   213: 00013b0c     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   214: 00013bb0     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   215: 00013bc0     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   216: 00013c98     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   217: 00013c9c     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   218: 00014950     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   219: 0001497c     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   220: 00063e10     0 NOTYPE  LOCAL  DEFAULT   15 $d
+   221: 00015014     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   222: 0001502c     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   223: 000150b4     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   224: 000150b8     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   225: 000151d0     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   226: 000151d8     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   227: 000153ec     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   228: 00015404     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   229: 00015860     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   230: 00015888     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   231: 00015a3c     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   232: 00015a44     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   233: 00015ae8     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   234: 00015aec     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   235: 00015ca4     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   236: 00015cb0     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   237: 00015d2c     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   238: 00015d30     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   239: 00015dd0     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   240: 00015de8     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   241: 00015eb8     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   242: 00015ee0     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   243: 00017314     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   244: 000173b8     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   245: 00018bbc     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   246: 00018c38     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   247: 00019728     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   248: 0001976c     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   249: 0001a39c     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   250: 0001a41c     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   251: 0001b400     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   252: 0001b484     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   253: 0001c084     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   254: 0001c100     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   255: 0001cf20     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   256: 0001cf6c     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   257: 0001de6c     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   258: 0001df00     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   259: 0001ec9c     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   260: 0001ed1c     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   261: 0001fc10     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   262: 0001fc94     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   263: 00020274     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   264: 000202e4     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   265: 00021180     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   266: 000211c8     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   267: 00021738     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   268: 00021754     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   269: 000223b4     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   270: 0002243c     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   271: 00023a4c     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   272: 00023ae4     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   273: 00024dc4     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   274: 00024e50     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   275: 00025c3c     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   276: 00025c74     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   277: 00025ce8     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   278: 00025cec     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   279: 000260e0     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   280: 00026110     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   281: 00026b80     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   282: 00000000     0 FILE    LOCAL  DEFAULT  ABS fastdes.c
+   283: 0006e480     0 NOTYPE  LOCAL  DEFAULT   23 $d
+   284: 0006e480    28 OBJECT  LOCAL  DEFAULT   23 bK_C
+   285: 0006e49c    28 OBJECT  LOCAL  DEFAULT   23 bK_D
+   286: 0006f4c0   512 OBJECT  LOCAL  DEFAULT   24 wC_K4
+   287: 0006f4c0     0 NOTYPE  LOCAL  DEFAULT   24 $d
+   288: 0006f6c0   256 OBJECT  LOCAL  DEFAULT   24 wC_K3
+   289: 0006f7c0   512 OBJECT  LOCAL  DEFAULT   24 wD_K4
+   290: 0006f9c0   256 OBJECT  LOCAL  DEFAULT   24 wD_K3
+   291: 0006e4b8    16 OBJECT  LOCAL  DEFAULT   23 preshift
+   292: 0006e4c8    48 OBJECT  LOCAL  DEFAULT   23 bCD_KS
+   293: 0006fac0   448 OBJECT  LOCAL  DEFAULT   24 hKS_C4
+   294: 0006fc80   448 OBJECT  LOCAL  DEFAULT   24 lKS_D4
+   295: 0006fe40   344 OBJECT  LOCAL  DEFAULT   24 wL_I8
+   296: 0006ff98    64 OBJECT  LOCAL  DEFAULT   24 wO_L4
+   297: 0006ffd8  2048 OBJECT  LOCAL  DEFAULT   24 wPS
+   298: 0006e4f8    32 OBJECT  LOCAL  DEFAULT   23 P
+   299: 0006e518   512 OBJECT  LOCAL  DEFAULT   23 S
+   300: 00026bec     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   301: 00026bec  1772 FUNC    LOCAL  DEFAULT   13 buildtables
+   302: 00027288     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   303: 000272d8     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   304: 000275bc     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   305: 000707d8     4 OBJECT  LOCAL  DEFAULT   24 built.1644
+   306: 000275dc     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   307: 00027a20     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   308: 00027a2c     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   309: 00063ebc     0 NOTYPE  LOCAL  DEFAULT   15 $d
+   310: 00027fdc     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   311: 00000000     0 FILE    LOCAL  DEFAULT  ABS xa_func.c
+   312: 0006e718     0 NOTYPE  LOCAL  DEFAULT   23 $d
+   313: 0006e718    60 OBJECT  LOCAL  DEFAULT   23 Len_ST
+   314: 0006e754    56 OBJECT  LOCAL  DEFAULT   23 Len_DZP
+   315: 0006e78c    56 OBJECT  LOCAL  DEFAULT   23 Len_DZR
+   316: 0006e7c4    64 OBJECT  LOCAL  DEFAULT   23 Len_DZM
+   317: 00063ec8     0 NOTYPE  LOCAL  DEFAULT   15 $d
+   318: 00027fe0     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   319: 00028850     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   320: 000288dc     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   321: 00028924     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   322: 00000000     0 FILE    LOCAL  DEFAULT  ABS xa_cpu20_operation.c
+   323: 00028928     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   324: 00028e1c     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   325: 00028e54     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   326: 00029070     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   327: 000290a4     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   328: 00029508     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   329: 00029518     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   330: 000296f8     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   331: 00029708     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   332: 00029770     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   333: 00029774     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   334: 00029b18     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   335: 00063efc     0 NOTYPE  LOCAL  DEFAULT   15 $d
+   336: 00029b38     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   337: 00029f24     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   338: 00029f80     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   339: 0002a504     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   340: 0002a540     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   341: 0002a71c     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   342: 0002a720     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   343: 0002a928     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   344: 0002a92c     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   345: 0002ac84     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   346: 0002acb4     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   347: 0002af64     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   348: 0002af80     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   349: 0002b2e0     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   350: 0002b2fc     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   351: 0002b65c     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   352: 0002b678     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   353: 0002b8c8     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   354: 0002b8d4     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   355: 0002b92c     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   356: 0002b930     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   357: 0002bbd8     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   358: 0002bbe8     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   359: 0002c500     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   360: 0002c56c     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   361: 0002d698     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   362: 0002d730     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   363: 0002df90     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   364: 0002e034     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   365: 0002f158     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   366: 0002f1f8     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   367: 0002fb34     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   368: 0002fb44     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   369: 000302b0     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   370: 00030318     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   371: 000312a8     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   372: 0003135c     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   373: 00032964     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   374: 00032a1c     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   375: 00033ee0     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   376: 00033f70     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   377: 000348ac     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   378: 000348bc     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   379: 000349cc     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   380: 00034a04     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   381: 00035604     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   382: 000356a8     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   383: 00036e24     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   384: 00036ec0     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   385: 00038128     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   386: 000381cc     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   387: 00039184     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   388: 00039194     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   389: 00039c5c     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   390: 00039ce0     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   391: 0003a75c     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   392: 0003a78c     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   393: 0003aa64     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   394: 0003aa94     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   395: 0003ad6c     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   396: 0003ad98     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   397: 0003b070     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   398: 0003b0a0     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   399: 0003b378     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   400: 0003b3a8     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   401: 0003b550     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   402: 0003b560     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   403: 0003b7d8     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   404: 0003b828     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   405: 0003ba58     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   406: 0003ba80     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   407: 0003bcb0     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   408: 0003bcd8     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   409: 0003be78     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   410: 0003be9c     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   411: 0003c044     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   412: 0003c054     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   413: 0003c378     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   414: 0003c3dc     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   415: 0003cf64     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   416: 0003cfd0     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   417: 0003d328     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   418: 0003d354     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   419: 0003d448     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   420: 00000000     0 FILE    LOCAL  DEFAULT  ABS xa_sam.c
+   421: 0006e804     0 NOTYPE  LOCAL  DEFAULT   23 $d
+   422: 0006e804    60 OBJECT  LOCAL  DEFAULT   23 Len_ST
+   423: 0006e840    56 OBJECT  LOCAL  DEFAULT   23 Len_DZP
+   424: 0006e878    56 OBJECT  LOCAL  DEFAULT   23 Len_DZR
+   425: 0006e8b0    64 OBJECT  LOCAL  DEFAULT   23 Len_DZM
+   426: 00064250     0 NOTYPE  LOCAL  DEFAULT   15 $d
+   427: 0003d450     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   428: 0003d594     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   429: 0003d5b8     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   430: 0003db38     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   431: 0003dba0     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   432: 0003e11c     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   433: 0003e168     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   434: 0003e8d0     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   435: 0003e924     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   436: 0003ed48     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   437: 0003ed88     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   438: 0003f0b4     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   439: 0003f0c4     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   440: 0003f2cc     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   441: 0003f2e0     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   442: 0003f6fc     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   443: 0003f70c     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   444: 0003fad8     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   445: 0003fae4     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   446: 0003fcd8     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   447: 0003fce4     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   448: 0003feb8     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   449: 0003fec4     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   450: 0003fef0     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   451: 0003ff0c     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   452: 00040198     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   453: 000401d4     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   454: 000402c0     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   455: 00000000     0 FILE    LOCAL  DEFAULT  ABS hard_2440_test.c
+   456: 0006473c     0 NOTYPE  LOCAL  DEFAULT   15 $d
+   457: 000402cc     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   458: 0004053c     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   459: 00040544     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   460: 00040a94     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   461: 00040aa0     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   462: 00040ad4     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   463: 00040ae8     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   464: 00000000     0 FILE    LOCAL  DEFAULT  ABS hh_cpu_operation.c
+   465: 00064764     0 NOTYPE  LOCAL  DEFAULT   15 $d
+   466: 00040be8     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   467: 00040d80     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   468: 00040d90     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   469: 0004102c     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   470: 00041054     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   471: 00041264     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   472: 0004127c     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   473: 00041490     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   474: 000414a4     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   475: 00041674     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   476: 000416a4     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   477: 000418c4     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   478: 000418e8     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   479: 000419f8     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   480: 00041a08     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   481: 00041c24     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   482: 00041c3c     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   483: 00041e74     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   484: 00041e98     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   485: 0004206c     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   486: 00042088     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   487: 00042198     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   488: 00000000     0 FILE    LOCAL  DEFAULT  ABS xa_tong_operation.c
+   489: 000421a4     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   490: 000422ec     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   491: 00042314     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   492: 0004249c     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   493: 000424c4     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   494: 00042b00     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   495: 00064890     0 NOTYPE  LOCAL  DEFAULT   15 $d
+   496: 00042b20     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   497: 00042f5c     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   498: 00042fb8     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   499: 00043080     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   500: 00043094     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   501: 00043314     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   502: 0004332c     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   503: 00043534     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   504: 00043538     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   505: 00043658     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   506: 00043664     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   507: 0004375c     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   508: 0004376c     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   509: 00043998     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   510: 000439c0     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   511: 00043b08     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   512: 00043b14     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   513: 00043bac     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   514: 00043bb4     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   515: 00044084     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   516: 000440b0     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   517: 000441a8     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   518: 000441b4     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   519: 00044474     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   520: 000444a0     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   521: 00044624     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   522: 00044628     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   523: 00045478     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   524: 00045568     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   525: 000464a4     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   526: 000465cc     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   527: 000477f0     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   528: 000478ec     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   529: 0004878c     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   530: 0004880c     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   531: 000489c0     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   532: 000489f0     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   533: 00048a48     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   534: 00048a50     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   535: 00048b2c     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   536: 00048b48     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   537: 00049930     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   538: 00049a84     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   539: 0004a3e8     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   540: 0004a47c     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   541: 0004a77c     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   542: 0004a7b0     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   543: 0004a8cc     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   544: 0004a8d0     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   545: 0004aa04     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   546: 0004aa08     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   547: 0004ac98     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   548: 0004aca4     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   549: 0004b198     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   550: 0004b1cc     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   551: 0004b4a0     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   552: 0004b4f4     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   553: 0004b728     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   554: 0004b76c     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   555: 0004b9a8     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   556: 0004b9fc     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   557: 0004ba88     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   558: 0004ba98     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   559: 0004c1e4     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   560: 00000000     0 FILE    LOCAL  DEFAULT  ABS bin_file_manage.c
+   561: 00064c3c     0 NOTYPE  LOCAL  DEFAULT   15 $d
+   562: 00064c3c    64 OBJECT  LOCAL  DEFAULT   15 fillbuf
+   563: 0004c214     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   564: 0004d11c     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   565: 0004d150     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   566: 0004e590     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   567: 0004e5d0     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   568: 0004f950     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   569: 0004f980     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   570: 00050688     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   571: 000506a4     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   572: 00051b20     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   573: 00051b24     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   574: 00052280     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   575: 000522a8     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   576: 00052dd0     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   577: 00052df0     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   578: 00053a00     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   579: 00053a24     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   580: 0005509c     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   581: 000550a4     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   582: 00055f00     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   583: 00055f28     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   584: 00056e6c     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   585: 00056e70     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   586: 000571c0     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   587: 000571d8     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   588: 00057698     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   589: 000576c0     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   590: 000579dc     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   591: 000579f8     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   592: 00057d10     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   593: 00057d30     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   594: 00058040     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   595: 0005805c     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   596: 00058370     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   597: 0005838c     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   598: 00058644     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   599: 00058664     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   600: 000586a8     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   601: 0005879c     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   602: 000595f4     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   603: 0005972c     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   604: 00059b90     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   605: 00059ba4     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   606: 00059c74     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   607: 00059c94     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   608: 00059d80     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   609: 00059d9c     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   610: 00059fb4     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   611: 00059fbc     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   612: 0005a5f4     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   613: 0005a600     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   614: 0005acd0     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   615: 0005acd8     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   616: 0005b1ac     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   617: 0005b1b0     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   618: 0005b3dc     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   619: 0005b3f8     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   620: 0005bcd0     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   621: 0005bcd4     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   622: 0005be18     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   623: 0005be1c     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   624: 0005bf5c     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   625: 0005bf60     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   626: 0005c094     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   627: 0005c098     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   628: 0005c300     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   629: 0005c310     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   630: 0005c928     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   631: 0005c938     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   632: 0005cb14     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   633: 0005cb1c     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   634: 0005ce3c     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   635: 0005ce44     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   636: 00000000     0 FILE    LOCAL  DEFAULT  ABS xa_operation.c
+   637: 0006e8f0     0 NOTYPE  LOCAL  DEFAULT   23 $d
+   638: 0006e8f0    60 OBJECT  LOCAL  DEFAULT   23 Len_ST
+   639: 0006e92c    56 OBJECT  LOCAL  DEFAULT   23 Len_DZP
+   640: 0006e964    56 OBJECT  LOCAL  DEFAULT   23 Len_DZR
+   641: 0006e99c    64 OBJECT  LOCAL  DEFAULT   23 Len_DZM
+   642: 0005cf2c     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   643: 0005d888     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   644: 0005d964     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   645: 0005da58     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   646: 0005da64     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   647: 0005db34     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   648: 0005db3c     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   649: 0005dc28     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   650: 0005dc30     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   651: 0005dd1c     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   652: 0005dd24     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   653: 0005de10     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   654: 0005de18     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   655: 0005def0     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   656: 0005def8     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   657: 0005dfd4     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   658: 0005dfdc     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   659: 0005e0a8     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   660: 00065068     0 NOTYPE  LOCAL  DEFAULT   15 $d
+   661: 0005e0b0     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   662: 0005e720     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   663: 0005e758     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   664: 0005e8d4     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   665: 0005e8dc     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   666: 0005ea5c     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   667: 0005ea74     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   668: 0005ee24     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   669: 0005ee38     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   670: 0005ef7c     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   671: 0005ef80     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   672: 0005f148     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   673: 00000000     0 FILE    LOCAL  DEFAULT  ABS sha1.c
+   674: 0005f14c     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   675: 0005f14c   100 FUNC    LOCAL  DEFAULT   13 READ_UINT32
+   676: 0005f1b0   120 FUNC    LOCAL  DEFAULT   13 WRITE_UINT32
+   677: 0005f2a8     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   678: 0005f2bc     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   679: 0005f2bc 11444 FUNC    LOCAL  DEFAULT   13 sha1_transform
+   680: 00060358     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   681: 00060364     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   682: 00061f6c     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   683: 00061f70     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   684: 00061f70   196 FUNC    LOCAL  DEFAULT   13 sha1_block
+   685: 00065090     0 NOTYPE  LOCAL  DEFAULT   15 $d
+   686: 000623e8     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   687: 000650c4    11 OBJECT  LOCAL  DEFAULT   15 __PRETTY_FUNCTION__.3494
+   688: 000623f8     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   689: 00062570     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   690: 000650b8    12 OBJECT  LOCAL  DEFAULT   15 __PRETTY_FUNCTION__.3548
+   691: 00062584     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   692: 00000010     0 NOTYPE  LOCAL  DEFAULT   31 $d
+   693: 0000000c     0 NOTYPE  LOCAL  DEFAULT   27 $d
+   694: 000626c8     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   695: 0000002c     0 NOTYPE  LOCAL  DEFAULT   27 $d
+   696: 00062ae4     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   697: 0000004c     0 NOTYPE  LOCAL  DEFAULT   27 $d
+   698: 00062f80     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   699: 0000006c     0 NOTYPE  LOCAL  DEFAULT   27 $d
+   700: 00063020     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   701: 0000008c     0 NOTYPE  LOCAL  DEFAULT   27 $d
+   702: 000632cc     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   703: 000000ac     0 NOTYPE  LOCAL  DEFAULT   27 $d
+   704: 00063328     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   705: 000000cc     0 NOTYPE  LOCAL  DEFAULT   27 $d
+   706: 00000000     0 FILE    LOCAL  DEFAULT  ABS elf-init.c
+   707: 0006333c     0 NOTYPE  LOCAL  DEFAULT   13 $a
+   708: 000633a4     0 NOTYPE  LOCAL  DEFAULT   13 $d
+   709: 00000000     0 FILE    LOCAL  DEFAULT  ABS crtstuff.c
+   710: 000650d8     0 NOTYPE  LOCAL  DEFAULT   17 $d
+   711: 000650d8     0 OBJECT  LOCAL  DEFAULT   17 __FRAME_END__
+   712: 0006defc     0 NOTYPE  LOCAL  DEFAULT   20 $d
+   713: 0006defc     0 OBJECT  LOCAL  DEFAULT   20 __JCR_END__
+   714: 0006e000     0 OBJECT  LOCAL  HIDDEN   22 _GLOBAL_OFFSET_TABLE_
+   715: 0006def8     0 NOTYPE  LOCAL  HIDDEN   18 __init_array_end
+   716: 0006def4     0 NOTYPE  LOCAL  HIDDEN   18 __init_array_start
+   717: 0006df00     0 OBJECT  LOCAL  HIDDEN   21 _DYNAMIC
+   718: 000096d4     0 NOTYPE  LOCAL  DEFAULT   12 $a
+   719: 000096e4     0 NOTYPE  LOCAL  DEFAULT   12 $d
+   720: 000096e8     0 NOTYPE  LOCAL  DEFAULT   12 $a
+   721: 0000c8a4   636 FUNC    GLOBAL DEFAULT   13 parity_set
+   722: 0006e180     0 NOTYPE  WEAK   DEFAULT   23 data_start
+   723: 0006302c   444 FUNC    GLOBAL HIDDEN   13 __aeabi_fadd
+   724: 00078048     8 OBJECT  GLOBAL DEFAULT   24 capp_debit
+   725: 000096e8     0 FUNC    GLOBAL DEFAULT  UND sam_set
+   726: 000096f4     0 FUNC    GLOBAL DEFAULT  UND watchdog
+   727: 0004127c   552 FUNC    GLOBAL DEFAULT   13 CPU_update_capp
+   728: 00009700     0 FUNC    GLOBAL DEFAULT  UND open@@GLIBC_2.4
+   729: 0000970c     0 FUNC    GLOBAL DEFAULT  UND sam_atr
+   730: 00062ae4   656 FUNC    GLOBAL HIDDEN   13 __muldf3
+   731: 00042b20  1176 FUNC    GLOBAL DEFAULT   13 CPUT_gettransprove
+   732: 0004f980  8612 FUNC    GLOBAL DEFAULT   13 PACC_1105_Product
+   733: 0002d730  4280 FUNC    GLOBAL DEFAULT   13 xa_CPU_entry_cnt
+   734: 0000bf08   296 FUNC    GLOBAL DEFAULT   13 VerifyPIN
+   735: 0003d354   252 FUNC    GLOBAL DEFAULT   13 xa_ext_auth
+   736: 000707dc    36 OBJECT  GLOBAL DEFAULT   24 tpContinue1920
+   737: 00009718     0 FUNC    GLOBAL DEFAULT  UND strerror@@GLIBC_2.4
+   738: 00009724     0 FUNC    GLOBAL DEFAULT  UND rtc_rd_time
+   739: 00070800    16 OBJECT  GLOBAL DEFAULT   24 xaFile1C
+   740: 000240e0  4972 FUNC    GLOBAL DEFAULT   13 xa_ul_update_period
+   741: 00078760     4 OBJECT  GLOBAL DEFAULT   24 szt_mac2
+   742: 0000c6c4    52 FUNC    GLOBAL DEFAULT   13 close_port
+   743: 00009730     0 FUNC    GLOBAL DEFAULT  UND mkdir@@GLIBC_2.4
+   744: 0005c938   484 FUNC    GLOBAL DEFAULT   13 get_degrade_sensitive_mod
+   745: 0000973c     0 FUNC    GLOBAL DEFAULT  UND abort@@GLIBC_2.4
+   746: 00029774   964 FUNC    GLOBAL DEFAULT   13 CPU_TellEntry
+   747: 0004b76c   656 FUNC    GLOBAL DEFAULT   13 xa_auth_logout_init
+   748: 00063328    20 FUNC    GLOBAL HIDDEN   13 __div0
+   749: 00070810    16 OBJECT  GLOBAL DEFAULT   24 xaFile17
+   750: 0003c3dc  3060 FUNC    GLOBAL DEFAULT   13 check_metro_Black_Lock
+   751: 00070820     6 OBJECT  GLOBAL DEFAULT   24 ch_cput_isam_id
+   752: 00070828    28 OBJECT  GLOBAL DEFAULT   24 tlv_ppse
+   753: 0006333c     4 FUNC    GLOBAL DEFAULT   13 __libc_csu_fini
+   754: 0003d5b8  1512 FUNC    GLOBAL DEFAULT   13 XAMetroSAM
+   755: 00046a0c  3808 FUNC    GLOBAL DEFAULT   13 xa_tong_update
+   756: 00070844     1 OBJECT  GLOBAL DEFAULT   24 PPSE_len
+   757: 00011698   404 FUNC    GLOBAL DEFAULT   13 datestr2days
+   758: 0005acd8  1240 FUNC    GLOBAL DEFAULT   13 check_peak_time
+   759: 000101ec   172 FUNC    GLOBAL DEFAULT   13 IsCrc16Good_With_CRC
+   760: 0004d718  5752 FUNC    GLOBAL DEFAULT   13 PACC_1102_Business
+   761: 00078050     8 OBJECT  GLOBAL DEFAULT   24 ch_ul_logic_id
+   762: 00009748     0 FUNC    GLOBAL DEFAULT  UND opendir@@GLIBC_2.4
+   763: 0000c64c   120 FUNC    GLOBAL DEFAULT   13 open_port
+   764: 00009754     0 FUNC    GLOBAL DEFAULT  UND memcmp@@GLIBC_2.4
+   765: 00009b38     0 FUNC    GLOBAL DEFAULT   13 _start
+   766: 0002b968    40 FUNC    GLOBAL DEFAULT   13 CPU_CalPeriod
+   767: 00013bc0    44 FUNC    GLOBAL DEFAULT   13 standard_tocken_read
+   768: 0001976c  3900 FUNC    GLOBAL DEFAULT   13 xa_ul_entry_purse
+   769: 0005e0b0  1704 FUNC    GLOBAL DEFAULT   13 xa_blacklist_request
+   770: 00009760     0 FUNC    GLOBAL DEFAULT  UND __libc_start_main@@GLIBC_
+   771: 00041c3c   604 FUNC    GLOBAL DEFAULT   13 CPU_init_for_purchase
+   772: 0005cb1c   284 FUNC    GLOBAL DEFAULT   13 xa_get_record
+   773: 0005ee38   328 FUNC    GLOBAL DEFAULT   13 xa_TellDate
+   774: 00070848    48 OBJECT  GLOBAL DEFAULT   24 tpCalendar1107
+   775: 0002b678   604 FUNC    GLOBAL DEFAULT   13 CPU_GetFiles1A
+   776: 00070878    12 OBJECT  GLOBAL DEFAULT   24 tpYPT_txn_val
+   777: 00062a70   116 FUNC    GLOBAL HIDDEN   13 __floatundidf
+   778: 0000976c     0 FUNC    GLOBAL DEFAULT  UND signal@@GLIBC_2.4
+   779: 0004aca4  1320 FUNC    GLOBAL DEFAULT   13 xa_load_mac2
+   780: 0003471c   744 FUNC    GLOBAL DEFAULT   13 xa_CPU_update
+   781: 0002a92c   904 FUNC    GLOBAL DEFAULT   13 CPU_GetFiles15
+   782: 00070884    40 OBJECT  GLOBAL DEFAULT   24 tpSensitive3021
+   783: 0000c350    80 FUNC    GLOBAL DEFAULT   13 ShortToByte
+   784: 000708ac   238 OBJECT  GLOBAL DEFAULT   24 tpTxnProductMultirideComp
+   785: 00009778     0 FUNC    GLOBAL DEFAULT  UND mcml_select2
+   786: 00063220   172 FUNC    GLOBAL HIDDEN   13 __aeabi_l2f
+   787: 000115f0   168 FUNC    GLOBAL DEFAULT   13 bin2bcd
+   788: 00000000     0 NOTYPE  WEAK   DEFAULT  UND __gmon_start__
+   789: 00000000     0 NOTYPE  WEAK   DEFAULT  UND _Jv_RegisterClasses
+   790: 0004aa08   668 FUNC    GLOBAL DEFAULT   13 calPin
+   791: 0007099c  2100 OBJECT  GLOBAL DEFAULT   24 retry_buf
+   792: 00078604     6 OBJECT  GLOBAL DEFAULT   24 ch_sh_psam_id
+   793: 0004c214  5380 FUNC    GLOBAL DEFAULT   13 PACC_1101_SystemParameter
+   794: 000418e8   288 FUNC    GLOBAL DEFAULT   13 output_binary_trace
+   795: 000711d0     2 OBJECT  GLOBAL DEFAULT   24 cur_sfi
+   796: 000711d4   186 OBJECT  GLOBAL DEFAULT   24 tpTxnproductPurseReverse
+   797: 00009790     0 FUNC    GLOBAL DEFAULT  UND cfgetispeed@@GLIBC_2.4
+   798: 00062a08    40 FUNC    GLOBAL HIDDEN   13 __floatsidf
+   799: 0002b930    56 FUNC    GLOBAL DEFAULT   13 CPU_ValidatePeriod
+   800: 0007128e     1 OBJECT  GLOBAL DEFAULT   24 blnRetry
+   801: 0004bbac  1640 FUNC    GLOBAL DEFAULT   13 check_YKT_Black_Lock
+   802: 00071290    28 OBJECT  GLOBAL DEFAULT   24 tlv_gpo
+   803: 0003e168  1980 FUNC    GLOBAL DEFAULT   13 XAYKTISAM
+   804: 000712ac   272 OBJECT  GLOBAL DEFAULT   24 eod_download
+   805: 0000979c     0 FUNC    GLOBAL DEFAULT  UND rename@@GLIBC_2.4
+   806: 000097a8     0 FUNC    GLOBAL DEFAULT  UND fclose@@GLIBC_2.4
+   807: 000713bc   130 OBJECT  GLOBAL DEFAULT   24 tpTxnEventBlacklistReques
+   808: 00012120   464 FUNC    GLOBAL DEFAULT   13 timestr2long
+   809: 000633b0     0 FUNC    GLOBAL DEFAULT   14 _fini
+   810: 00078058     8 OBJECT  GLOBAL DEFAULT   24 ch_ul_phyical_id
+   811: 000097b4     0 FUNC    GLOBAL DEFAULT  UND system@@GLIBC_2.4
+   812: 000441b4   748 FUNC    GLOBAL DEFAULT   13 CPUT_externauth
+   813: 0000e250   452 FUNC    GLOBAL DEFAULT   13 xaReaderResponse
+   814: 000097c0     0 FUNC    GLOBAL DEFAULT  UND putchar@@GLIBC_2.4
+   815: 00078060    16 OBJECT  GLOBAL DEFAULT   24 xaDynamicZonePurse
+   816: 00071440   180 OBJECT  GLOBAL DEFAULT   24 tpauthLogin
+   817: 0000d134   564 FUNC    GLOBAL DEFAULT   13 xaDeleteDLE
+   818: 00078070   108 OBJECT  GLOBAL DEFAULT   24 tpSJT
+   819: 0003dba0  1480 FUNC    GLOBAL DEFAULT   13 XAYKTPSAM
+   820: 00015cb0   128 FUNC    GLOBAL DEFAULT   13 UL_TellTesting
+   821: 000275dc  1104 FUNC    GLOBAL DEFAULT   13 fencrypt
+   822: 000097cc     0 FUNC    GLOBAL DEFAULT  UND toupper@@GLIBC_2.4
+   823: 0000d368  2336 FUNC    GLOBAL DEFAULT   13 com_serv
+   824: 0003b3a8  1152 FUNC    GLOBAL DEFAULT   13 xa_CPU_active
+   825: 000714f4     1 OBJECT  GLOBAL DEFAULT   24 chCode_bak
+   826: 0000cfa4   400 FUNC    GLOBAL DEFAULT   13 xaInsertDLE
+   827: 000714f8 10530 OBJECT  GLOBAL DEFAULT   24 tpXACPUProtect
+   828: 00073e1c    20 OBJECT  GLOBAL DEFAULT   24 tpfile1b
+   829: 0003ba80   600 FUNC    GLOBAL DEFAULT   13 xa_CPU_active_em
+   830: 00063210   188 FUNC    GLOBAL HIDDEN   13 __aeabi_ul2f
+   831: 00073e30     8 OBJECT  GLOBAL DEFAULT   24 ch_cput_psam_sn
+   832: 0005da64   216 FUNC    GLOBAL DEFAULT   13 xa_sale
+   833: 0007860a     1 OBJECT  GLOBAL DEFAULT   24 sh_psam_index
+   834: 000097d8     0 FUNC    GLOBAL DEFAULT  UND sem_init@@GLIBC_2.4
+   835: 00044628  4096 FUNC    GLOBAL DEFAULT   13 xa_tong_entry
+   836: 000097e4     0 FUNC    GLOBAL DEFAULT  UND fopen@@GLIBC_2.4
+   837: 00073e38     8 OBJECT  GLOBAL DEFAULT   24 ch_cpu20_logic_id
+   838: 0003bcd8   452 FUNC    GLOBAL DEFAULT   13 xa_CPU_active_dis
+   839: 00073e40     1 OBJECT  GLOBAL DEFAULT   24 xa_tong_isam_index
+   840: 0004ed90  3056 FUNC    GLOBAL DEFAULT   13 PACC_1104_Blacklist
+   841: 000097f0     0 FUNC    GLOBAL DEFAULT  UND memset@@GLIBC_2.4
+   842: 000272d8   772 FUNC    GLOBAL DEFAULT   13 fsetkey
+   843: 00073e44   112 OBJECT  GLOBAL DEFAULT   24 tpSystem1101
+   844: 00010434   172 FUNC    GLOBAL DEFAULT   13 Get_CRC32
+   845: 0005cc38   524 FUNC    GLOBAL DEFAULT   13 ee_write_last_record
+   846: 00012b24   536 FUNC    GLOBAL DEFAULT   13 BCD2Date16
+   847: 00073eb4     1 OBJECT  GLOBAL DEFAULT   24 xa_ticket_family
+   848: 0005ea74   964 FUNC    GLOBAL DEFAULT   13 xa_station_all_price
+   849: 000478ec  3872 FUNC    GLOBAL DEFAULT   13 xa_tong_inquire
+   850: 000579f8   824 FUNC    GLOBAL DEFAULT   13 YKT_1914_Load
+   851: 00073eb5     1 OBJECT  GLOBAL DEFAULT   24 ch_sz_cpu_rollback
+   852: 000780dc     4 OBJECT  GLOBAL DEFAULT   24 mac2
+   853: 00073eb8    20 OBJECT  GLOBAL DEFAULT   24 xaFile05
+   854: 00062034   340 FUNC    GLOBAL DEFAULT   13 sha1_update
+   855: 000097fc     0 FUNC    GLOBAL DEFAULT  UND mcml_select
+   856: 000444a0   392 FUNC    GLOBAL DEFAULT   13 CPU_update_purchase
+   857: 00078600     1 OBJECT  GLOBAL DEFAULT   24 TicketOTP
+   858: 00027b90   124 FUNC    GLOBAL DEFAULT   13 des3_decode
+   859: 00078764     8 OBJECT  GLOBAL DEFAULT   24 szt_mac1
+   860: 00012a98   140 FUNC    GLOBAL DEFAULT   13 Date162BCD
+   861: 00043664   264 FUNC    GLOBAL DEFAULT   13 CPUT_GetFiles05
+   862: 00073ecc     1 OBJECT  GLOBAL DEFAULT   24 blnCalMAC2
+   863: 00010138   180 FUNC    GLOBAL DEFAULT   13 IsCrc16Good
+   864: 0007876c    64 OBJECT  GLOBAL DEFAULT   24 cpu_19_data
+   865: 00009808     0 FUNC    GLOBAL DEFAULT  UND perror@@GLIBC_2.4
+   866: 000290a4  1140 FUNC    GLOBAL DEFAULT   13 xa_MCPU_rollback_write
+   867: 0004a7b0   288 FUNC    GLOBAL DEFAULT   13 get_purchase_ticket
+   868: 00015888   444 FUNC    GLOBAL DEFAULT   13 UL_CalExitMAC
+   869: 00009814     0 FUNC    GLOBAL DEFAULT  UND iconv@@GLIBC_2.4
+   870: 0000ef2c   832 FUNC    GLOBAL DEFAULT   13 communicate
+   871: 00041e98   496 FUNC    GLOBAL DEFAULT   13 CPU_debit_for_purchase
+   872: 0001f02c  3176 FUNC    GLOBAL DEFAULT   13 xa_ul_exit_period
+   873: 0001117c   360 FUNC    GLOBAL DEFAULT   13 sz_localtimeToSecond
+   874: 00029f80  1472 FUNC    GLOBAL DEFAULT   13 CPU_GetFiles05
+   875: 00073ecd     1 OBJECT  GLOBAL DEFAULT   24 tpXACPUProtectIndex
+   876: 0005ce44   232 FUNC    GLOBAL DEFAULT   13 ee_read_last_record
+   877: 0002b8d4    92 FUNC    GLOBAL DEFAULT   13 CPU_TellSysCard
+   878: 00009820     0 FUNC    GLOBAL DEFAULT  UND __assert_fail@@GLIBC_2.4
+   879: 0002acb4   716 FUNC    GLOBAL DEFAULT   13 CPU_GetFiles1b
+   880: 0000cdcc   472 FUNC    GLOBAL DEFAULT   13 DeleteDLE
+   881: 00011c2c   356 FUNC    GLOBAL DEFAULT   13 timestr6to4
+   882: 0000c214   316 FUNC    GLOBAL DEFAULT   13 code_convert
+   883: 00073ece     1 OBJECT  GLOBAL DEFAULT   24 xa_pboc_psam_index
+   884: 00042088   284 FUNC    GLOBAL DEFAULT   13 CPU_VerifyPIN
+   885: 0004a47c   820 FUNC    GLOBAL DEFAULT   13 xa_update_city_15
+   886: 00018c38  2868 FUNC    GLOBAL DEFAULT   13 xa_ul_entry
+   887: 0003f2e0  1068 FUNC    GLOBAL DEFAULT   13 cpu_cal_dcmk
+   888: 00028c44   528 FUNC    GLOBAL DEFAULT   13 sz_CPU20_ee_write
+   889: 0001b484  3812 FUNC    GLOBAL DEFAULT   13 xa_ul_entry_period
+   890: 0003cfd0   900 FUNC    GLOBAL DEFAULT   13 xa_ext_auth_init
+   891: 00073ed0    16 OBJECT  GLOBAL DEFAULT   24 g_sha1wait
+   892: 000780e0    32 OBJECT  GLOBAL DEFAULT   24 tpDZperiod
+   893: 0005c114   508 FUNC    GLOBAL DEFAULT   13 get_temp_para_ver
+   894: 00013bec    80 FUNC    GLOBAL DEFAULT   13 standard_tocken_write
+   895: 00012d3c   192 FUNC    GLOBAL DEFAULT   13 sz_get_seconds_since_midn
+   896: 0005f228   148 FUNC    GLOBAL DEFAULT   13 sha1_init
+   897: 00073ee0   112 OBJECT  GLOBAL DEFAULT   24 tpBusiness1102
+   898: 0005be1c   324 FUNC    GLOBAL DEFAULT   13 location_to_card
+   899: 00073f50     2 OBJECT  GLOBAL DEFAULT   24 xa_metro_psam_sfi
+   900: 00063028   448 FUNC    GLOBAL HIDDEN   13 __subsf3
+   901: 000424c4  1628 FUNC    GLOBAL DEFAULT   13 xa_tong_rollback_write
+   902: 00073f52     1 OBJECT  GLOBAL DEFAULT   24 sam_version
+   903: 0000982c     0 FUNC    GLOBAL DEFAULT  UND usleep@@GLIBC_2.4
+   904: 00022d20  5056 FUNC    GLOBAL DEFAULT   13 xa_ul_update_multiride
+   905: 00073f54    24 OBJECT  GLOBAL DEFAULT   24 tpfile15
+   906: 0005e758   388 FUNC    GLOBAL DEFAULT   13 xa_getud
+   907: 0003fec4   784 FUNC    GLOBAL DEFAULT   13 pthsamcal
+   908: 000202e4  4760 FUNC    GLOBAL DEFAULT   13 xa_ul_inquire
+   909: 00073f6c     4 OBJECT  GLOBAL DEFAULT   24 csc_comm
+   910: 00049c5c  2080 FUNC    GLOBAL DEFAULT   13 xa_CPU_sale
+   911: 0000c030   156 FUNC    GLOBAL DEFAULT   13 md5_str
+   912: 0003aa94   772 FUNC    GLOBAL DEFAULT   13 xa_update_file_1b
+   913: 00073f70     4 OBJECT  GLOBAL DEFAULT   24 g_pthtmrID
+   914: 000633bc     4 OBJECT  GLOBAL DEFAULT   15 _IO_stdin_used
+   915: 00078100    28 OBJECT  GLOBAL DEFAULT   24 tpSZ
+   916: 00073f74     1 OBJECT  GLOBAL DEFAULT   24 blncpuRollback
+   917: 00029518   496 FUNC    GLOBAL DEFAULT   13 xa_CPU_rollback_read
+   918: 0000c40c   100 FUNC    GLOBAL DEFAULT   13 ByteToShort
+   919: 000126b0   232 FUNC    GLOBAL DEFAULT   13 get_month_end_date
+   920: 00009838     0 FUNC    GLOBAL DEFAULT  UND free@@GLIBC_2.4
+   921: 00009844     0 FUNC    GLOBAL DEFAULT  UND read@@GLIBC_2.4
+   922: 00073f78     2 OBJECT  GLOBAL DEFAULT   24 sfi_bak
+   923: 00009850     0 FUNC    GLOBAL DEFAULT  UND write@@GLIBC_2.4
+   924: 00041054   552 FUNC    GLOBAL DEFAULT   13 CPU_init_for_capp
+   925: 0000a120   132 FUNC    GLOBAL DEFAULT   13 md5_init_ctx
+   926: 00034a04  5948 FUNC    GLOBAL DEFAULT   13 xa_CPU_update_dis
+   927: 00011388   144 FUNC    GLOBAL DEFAULT   13 DaysToWeek
+   928: 00073f7a     1 OBJECT  GLOBAL DEFAULT   24 blnNeedReadfile14
+   929: 00073f7b     1 OBJECT  GLOBAL DEFAULT   24 xa_metro_psam_index
+   930: 0007811c    28 OBJECT  GLOBAL DEFAULT   24 tpDZpurse
+   931: 000629e4    36 FUNC    GLOBAL HIDDEN   13 __aeabi_ui2d
+   932: 00073f7c    64 OBJECT  GLOBAL DEFAULT   24 tpLocation1106
+   933: 00040d90   708 FUNC    GLOBAL DEFAULT   13 CPU_externauth
+   934: 000421a4   368 FUNC    GLOBAL DEFAULT   13 sz_tong_ee_write
+   935: 00056e70   872 FUNC    GLOBAL DEFAULT   13 YKT_1901_Blacklist
+   936: 0002544c  2088 FUNC    GLOBAL DEFAULT   13 xa_ul_active
+   937: 00073fbc     1 OBJECT  GLOBAL DEFAULT   24 ch_metro_edu_type
+   938: 0006e180     0 NOTYPE  GLOBAL DEFAULT   23 __data_start
+   939: 0003f70c   984 FUNC    GLOBAL DEFAULT   13 cpu_cal_protect_mac
+   940: 0000985c     0 FUNC    GLOBAL DEFAULT  UND gettimeofday@@GLIBC_2.4
+   941: 0005dd24   244 FUNC    GLOBAL DEFAULT   13 xa_update
+   942: 00063954  1024 OBJECT  GLOBAL DEFAULT   15 crc32_tab
+   943: 00073fc0     4 OBJECT  GLOBAL DEFAULT   24 g_pthsamID
+   944: 00009868     0 FUNC    GLOBAL DEFAULT  UND fseek@@GLIBC_2.4
+   945: 0005b1b0  2852 FUNC    GLOBAL DEFAULT   13 cal_fare_value
+   946: 00027c0c   468 FUNC    GLOBAL DEFAULT   13 WatchDiversity
+   947: 0005db3c   244 FUNC    GLOBAL DEFAULT   13 xa_entry
+   948: 00073fc4     1 OBJECT  GLOBAL DEFAULT   24 blncputRollback
+   949: 00078138    76 OBJECT  GLOBAL DEFAULT   24 tpCPU
+   950: 00042314   432 FUNC    GLOBAL DEFAULT   13 sz_tong_ee_read
+   951: 00009874     0 FUNC    GLOBAL DEFAULT  UND tcgetattr@@GLIBC_2.4
+   952: 00073fc8     8 OBJECT  GLOBAL DEFAULT   24 ch_cpu20_phyical_id
+   953: 00015a90    92 FUNC    GLOBAL DEFAULT   13 UL_TellSysCard
+   954: 0006e9dc     0 NOTYPE  GLOBAL DEFAULT  ABS __bss_start__
+   955: 00078184     2 OBJECT  GLOBAL DEFAULT   24 gDebugStep
+   956: 00062a08    40 FUNC    GLOBAL HIDDEN   13 __aeabi_i2d
+   957: 00078188    12 OBJECT  GLOBAL DEFAULT   24 xaStaticZone
+   958: 00009880     0 FUNC    GLOBAL DEFAULT  UND tcflush@@GLIBC_2.4
+   959: 0000988c     0 FUNC    GLOBAL DEFAULT  UND mcml_request2
+   960: 000150b8   288 FUNC    GLOBAL DEFAULT   13 UL_CalIssueMAC
+   961: 000629e4    36 FUNC    GLOBAL HIDDEN   13 __floatunsidf
+   962: 00015404  1156 FUNC    GLOBAL DEFAULT   13 UL_TellEntryMAC
+   963: 000626d0   788 FUNC    GLOBAL HIDDEN   13 __subdf3
+   964: 00073fd0     1 OBJECT  GLOBAL DEFAULT   24 ch_sz_pboc_rollback
+   965: 00078194    32 OBJECT  GLOBAL DEFAULT   24 tpDZmultiride
+   966: 00073fd4    28 OBJECT  GLOBAL DEFAULT   24 tlv_aid
+   967: 000631f0    32 FUNC    GLOBAL HIDDEN   13 __floatsisf
+   968: 00073ff0   214 OBJECT  GLOBAL DEFAULT   24 tpTxnProductPurseCompensa
+   969: 000489f0    96 FUNC    GLOBAL DEFAULT   13 sz_tong_unlock
+   970: 000740c8   186 OBJECT  GLOBAL DEFAULT   24 tpTxnProductMultirideIssu
+   971: 00009898     0 FUNC    GLOBAL DEFAULT  UND ioctl@@GLIBC_2.4
+   972: 0003a78c   776 FUNC    GLOBAL DEFAULT   13 xa_update_file_17
+   973: 0006302c   444 FUNC    GLOBAL HIDDEN   13 __addsf3
+   974: 00074184     8 OBJECT  GLOBAL DEFAULT   24 ch_cput_isam_sn
+   975: 0000dc88   272 FUNC    GLOBAL DEFAULT   13 ReaderResponse
+   976: 000402cc   632 FUNC    GLOBAL DEFAULT   13 reader_test_eeprom
+   977: 0001fc94  1616 FUNC    GLOBAL DEFAULT   13 sz_ul_return
+   978: 0007418c   151 OBJECT  GLOBAL DEFAULT   24 tpYKTTxnLoad
+   979: 0000a1a4  6504 FUNC    GLOBAL DEFAULT   13 md5_process_block
+   980: 00074224    36 OBJECT  GLOBAL DEFAULT   24 tpBlacklist1901
+   981: 000122f0   960 FUNC    GLOBAL DEFAULT   13 long2timestr
+   982: 00074248     1 OBJECT  GLOBAL DEFAULT   24 sam_type
+   983: 00013788   132 FUNC    GLOBAL DEFAULT   13 xa_MinuteTolocaltime
+   984: 0005def8   228 FUNC    GLOBAL DEFAULT   13 xa_active
+   985: 000098a4     0 FUNC    GLOBAL DEFAULT  UND iconv_close@@GLIBC_2.4
+   986: 0007424c     4 OBJECT  GLOBAL DEFAULT   24 ch_tac_data
+   987: 000098b0     0 FUNC    GLOBAL DEFAULT  UND watchdog_init
+   988: 00074250    36 OBJECT  GLOBAL DEFAULT   24 ch_cpu_mac_data
+   989: 000098bc     0 FUNC    GLOBAL DEFAULT  UND strlen@@GLIBC_2.4
+   990: 000650d8     0 NOTYPE  GLOBAL DEFAULT  ABS __exidx_end
+   991: 00074274   300 OBJECT  GLOBAL DEFAULT   24 PPSE
+   992: 0002e7e8  4520 FUNC    GLOBAL DEFAULT   13 xa_CPU_entry_em
+   993: 000743a0   110 OBJECT  GLOBAL DEFAULT   24 tpauthLogout
+   994: 0007440e     1 OBJECT  GLOBAL DEFAULT   24 reader_status
+   995: 0000f26c   312 FUNC    GLOBAL DEFAULT   13 left_move
+   996: 00074410    62 OBJECT  GLOBAL DEFAULT   24 tpSaleTable1109
+   997: 0003be9c  1344 FUNC    GLOBAL DEFAULT   13 xa_CPU_defer
+   998: 000522a8  2888 FUNC    GLOBAL DEFAULT   13 PACC_1107_Calendar
+   999: 00048a50   248 FUNC    GLOBAL DEFAULT   13 sz_tong_history
+  1000: 000098c8     0 FUNC    GLOBAL DEFAULT  UND pthread_create@@GLIBC_2.4
+  1001: 0001007c   188 FUNC    GLOBAL DEFAULT   13 cal_crc
+  1002: 0002b9bc  4044 FUNC    GLOBAL DEFAULT   13 xa_CPU_entry
+  1003: 000786d8    16 OBJECT  GLOBAL DEFAULT   24 cpu_1c_data
+  1004: 000098d4     0 FUNC    GLOBAL DEFAULT  UND memcpy@@GLIBC_2.4
+  1005: 000787ac    55 OBJECT  GLOBAL DEFAULT   24 cput_16_data
+  1006: 000787e4    32 OBJECT  GLOBAL DEFAULT   24 cput_39_data
+  1007: 0007444e     1 OBJECT  GLOBAL DEFAULT   24 ch_sz_cput_rollback
+  1008: 0005a600  1752 FUNC    GLOBAL DEFAULT   13 cal_station_fare
+  1009: 00074450     6 OBJECT  GLOBAL DEFAULT   24 ch_cpu20_psam_id
+  1010: 000098e0     0 FUNC    GLOBAL DEFAULT  UND set_card_type
+  1011: 00063020   456 FUNC    GLOBAL HIDDEN   13 __aeabi_frsub
+  1012: 00011dd0   444 FUNC    GLOBAL DEFAULT   13 time_chk_valid
+  1013: 00074458   218 OBJECT  GLOBAL DEFAULT   24 tpTxnProductPurseRefund
+  1014: 0000cb20   148 FUNC    GLOBAL DEFAULT   13 writecom
+  1015: 000786e8    16 OBJECT  GLOBAL DEFAULT   24 cpu_1d_data
+  1016: 00052df0  8884 FUNC    GLOBAL DEFAULT   13 PACC_1108_FareTable
+  1017: 000571d8  1256 FUNC    GLOBAL DEFAULT   13 YKT_1912_Card
+  1018: 000781b4     8 OBJECT  GLOBAL DEFAULT   24 mac1
+  1019: 0005805c   816 FUNC    GLOBAL DEFAULT   13 YKT_1920_Continue
+  1020: 0005bf60   312 FUNC    GLOBAL DEFAULT   13 get_ticket_para
+  1021: 0000f3a4  2528 FUNC    GLOBAL DEFAULT   13 DealSmartCommand
+  1022: 00074534   234 OBJECT  GLOBAL DEFAULT   24 tpTxnProductPassExit
+  1023: 0005dfdc   212 FUNC    GLOBAL DEFAULT   13 xa_defer
+  1024: 0000c3a0   108 FUNC    GLOBAL DEFAULT   13 LongToByte
+  1025: 0006e288    20 OBJECT  GLOBAL DEFAULT   23 name_sel
+  1026: 0005bcd4    44 FUNC    GLOBAL DEFAULT   13 fast_cal_fare
+  1027: 00059a3c   360 FUNC    GLOBAL DEFAULT   13 active_eod_file
+  1028: 00013c9c  4060 FUNC    GLOBAL DEFAULT   13 read_tocken_info
+  1029: 000098ec     0 FUNC    GLOBAL DEFAULT  UND getppid@@GLIBC_2.4
+  1030: 000098f8     0 FUNC    GLOBAL DEFAULT  UND ftell@@GLIBC_2.4
+  1031: 00062584   300 FUNC    GLOBAL HIDDEN   13 __divsi3
+  1032: 0000be94   116 FUNC    GLOBAL DEFAULT   13 md5_read_ctx
+  1033: 0004a8d0   312 FUNC    GLOBAL DEFAULT   13 get_load_ticket
+  1034: 0007461e     2 OBJECT  GLOBAL DEFAULT   24 para_type
+  1035: 00012798   364 FUNC    GLOBAL DEFAULT   13 LocalDateTime2BCD
+  1036: 0006e184     0 OBJECT  GLOBAL HIDDEN   23 __dso_handle
+  1037: 00062a84    96 FUNC    GLOBAL HIDDEN   13 __floatdidf
+  1038: 00009904     0 FUNC    GLOBAL DEFAULT  UND strcpy@@GLIBC_2.4
+  1039: 00014c78   948 FUNC    GLOBAL DEFAULT   13 UL_CalInitMAC
+  1040: 00010394   160 FUNC    GLOBAL DEFAULT   13 Reflect
+  1041: 00013a58   180 FUNC    GLOBAL DEFAULT   13 sz_ul_ee_write
+  1042: 00009910     0 FUNC    GLOBAL DEFAULT  UND sem_post@@GLIBC_2.4
+  1043: 0006e274    20 OBJECT  GLOBAL DEFAULT   23 speed_sel
+  1044: 0000991c     0 FUNC    GLOBAL DEFAULT  UND waitpid@@GLIBC_2.4
+  1045: 000439c0   340 FUNC    GLOBAL DEFAULT   13 CPUT_GetFiles1A
+  1046: 000788c8     0 NOTYPE  GLOBAL DEFAULT  ABS __end__
+  1047: 0002af80   892 FUNC    GLOBAL DEFAULT   13 CPU_GetFiles1c
+  1048: 00059ba4   240 FUNC    GLOBAL DEFAULT   13 active_tp_file
+  1049: 00074620   230 OBJECT  GLOBAL DEFAULT   24 tpTxnProductPassEntry
+  1050: 00074708    12 OBJECT  GLOBAL DEFAULT   24 tpStationPrice
+  1051: 00041a08   564 FUNC    GLOBAL DEFAULT   13 city_auth
+  1052: 00059fbc  1604 FUNC    GLOBAL DEFAULT   13 cal_station_multi_fare
+  1053: 000104e0   140 FUNC    GLOBAL DEFAULT   13 crc8
+  1054: 000626d4   784 FUNC    GLOBAL HIDDEN   13 __adddf3
+  1055: 00063340   112 FUNC    GLOBAL DEFAULT   13 __libc_csu_init
+  1056: 000788c8     0 NOTYPE  GLOBAL DEFAULT  ABS __bss_end__
+  1057: 00009928     0 FUNC    GLOBAL DEFAULT  UND printf@@GLIBC_2.4
+  1058: 00009934     0 FUNC    GLOBAL DEFAULT  UND mcml_anticoll2
+  1059: 00025cec  1060 FUNC    GLOBAL DEFAULT   13 xa_ul_reverse
+  1060: 00074714     1 OBJECT  GLOBAL DEFAULT   24 tpXACPUPointer
+  1061: 00025c74   120 FUNC    GLOBAL DEFAULT   13 xa_ul_repair
+  1062: 0001df5c  4304 FUNC    GLOBAL DEFAULT   13 xa_ul_exit_multiride
+  1063: 00009940     0 FUNC    GLOBAL DEFAULT  UND raise@@GLIBC_2.4
+  1064: 0000c6f8   428 FUNC    GLOBAL DEFAULT   13 speed_set
+  1065: 00074718    16 OBJECT  GLOBAL DEFAULT   24 xaFile15
+  1066: 000401d4   248 FUNC    GLOBAL DEFAULT   13 sam_select_file
+  1067: 00026110  2780 FUNC    GLOBAL DEFAULT   13 xa_ul_reverse_purse
+  1068: 0003a454    56 FUNC    GLOBAL DEFAULT   13 sz_CPU_add_dis
+  1069: 00074728     8 OBJECT  GLOBAL DEFAULT   24 ch_cput_phyical_id_bak
+  1070: 00074730   226 OBJECT  GLOBAL DEFAULT   24 tpTxnPurseEntry
+  1071: 00074814    45 OBJECT  GLOBAL DEFAULT   24 tpCmdInit
+  1072: 000288dc    76 FUNC    GLOBAL DEFAULT   13 sz_rf_on_off
+  1073: 0000994c     0 FUNC    GLOBAL DEFAULT  UND ee_write
+  1074: 0004376c   596 FUNC    GLOBAL DEFAULT   13 CPUT_GetFiles19
+  1075: 00015de8 11856 FUNC    GLOBAL DEFAULT   13 xa_ul_sale
+  1076: 00062d74   524 FUNC    GLOBAL HIDDEN   13 __divdf3
+  1077: 00040544   308 FUNC    GLOBAL DEFAULT   13 reader_test_rtc
+  1078: 00074844  1000 OBJECT  GLOBAL DEFAULT   24 ch_mac_data
+  1079: 0003ad98   776 FUNC    GLOBAL DEFAULT   13 xa_update_file_1c
+  1080: 00015aec    32 FUNC    GLOBAL DEFAULT   13 UL_TellCallback
+  1081: 0003f0c4   540 FUNC    GLOBAL DEFAULT   13 sjt_cal_mac
+  1082: 0005de18   224 FUNC    GLOBAL DEFAULT   13 xa_add
+  1083: 00013294   468 FUNC    GLOBAL DEFAULT   13 xa_daytodate
+  1084: 00074c2c     6 OBJECT  GLOBAL DEFAULT   24 ch_pboc_psam_id
+  1085: 00038d48  5844 FUNC    GLOBAL DEFAULT   13 xa_CPU_inquire
+  1086: 00074c34    37 OBJECT  GLOBAL DEFAULT   24 tpwaivermode
+  1087: 0005cf2c  2616 FUNC    GLOBAL DEFAULT   13 xa_init
+  1088: 0002a540   480 FUNC    GLOBAL DEFAULT   13 CPU_GetFiles17
+  1089: 00074c5c     8 OBJECT  GLOBAL DEFAULT   24 ch_cput_phyical_id
+  1090: 00040678   252 FUNC    GLOBAL DEFAULT   13 reader_test_littlesam
+  1091: 00009958     0 FUNC    GLOBAL DEFAULT  UND mcml_anticoll
+  1092: 0005c098   124 FUNC    GLOBAL DEFAULT   13 get_cur_para_ver
+  1093: 00074c64     1 OBJECT  GLOBAL DEFAULT   24 ch_tong_code_bak
+  1094: 00074c66     2 OBJECT  GLOBAL DEFAULT   24 TxnUdType
+  1095: 00027b14   124 FUNC    GLOBAL DEFAULT   13 des3_encode
+  1096: 00009964     0 FUNC    GLOBAL DEFAULT  UND strstr@@GLIBC_2.4
+  1097: 00074c68    72 OBJECT  GLOBAL DEFAULT   24 tpBlacklist1104
+  1098: 00009970     0 FUNC    GLOBAL DEFAULT  UND select@@GLIBC_2.4
+  1099: 0000997c     0 FUNC    GLOBAL DEFAULT  UND close@@GLIBC_2.4
+  1100: 00013148   332 FUNC    GLOBAL DEFAULT   13 xa_monthtodate
+  1101: 00040be8   424 FUNC    GLOBAL DEFAULT   13 CPU_select_file
+  1102: 0002c988  3496 FUNC    GLOBAL DEFAULT   13 xa_CPU_entry_dis
+  1103: 00029b38  1096 FUNC    GLOBAL DEFAULT   13 CPU_gettransprove
+  1104: 00042fb8   220 FUNC    GLOBAL DEFAULT   13 CPUT_GetFiles15
+  1105: 00074cb0     6 OBJECT  GLOBAL DEFAULT   24 ch_cput_psam_id
+  1106: 00027fe0  2300 FUNC    GLOBAL DEFAULT   13 xa_polling_card
+  1107: 00009988     0 FUNC    GLOBAL DEFAULT  UND fwrite@@GLIBC_2.4
+  1108: 00062f80   160 FUNC    GLOBAL HIDDEN   13 __aeabi_d2f
+  1109: 00074cb8    40 OBJECT  GLOBAL DEFAULT   24 tpfile05
+  1110: 00009994     0 FUNC    GLOBAL DEFAULT  UND closedir@@GLIBC_2.4
+  1111: 0000c470   124 FUNC    GLOBAL DEFAULT   13 ByteToLong
+  1112: 0005838c   728 FUNC    GLOBAL DEFAULT   13 LCC_3021_Sensitive
+  1113: 00011f8c   404 FUNC    GLOBAL DEFAULT   13 date_chk_valid
+  1114: 0003fce4   480 FUNC    GLOBAL DEFAULT   13 cpu_cal_mac2
+  1115: 00015b0c   420 FUNC    GLOBAL DEFAULT   13 UL_TellOverRide
+  1116: 00078804    68 OBJECT  GLOBAL DEFAULT   24 cput_21_data
+  1117: 0000e414  2840 FUNC    GLOBAL DEFAULT   13 xaDealCommand
+  1118: 00045628  5092 FUNC    GLOBAL DEFAULT   13 xa_tong_exit
+  1119: 00062a84    96 FUNC    GLOBAL HIDDEN   13 __aeabi_l2d
+  1120: 0001380c   440 FUNC    GLOBAL DEFAULT   13 xa_DurationTolocaltime
+  1121: 000786f8    16 OBJECT  GLOBAL DEFAULT   24 cpu_1b_data
+  1122: 00029708   108 FUNC    GLOBAL DEFAULT   13 CPU_TellTesting
+  1123: 00074ce0     8 OBJECT  GLOBAL DEFAULT   24 ch_cput_ats
+  1124: 000099a0     0 FUNC    GLOBAL DEFAULT  UND remove@@GLIBC_2.4
+  1125: 00078708     2 OBJECT  GLOBAL DEFAULT   24 key
+  1126: 0000c4ec   232 FUNC    GLOBAL DEFAULT   13 sz_round
+  1127: 00074ce8 10420 OBJECT  GLOBAL DEFAULT   24 tpMCPUProtect
+  1128: 0001c368  3436 FUNC    GLOBAL DEFAULT   13 xa_ul_exit
+  1129: 000099ac     0 FUNC    GLOBAL DEFAULT  UND sam_select
+  1130: 000374e8  6240 FUNC    GLOBAL DEFAULT   13 xa_CPU_update_cnt
+  1131: 0007759c     1 OBJECT  GLOBAL DEFAULT   24 tpMCPUPointer
+  1132: 000623f8   396 FUNC    GLOBAL DEFAULT   13 sha1_digest
+  1133: 0001159c    84 FUNC    GLOBAL DEFAULT   13 bcd2bin
+  1134: 0006e9dc     0 NOTYPE  GLOBAL DEFAULT  ABS __bss_start
+  1135: 0002157c   472 FUNC    GLOBAL DEFAULT   13 xa_ul_update
+  1136: 00078848    31 OBJECT  GLOBAL DEFAULT   24 cput_1A_data
+  1137: 000775a0   226 OBJECT  GLOBAL DEFAULT   24 tpTxnProductPurseEntry
+  1138: 000099b8     0 FUNC    GLOBAL DEFAULT  UND mcml_pwr_on
+  1139: 00015a44    76 FUNC    GLOBAL DEFAULT   13 UL_TellExitMAC
+  1140: 000099c4     0 FUNC    GLOBAL DEFAULT  UND malloc@@GLIBC_2.4
+  1141: 0005d964   256 FUNC    GLOBAL DEFAULT   13 xa_inquire
+  1142: 00030690  5536 FUNC    GLOBAL DEFAULT   13 xa_CPU_exit_dis
+  1143: 000788c8     0 NOTYPE  GLOBAL DEFAULT  ABS _bss_end__
+  1144: 000099d0     0 FUNC    GLOBAL DEFAULT  UND cfsetospeed@@GLIBC_2.4
+  1145: 000099dc     0 FUNC    GLOBAL DEFAULT  UND UL_Anticoll_Select
+  1146: 00028e54   592 FUNC    GLOBAL DEFAULT   13 sz_CPU20_ee_read
+  1147: 0001056c   148 FUNC    GLOBAL DEFAULT   13 Crc32
+  1148: 00077684     4 OBJECT  GLOBAL DEFAULT   24 g_sha1txnsn
+  1149: 00077688    28 OBJECT  GLOBAL DEFAULT   24 tpfile1d
+  1150: 000099e8     0 FUNC    GLOBAL DEFAULT  UND rtc_wr_time
+  1151: 00043538   300 FUNC    GLOBAL DEFAULT   13 CPUT_VerifyPIN
+  1152: 000151d8   108 FUNC    GLOBAL DEFAULT   13 UL_TellIssueMAC
+  1153: 00062ae4   656 FUNC    GLOBAL HIDDEN   13 __aeabi_dmul
+  1154: 000776a4    97 OBJECT  GLOBAL DEFAULT   24 tpTicketDef
+  1155: 00013c3c    96 FUNC    GLOBAL DEFAULT   13 read_tocken_otp_info
+  1156: 0003b828   600 FUNC    GLOBAL DEFAULT   13 xa_CPU_active_cnt
+  1157: 00015244   448 FUNC    GLOBAL DEFAULT   13 UL_CalEntryMAC
+  1158: 00012904   404 FUNC    GLOBAL DEFAULT   13 BCD2LocalDateTime
+  1159: 00063220   172 FUNC    GLOBAL HIDDEN   13 __floatdisf
+  1160: 000099f4     0 FUNC    GLOBAL DEFAULT  UND mcml_pwr_off
+  1161: 00062a30    64 FUNC    GLOBAL HIDDEN   13 __aeabi_f2d
+  1162: 0007860c   192 OBJECT  GLOBAL DEFAULT   24 m1_key
+  1163: 00077708    12 OBJECT  GLOBAL DEFAULT   24 tpSysPrice
+  1164: 00077714     8 OBJECT  GLOBAL DEFAULT   24 tpStationWaiverMode
+  1165: 0007771c   202 OBJECT  GLOBAL DEFAULT   24 tpTxnProductExitIssue
+  1166: 00062a70   116 FUNC    GLOBAL HIDDEN   13 __aeabi_ul2d
+  1167: 000632cc    92 FUNC    GLOBAL HIDDEN   13 __fixsfsi
+  1168: 00033624  4344 FUNC    GLOBAL DEFAULT   13 xa_CPU_exit_em
+  1169: 000781bc    16 OBJECT  GLOBAL DEFAULT   24 xaDynamicZoneMultiride
+  1170: 0000cc3c   400 FUNC    GLOBAL DEFAULT   13 InsertDLE
+  1171: 00011418   388 FUNC    GLOBAL DEFAULT   13 sz_cal_month
+  1172: 00040aa0   328 FUNC    GLOBAL DEFAULT   13 reader_hard_test
+  1173: 00043bdc  1236 FUNC    GLOBAL DEFAULT   13 CPUT_TellEntry
+  1174: 00009a00     0 FUNC    GLOBAL DEFAULT  UND sleep@@GLIBC_2.4
+  1175: 0003a41c    56 FUNC    GLOBAL DEFAULT   13 sz_CPU_add_prepare
+  1176: 00062f80   160 FUNC    GLOBAL HIDDEN   13 __truncdfsf2
+  1177: 00009a0c     0 FUNC    GLOBAL DEFAULT  UND strcat@@GLIBC_2.4
+  1178: 00011a80   428 FUNC    GLOBAL DEFAULT   13 timestr4to6
+  1179: 00059cb8    44 FUNC    GLOBAL DEFAULT   13 cal_fare_time
+  1180: 00078868     8 OBJECT  GLOBAL DEFAULT   24 purchase_debit
+  1181: 0000dd98  1208 FUNC    GLOBAL DEFAULT   13 DealCommand
+  1182: 00063554   512 OBJECT  GLOBAL DEFAULT   15 gwCrcTab16
+  1183: 000777e6     1 OBJECT  GLOBAL DEFAULT   24 chSmartSAMIndex
+  1184: 000416a4   580 FUNC    GLOBAL DEFAULT   13 CPU_init_for_credit
+  1185: 000626b0    24 FUNC    GLOBAL HIDDEN   13 __aeabi_idivmod
+  1186: 00012dfc   436 FUNC    GLOBAL DEFAULT   13 sz_get_month_day
+  1187: 000777e8    12 OBJECT  GLOBAL DEFAULT   24 xaFile1B
+  1188: 000777f4     4 OBJECT  GLOBAL DEFAULT   24 tp_ver
+  1189: 00009a18     0 FUNC    GLOBAL DEFAULT  UND gled
+  1190: 0001502c   140 FUNC    GLOBAL DEFAULT   13 UL_TellInitMAC
+  1191: 00078870    19 OBJECT  GLOBAL DEFAULT   24 purchase_init
+  1192: 0004b1cc   808 FUNC    GLOBAL DEFAULT   13 xa_auth_login_init
+  1193: 0002b2fc   892 FUNC    GLOBAL DEFAULT   13 CPU_GetFiles1d
+  1194: 00009a24     0 FUNC    GLOBAL DEFAULT  UND puts@@GLIBC_2.4
+  1195: 00009a30     0 FUNC    GLOBAL DEFAULT  UND tcsetattr@@GLIBC_2.4
+  1196: 000777f8     2 OBJECT  GLOBAL DEFAULT   24 position_6002
+  1197: 000788c8     0 NOTYPE  GLOBAL DEFAULT  ABS _end
+  1198: 000777fc    36 OBJECT  GLOBAL DEFAULT   24 tpProperty1913
+  1199: 00077820     2 OBJECT  GLOBAL DEFAULT   24 sh_mac_len
+  1200: 00062188   624 FUNC    GLOBAL DEFAULT   13 sha1_final
+  1201: 00077824   122 OBJECT  GLOBAL DEFAULT   24 tpYKTTxnPurchase
+  1202: 00059ce4   728 FUNC    GLOBAL DEFAULT   13 cal_overtime
+  1203: 00015d30   184 FUNC    GLOBAL DEFAULT   13 sz_ul_search
+  1204: 00009a3c     0 FUNC    GLOBAL DEFAULT  UND rf_select
+  1205: 00013b0c   180 FUNC    GLOBAL DEFAULT   13 sz_ul_ee_read
+  1206: 000778a0     4 OBJECT  GLOBAL DEFAULT   24 retry_len
+  1207: 000778a4    24 OBJECT  GLOBAL DEFAULT   24 tpfile17
+  1208: 0007870c    16 OBJECT  GLOBAL DEFAULT   24 cpu_1a_data
+  1209: 000781cc     1 OBJECT  GLOBAL DEFAULT   24 blnsjtRollback
+  1210: 000778bc   234 OBJECT  GLOBAL DEFAULT   24 tpTxnProductPurseExit
+  1211: 000779a6     1 OBJECT  GLOBAL DEFAULT   24 tpMCPUProtectIndex
+  1212: 000576c0   824 FUNC    GLOBAL DEFAULT   13 YKT_1913_Property
+  1213: 00009a48     0 FUNC    GLOBAL DEFAULT  UND fcntl@@GLIBC_2.4
+  1214: 00010298   252 FUNC    GLOBAL DEFAULT   13 Init_CRC32_Table
+  1215: 0003b0a0   776 FUNC    GLOBAL DEFAULT   13 xa_update_file_1d
+  1216: 00063028   448 FUNC    GLOBAL HIDDEN   13 __aeabi_fsub
+  1217: 0007871c    16 OBJECT  GLOBAL DEFAULT   24 cpu_17_data
+  1218: 0000bd38   348 FUNC    GLOBAL DEFAULT   13 md5_finish_ctx
+  1219: 0004332c   524 FUNC    GLOBAL DEFAULT   13 CPUT_GetFiles18
+  1220: 0005e8dc   408 FUNC    GLOBAL DEFAULT   13 xa_price
+  1221: 00063754   512 OBJECT  GLOBAL DEFAULT   15 crc_ta
+  1222: 00059c94    36 FUNC    GLOBAL DEFAULT   13 check_station_id
+  1223: 000779a7     1 OBJECT  GLOBAL DEFAULT   24 ch_mac_sel
+  1224: 00009a54     0 FUNC    GLOBAL DEFAULT  UND fork@@GLIBC_2.4
+  1225: 00062d74   524 FUNC    GLOBAL HIDDEN   13 __aeabi_ddiv
+  1226: 000440b0   260 FUNC    GLOBAL DEFAULT   13 CPUT_select_file
+  1227: 00078884     4 OBJECT  GLOBAL DEFAULT   24 cput_01_data
+  1228: 00009a60     0 FUNC    GLOBAL DEFAULT  UND mifpro_ats
+  1229: 000414a4   512 FUNC    GLOBAL DEFAULT   13 CPU_debit_for_capppurchas
+  1230: 000779a8   182 OBJECT  GLOBAL DEFAULT   24 tpTxnProductPurseIssue
+  1231: 0004b9fc   156 FUNC    GLOBAL DEFAULT   13 xa_auth_logout
+  1232: 0005dc30   244 FUNC    GLOBAL DEFAULT   13 xa_exit
+  1233: 00009a6c     0 FUNC    GLOBAL DEFAULT  UND sam_pts
+  1234: 00057d30   812 FUNC    GLOBAL DEFAULT   13 YKT_1919_Terminal
+  1235: 00077a5e     1 OBJECT  GLOBAL DEFAULT   24 xa_tong_psam_index
+  1236: 00078888    30 OBJECT  GLOBAL DEFAULT   24 cput_05_data
+  1237: 00009a78     0 FUNC    GLOBAL DEFAULT  UND rled
+  1238: 000631e8    40 FUNC    GLOBAL HIDDEN   13 __aeabi_ui2f
+  1239: 00077a60    16 OBJECT  GLOBAL DEFAULT   24 g_samreturn
+  1240: 00009a84     0 FUNC    GLOBAL DEFAULT  UND UL_Page_Read
+  1241: 00077a70    64 OBJECT  GLOBAL DEFAULT   24 tpFareTable1108
+  1242: 00077ab0    17 OBJECT  GLOBAL DEFAULT   24 tpCmdInquire
+  1243: 00077ac4   182 OBJECT  GLOBAL DEFAULT   24 tpTxnProductPassIssue
+  1244: 00043bb4    40 FUNC    GLOBAL DEFAULT   13 CPUT_CalPeriod
+  1245: 0002a720   524 FUNC    GLOBAL DEFAULT   13 CPU_GetFiles18
+  1246: 0005ef80   460 FUNC    GLOBAL DEFAULT   13 xa_ValidateArea
+  1247: 000781d0    19 OBJECT  GLOBAL DEFAULT   24 capp_init
+  1248: 00009a90     0 FUNC    GLOBAL DEFAULT  UND UL_Page_Write
+  1249: 0000fd84   760 FUNC    GLOBAL DEFAULT   13 SmartResponse
+  1250: 000781e4     8 OBJECT  GLOBAL DEFAULT   24 ch_ul_phyical_id_bak
+  1251: 000781ec     1 OBJECT  GLOBAL DEFAULT   24 ch_sz_sjt_rollback
+  1252: 0003ed88   828 FUNC    GLOBAL DEFAULT   13 xasjt_cal_tac
+  1253: 00031c30  6644 FUNC    GLOBAL DEFAULT   13 xa_CPU_exit_cnt
+  1254: 0000bb0c   556 FUNC    GLOBAL DEFAULT   13 md5_process_bytes
+  1255: 00077b7c     8 OBJECT  GLOBAL DEFAULT   24 ch_cput_logic_id
+  1256: 00058664  5080 FUNC    GLOBAL DEFAULT   13 binFileManage
+  1257: 00077b84    97 OBJECT  GLOBAL DEFAULT   24 tpSJTTicketDef
+  1258: 00021754  5580 FUNC    GLOBAL DEFAULT   13 xa_ul_update_purse
+  1259: 00027aa0   116 FUNC    GLOBAL DEFAULT   13 des_decode
+  1260: 00009a9c     0 FUNC    GLOBAL DEFAULT  UND fread@@GLIBC_2.4
+  1261: 0003fae4   512 FUNC    GLOBAL DEFAULT   13 cpu_cal_mac1
+  1262: 00077be8    45 OBJECT  GLOBAL DEFAULT   24 tpCard1912
+  1263: 00027a2c   116 FUNC    GLOBAL DEFAULT   13 des_encode
+  1264: 000550a4  7628 FUNC    GLOBAL DEFAULT   13 PACC_1109_SaleTable
+  1265: 0006e9dc     0 NOTYPE  GLOBAL DEFAULT  ABS _edata
+  1266: 000631f0    32 FUNC    GLOBAL HIDDEN   13 __aeabi_i2f
+  1267: 0007872c    16 OBJECT  GLOBAL DEFAULT   24 cpu_15_data
+  1268: 000786cc     9 OBJECT  GLOBAL DEFAULT   24 ch_m1_phyical_id
+  1269: 0004b4f4   632 FUNC    GLOBAL DEFAULT   13 xa_auth_login
+  1270: 0002f990  3328 FUNC    GLOBAL DEFAULT   13 xa_CPU_exit
+  1271: 00078200  1024 OBJECT  GLOBAL DEFAULT   24 crc32_table
+  1272: 0003a48c   768 FUNC    GLOBAL DEFAULT   13 xa_update_file_15
+  1273: 00009aa8     0 FUNC    GLOBAL DEFAULT  UND realloc@@GLIBC_2.4
+  1274: 00077c18   234 OBJECT  GLOBAL DEFAULT   24 tpTxnProductPassCompensat
+  1275: 000112e4   164 FUNC    GLOBAL DEFAULT   13 sz_localtimeToDay
+  1276: 00009ab4     0 FUNC    GLOBAL DEFAULT  UND iconv_open@@GLIBC_2.4
+  1277: 000788a8    30 OBJECT  GLOBAL DEFAULT   24 cput_15_data
+  1278: 00077d02     1 OBJECT  GLOBAL DEFAULT   24 ch_cpu20_keyversion
+  1279: 00077d04    16 OBJECT  GLOBAL DEFAULT   24 g_samcalwait
+  1280: 000626c8     0 FUNC    GLOBAL HIDDEN   13 __aeabi_drsub
+  1281: 00010600  2940 FUNC    GLOBAL DEFAULT   13 xdrFileManage
+  1282: 00009ac0     0 FUNC    GLOBAL DEFAULT  UND mifpro_icmd
+  1283: 000650d0     0 NOTYPE  GLOBAL DEFAULT  ABS __exidx_start
+  1284: 0001d0d4  3720 FUNC    GLOBAL DEFAULT   13 xa_ul_exit_purse
+  1285: 00077d14     1 OBJECT  GLOBAL DEFAULT   24 mac_ret
+  1286: 0007873c     4 OBJECT  GLOBAL DEFAULT   24 cpu_02_data
+  1287: 00062584     0 FUNC    GLOBAL HIDDEN   13 __aeabi_idiv
+  1288: 00036140  5032 FUNC    GLOBAL DEFAULT   13 xa_CPU_update_em
+  1289: 00009acc     0 FUNC    GLOBAL DEFAULT  UND readdir@@GLIBC_2.4
+  1290: 00013468   800 FUNC    GLOBAL DEFAULT   13 xa_localtimeToMinute
+  1291: 0001182c   596 FUNC    GLOBAL DEFAULT   13 days2datestr
+  1292: 00077d18   246 OBJECT  GLOBAL DEFAULT   24 tpTxnProductMultirideExit
+  1293: 0002b990    44 FUNC    GLOBAL DEFAULT   13 CPU_TravelsRights
+  1294: 000139c4   148 FUNC    GLOBAL DEFAULT   13 set_timeout
+  1295: 0004ba98   276 FUNC    GLOBAL DEFAULT   13 xa_hex2bcd
+  1296: 000781f0    16 OBJECT  GLOBAL DEFAULT   24 xaDynamicZonePeriod
+  1297: 00009bec    88 FUNC    GLOBAL DEFAULT   13 pthtmr
+  1298: 00009ad8     0 FUNC    GLOBAL DEFAULT  UND sem_wait@@GLIBC_2.4
+  1299: 0003e924  1124 FUNC    GLOBAL DEFAULT   13 XAPbocPSAM
+  1300: 00077e10    28 OBJECT  GLOBAL DEFAULT   24 tpfile1c
+  1301: 00009ae4     0 FUNC    GLOBAL DEFAULT  UND ee_read
+  1302: 00077e2c     8 OBJECT  GLOBAL DEFAULT   24 ch_cpu20_phyical_id_bak
+  1303: 0001a6a8  3548 FUNC    GLOBAL DEFAULT   13 xa_ul_entry_multiride
+  1304: 0000cbb4   136 FUNC    GLOBAL DEFAULT   13 readcom
+  1305: 00077e34    64 OBJECT  GLOBAL DEFAULT   24 tpCPUtong
+  1306: 00062a30    64 FUNC    GLOBAL HIDDEN   13 __extendsfdf2
+  1307: 00078740    32 OBJECT  GLOBAL DEFAULT   24 cpu_05_data
+  1308: 0005bd00   284 FUNC    GLOBAL DEFAULT   13 card_to_location
+  1309: 000631e8    40 FUNC    GLOBAL HIDDEN   13 __floatunsisf
+  1310: 0004880c   484 FUNC    GLOBAL DEFAULT   13 sz_tong_lock
+  1311: 00009af0     0 FUNC    GLOBAL DEFAULT  UND strcmp@@GLIBC_2.4
+  1312: 00051b24  1924 FUNC    GLOBAL DEFAULT   13 PACC_1106_Location
+  1313: 00077e74     4 OBJECT  GLOBAL DEFAULT   24 wdmc_ver
+  1314: 00077e78     4 OBJECT  GLOBAL DEFAULT   24 tpSJTPrice
+  1315: 00009afc     0 FUNC    GLOBAL DEFAULT  UND exit@@GLIBC_2.4
+  1316: 00009b08     0 FUNC    GLOBAL DEFAULT  UND cfsetispeed@@GLIBC_2.4
+  1317: 00077e7c    36 OBJECT  GLOBAL DEFAULT   24 tpTerminal1919
+  1318: 00077ea0   102 OBJECT  GLOBAL DEFAULT   24 tpTxnCardBlock
+  1319: 0003d450   360 FUNC    GLOBAL DEFAULT   13 ResetXAMetroSam
+  1320: 00009b14     0 FUNC    GLOBAL DEFAULT  UND __errno_location@@GLIBC_2
+  1321: 00027de0   512 FUNC    GLOBAL DEFAULT   13 CmdWatchCalMac
+  1322: 00043b14   160 FUNC    GLOBAL DEFAULT   13 CPUT_ValidatePeriod
+  1323: 00040774   812 FUNC    GLOBAL DEFAULT   13 reader_test_antenna
+  1324: 00043094   664 FUNC    GLOBAL DEFAULT   13 CPUT_GetFiles21
+  1325: 00028928   796 FUNC    GLOBAL DEFAULT   13 sz_timetype2bcd
+  1326: 00077f08   238 OBJECT  GLOBAL DEFAULT   24 tpTxnProductMultirideEntr
+  1327: 00011d90    64 FUNC    GLOBAL DEFAULT   13 timestr4todate
+  1328: 0000c0cc   328 FUNC    GLOBAL DEFAULT   13 FileisExist
+  1329: 00009b20     0 FUNC    GLOBAL DEFAULT  UND sam_apdu
+  1330: 000626d4   784 FUNC    GLOBAL HIDDEN   13 __aeabi_dadd
+  1331: 00077ff8    44 OBJECT  GLOBAL DEFAULT   24 tpProduct1105
+  1332: 00063210   188 FUNC    GLOBAL HIDDEN   13 __floatundisf
+  1333: 00009b2c     0 FUNC    GLOBAL DEFAULT  UND sprintf@@GLIBC_2.4
+  1334: 00009c44  1244 FUNC    GLOBAL DEFAULT   13 main
+  1335: 00078024    36 OBJECT  GLOBAL DEFAULT   24 tpLoad1914
+  1336: 000096c4     0 FUNC    GLOBAL DEFAULT   11 _init
+  1337: 000626d0   788 FUNC    GLOBAL HIDDEN   13 __aeabi_dsub
+  1338: 00048b48  4372 FUNC    GLOBAL DEFAULT   13 xa_tong_add
+  1339: 000632cc    92 FUNC    GLOBAL HIDDEN   13 __aeabi_f2iz
+  1340: 00078601     1 OBJECT  GLOBAL DEFAULT   24 bgUpdatableFlag
+  1341: 0005c310  1576 FUNC    GLOBAL DEFAULT   13 get_degrade_mode
+  1342: 00012fb0   408 FUNC    GLOBAL DEFAULT   13 second2days
+  1343: 0000c5d4   120 FUNC    GLOBAL DEFAULT   13 toMoto
+
+Histogram for bucket list length (total of 97 buckets):
+ Length  Number     % of total  Coverage
+      0  37         ( 38.1%)
+      1  30         ( 30.9%)     28.8%
+      2  19         ( 19.6%)     65.4%
+      3  8          (  8.2%)     88.5%
+      4  3          (  3.1%)    100.0%
+
+Histogram for `.gnu.hash' bucket list length (total of 97 buckets):
+ Length  Number     % of total  Coverage
+      0  39         ( 40.2%)
+      1  30         ( 30.9%)     29.4%
+      2  19         ( 19.6%)     66.7%
+      3  4          (  4.1%)     78.4%
+      4  3          (  3.1%)     90.2%
+      5  2          (  2.1%)    100.0%
+
+Version symbols section '.gnu.version' contains 105 entries:
+ Addr: 00000000000092ca  Offset: 0x0012ca  Link: 5 (.dynsym)
+  000:   0 (*local*)       0 (*local*)       0 (*local*)       2 (GLIBC_2.4)  
+  004:   3 (GLIBC_2.4)     3 (GLIBC_2.4)     3 (GLIBC_2.4)     0 (*local*)    
+  008:   3 (GLIBC_2.4)     1 (*global*)      3 (GLIBC_2.4)     2 (GLIBC_2.4)  
+  00c:   3 (GLIBC_2.4)     0 (*local*)       3 (GLIBC_2.4)     3 (GLIBC_2.4)  
+  010:   3 (GLIBC_2.4)     3 (GLIBC_2.4)     3 (GLIBC_2.4)     1 (*global*)   
+  014:   0 (*local*)       3 (GLIBC_2.4)     1 (*global*)      0 (*local*)    
+  018:   0 (*local*)       3 (GLIBC_2.4)     3 (GLIBC_2.4)     3 (GLIBC_2.4)  
+  01c:   2 (GLIBC_2.4)     0 (*local*)       3 (GLIBC_2.4)     2 (GLIBC_2.4)  
+  020:   0 (*local*)       2 (GLIBC_2.4)     3 (GLIBC_2.4)     3 (GLIBC_2.4)  
+  024:   0 (*local*)       0 (*local*)       3 (GLIBC_2.4)     3 (GLIBC_2.4)  
+  028:   1 (*global*)      2 (GLIBC_2.4)     2 (GLIBC_2.4)     0 (*local*)    
+  02c:   3 (GLIBC_2.4)     0 (*local*)       3 (GLIBC_2.4)     1 (*global*)   
+  030:   3 (GLIBC_2.4)     0 (*local*)       3 (GLIBC_2.4)     3 (GLIBC_2.4)  
+  034:   0 (*local*)       0 (*local*)       1 (*global*)      0 (*local*)    
+  038:   1 (*global*)      0 (*local*)       2 (GLIBC_2.4)     3 (GLIBC_2.4)  
+  03c:   2 (GLIBC_2.4)     2 (GLIBC_2.4)     1 (*global*)      0 (*local*)    
+  040:   2 (GLIBC_2.4)     3 (GLIBC_2.4)     1 (*global*)      1 (*global*)   
+  044:   0 (*local*)       0 (*local*)       3 (GLIBC_2.4)     3 (GLIBC_2.4)  
+  048:   0 (*local*)       3 (GLIBC_2.4)     0 (*local*)       2 (GLIBC_2.4)  
+  04c:   3 (GLIBC_2.4)     3 (GLIBC_2.4)     3 (GLIBC_2.4)     3 (GLIBC_2.4)  
+  050:   0 (*local*)       3 (GLIBC_2.4)     1 (*global*)      3 (GLIBC_2.4)  
+  054:   3 (GLIBC_2.4)     3 (GLIBC_2.4)     0 (*local*)       3 (GLIBC_2.4)  
+  058:   3 (GLIBC_2.4)     2 (GLIBC_2.4)     3 (GLIBC_2.4)     3 (GLIBC_2.4)  
+  05c:   0 (*local*)       3 (GLIBC_2.4)     2 (GLIBC_2.4)     3 (GLIBC_2.4)  
+  060:   3 (GLIBC_2.4)     3 (GLIBC_2.4)     3 (GLIBC_2.4)     3 (GLIBC_2.4)  
+  064:   0 (*local*)       3 (GLIBC_2.4)     0 (*local*)       0 (*local*)    
+  068:   3 (GLIBC_2.4)  
+
+Version needs section '.gnu.version_r' contains 2 entries:
+ Addr: 0x000000000000939c  Offset: 0x00139c  Link: 6 (.dynstr)
+  000000: Version: 1  File: libc.so.6  Cnt: 1
+  0x0010:   Name: GLIBC_2.4  Flags: none  Version: 3
+  0x0020: Version: 1  File: libpthread.so.0  Cnt: 1
+  0x0030:   Name: GLIBC_2.4  Flags: none  Version: 2
+
+Notes at offset 0x00000188 with length 0x00000020:
+  Owner		Data size	Description
+  GNU		0x00000010	NT_GNU_ABI_TAG (ABI version tag)
+Attribute Section: aeabi
+File Attributes
+  Tag_CPU_name: "4T"
+  Tag_CPU_arch: v4T
+  Tag_ARM_ISA_use: Yes
+  Tag_THUMB_ISA_use: Thumb-1
+  Tag_ABI_PCS_wchar_t: 4
+  Tag_ABI_FP_denormal: Needed
+  Tag_ABI_FP_exceptions: Needed
+  Tag_ABI_FP_number_model: IEEE 754
+  Tag_ABI_align8_needed: Yes
+  Tag_ABI_enum_size: int

@@ -1,0 +1,63 @@
+[Project ID]
+Signature=UE Proj: v.1
+[Project Information]
+Compilable=1
+Use Relative Directory=1
+Relative to Project File=1
+Include Sub Directories=1
+Project Tagfile=
+Project Wordfile=
+Filter=
+Using VCS=0
+Save Account=0
+Create Tagfile=0
+CTags Legacy Support=0
+[Files]
+0=bin_file_manage.c
+1=bin_file_manage.h
+2=binEOD.h
+3=crc.c
+4=crc.h
+5=eeprom.h
+6=fastdes.c
+7=fastdes.h
+8=hard_2440_test.c
+9=hh_cpu_operation.c
+10=hh_cpu_operation.h
+11=km_error_code.h
+12=linux2440lib.h
+13=main.c
+14=Makefile
+15=md5.c
+16=md5.h
+17=serial.c
+18=serial.h
+19=sha1.c
+20=sha1.h
+21=time_tools.c
+22=time_tools.h
+23=xa_cpu20_operation.c
+24=xa_cpu20_operation.h
+25=xa_error_code.h
+26=xa_func.c
+27=xa_func.h
+28=xa_m1_operation.c
+29=xa_m1_operation.h
+30=xa_sam.c
+31=xa_sam.h
+32=xa_tong_operation.c
+33=xa_tong_operation.h
+34=xa_ul_operation.c
+35=xa_ul_operation.h
+36=xdr_file_manage.c
+37=xdr_file_manage.h
+38=xa_pboc_operation.c
+39=xa_pboc_operation.h
+[uemakeXp]
+ReleaseMode=0
+[Debug Settings]
+Program Arguments=
+Symbol Paths=
+Working Directory=
+Selected Debugger=0
+Source Paths=

@@ -1,0 +1,5393 @@
+#include <stdio.h>
+#include <stdlib.h>
+//#include "xdrBaseType.h"
+
+#include "bin_file_manage.h"
+#include "md5.h"
+#include "time_tools.h"
+#include "xa_error_code.h"
+#include "eeprom.h"
+#include "xa_func.h"
+#include "serial.h"
+#include "hh_cpu_operation.h"
+
+//#define	DEBUG_PRINT 	1
+//#define	DEBUG_1101_PRINT	1
+//#define	DEBUG_1102_PRINT	1
+//#define	DEBUG_1104_PRINT	1
+//#define	DEBUG_1105_PRINT	1
+//#define	DEBUG_1106_PRINT	1
+//#define	DEBUG_1107_PRINT	1
+//#define	DEBUG_1108_PRINT	1
+//#define	DEBUG_1109_PRINT	1
+//#define	DEBUG_1901_PRINT	1
+//#define	DEBUG_1912_PRINT	1
+//#define	DEBUG_1913_PRINT	1
+//#define	DEBUG_1914_PRINT	1
+//#define	DEBUG_1919_PRINT	1
+//#define	DEBUG_1920_PRINT	1
+//#define	DEBUG_3021_PRINT	1
+//#define	DEBUG_OVERTIME 	1
+//#define	DEBUG_1931_PRINT	1
+//#define	DEBUG_1932_PRINT	1
+//#define	DEBUG_1933_PRINT	1
+//#define	DEBUG_1934_PRINT	1
+//#define	DEBUG_1935_PRINT	1
+//#define	DEBUG_1938_PRINT	1
+//#define	DEBUG_1939_PRINT	1
+
+//function：
+//parater：
+//return：
+#ifndef DEBUG_1912_PRINT
+#define DEBUG_1912_PRINT
+#endif
+long PACC_1101_SystemParameter()
+{
+FILE *intFile;
+long lngPosition, lngnum, file_len;
+char	filename[100], eod_file[100];
+struct PARA_3082 *tpTemppara;
+long i, j;
+
+	memset(eod_file, 0x00, 100);
+	memset(filename, 0x00, 100);
+	sprintf(eod_file, "PARA.1101.");
+	if(0 != FileisExist("./para/", eod_file, filename))
+	{
+		PRINTK("1101 file not exist\n");
+		return 2;
+	}
+	//check the file
+	sprintf(eod_file, "./para/%s", filename);
+    intFile = fopen(eod_file, "rb");
+    if(intFile == NULL)
+    {
+        return 1;
+    }
+    //transfer head 1 + 38
+	fseek(intFile, 0, SEEK_END);
+	file_len = ftell(intFile);
+	fseek(intFile, 0, 0);
+   	//fseek(intFile, 39, 0);	//not nead 
+    fread(&tpSystem1101.paratitle, sizeof(ParaTitle), 1, intFile);
+#ifdef	DEBUG_1101_PRINT
+	PRINTK("------1101---------\nformat:%02x source %02x length %08x type %02x%02x ver %04x createtime %02x%02x%02x%02x %02x%02x%02x \nstart %02x%02x%02x%02x offset %04x rfu %02x%02x%02x\n",
+			tpSystem1101.paratitle.format, tpSystem1101.paratitle.source, tpSystem1101.paratitle.length, tpSystem1101.paratitle.type[0], tpSystem1101.paratitle.type[1], tpSystem1101.paratitle.version,
+			tpSystem1101.paratitle.create_time[0], tpSystem1101.paratitle.create_time[1], tpSystem1101.paratitle.create_time[2], tpSystem1101.paratitle.create_time[3], tpSystem1101.paratitle.create_time[4], tpSystem1101.paratitle.create_time[5], tpSystem1101.paratitle.create_time[6],
+			tpSystem1101.paratitle.start_time[0], tpSystem1101.paratitle.start_time[1], tpSystem1101.paratitle.start_time[2], tpSystem1101.paratitle.start_time[3],
+			tpSystem1101.paratitle.section_number, tpSystem1101.paratitle.rfu[0], tpSystem1101.paratitle.rfu[1], tpSystem1101.paratitle.rfu[2]);
+#endif
+    
+    //增加判断保存的参数文件大小
+    if(tpSystem1101.paratitle.length != file_len)
+    {
+    	fclose(intFile);
+    	memset(&tpSystem1101.paratitle, 0x00, sizeof(ParaTitle));
+    	remove( eod_file );
+    	return 1;
+    }
+
+    if(tpSystem1101.paratitle.section_number == 0)
+    {
+    	fclose(intFile);
+    	return 1;
+    }
+    if(tpSystem1101.offset != NULL)
+    	free(tpSystem1101.offset);
+    tpSystem1101.offset = (section_offset *)malloc(sizeof(section_offset) * tpSystem1101.paratitle.section_number);
+    if(tpSystem1101.offset == NULL)
+    {
+    	fclose(intFile);
+    	return 1;
+    }
+    fread(tpSystem1101.offset, sizeof(section_offset), tpSystem1101.paratitle.section_number, intFile);
+#ifdef DEBUG_1101_PRINT
+    for(i = 0; i < tpSystem1101.paratitle.section_number; i++)
+    	PRINTK("start_pos %08x  section_rec %08x\n", tpSystem1101.offset[i].start_pos, tpSystem1101.offset[i].section_rec);
+#endif
+
+	fread(&tpSystem1101.system_parameters_val, sizeof(system_parameters), 1, intFile);
+#ifdef DEBUG_1101_PRINT
+	PRINTK("up register %04x keyversion %04x timezone %02x\n", tpSystem1101.system_parameters_val.AuditRegisterSnapshotFrequency,
+			tpSystem1101.system_parameters_val.udKeyVersion, tpSystem1101.system_parameters_val.TimeZone);
+#endif
+    
+    fread(&tpSystem1101.service_provider, sizeof(service_provider_parameters), 1, intFile);
+#ifdef DEBUG_1101_PRINT
+	PRINTK("maxJourneytime %04x maxTransfertime %04x maxExitTime %04x personal %02x passbackTime %04x \n trainEx %04x emergencyEx %04x modeEx %04x discountvalue %08x Imrefund %04x ImreMax %08x\n tolerance %04x busDuration %04x Bus%02x%02x%02x spID %08x\n",
+		tpSystem1101.service_provider.maxJourneyTime, tpSystem1101.service_provider.MaxTransferTime, tpSystem1101.service_provider.maxExitTime, tpSystem1101.service_provider.exposePersonalDetails, tpSystem1101.service_provider.passbackTime,
+		tpSystem1101.service_provider.trainFaultValidityExtension, tpSystem1101.service_provider.emergencyValidityExtension, tpSystem1101.service_provider.modeCalendarValidityPeriod, tpSystem1101.service_provider.FinalRideMaxDiscountValue,
+		tpSystem1101.service_provider.ImmediateRefundExpiryPeriod, tpSystem1101.service_provider.ImmediateRefundMaximumThres, tpSystem1101.service_provider.ValidityToleranceDuration, tpSystem1101.service_provider.BusinessDayDuration, 
+		tpSystem1101.service_provider.BusinessDayStart[0], tpSystem1101.service_provider.BusinessDayStart[1], tpSystem1101.service_provider.BusinessDayStart[2], tpSystem1101.service_provider.ServiceProviderId);
+#endif    
+	if(tpSystem1101.participant_len != 0)
+	{
+		for(i = 0; i < tpSystem1101.participant_len; i++)
+		{
+			for(j = 0; j < tpSystem1101.participant_val[i].Participant_number; j++)
+			{
+				if(tpSystem1101.participant_val[i].ticket_type != NULL)
+					free(tpSystem1101.participant_val[i].ticket_type);
+				tpSystem1101.participant_val[i].ticket_type = NULL;
+			}
+		}
+		free(tpSystem1101.participant_val);
+		tpSystem1101.participant_val = NULL;
+	}
+	fread(&tpSystem1101.participant_len, 1, 1, intFile);
+#ifdef DEBUG_1101_PRINT
+	PRINTK("parcipantnum %02x\n", tpSystem1101.participant_len);
+#endif
+    if(tpSystem1101.Participant_ID != NULL)
+    	free(tpSystem1101.Participant_ID);
+    tpSystem1101.Participant_ID = (long *)malloc(sizeof(long) * tpSystem1101.participant_len);
+	if(tpSystem1101.Participant_ID == NULL)
+	{
+		fclose(intFile);
+		return 1;
+	}
+	fread(tpSystem1101.Participant_ID, sizeof(long), tpSystem1101.participant_len, intFile);
+#ifdef DEBUG_1101_PRINT
+	for(i = 0; i < tpSystem1101.participant_len; i++)
+		PRINTK("parcipantID %02x\n", tpSystem1101.Participant_ID[i]);
+#endif
+	if(tpSystem1101.participant_val != NULL)
+		free(tpSystem1101.participant_val);
+	tpSystem1101.participant_val = (participant_t *)malloc(sizeof(participant_t) * tpSystem1101.participant_len);
+	for(i = 0; i < tpSystem1101.participant_len; i++)
+	{
+		fread(&tpSystem1101.participant_val[i], sizeof(participant_t) - 4, 1, intFile);
+#ifdef DEBUG_1101_PRINT
+		PRINTK("participantID %02x ch_name%s, en_name %s number %04x\n", tpSystem1101.participant_val[i].Participant_ID, tpSystem1101.participant_val[i].Participant_name_ch,
+			tpSystem1101.participant_val[i].Participant_name_en, tpSystem1101.participant_val[i].Participant_number);
+#endif
+		tpSystem1101.participant_val[i].ticket_type = NULL;
+		if(tpSystem1101.participant_val[i].Participant_number != 0)
+		{
+			tpSystem1101.participant_val[i].ticket_type = (unsigned short *)malloc(sizeof(short) * tpSystem1101.participant_val[i].Participant_number);
+			if(tpSystem1101.participant_val[i].ticket_type == NULL)
+			{
+				fclose(intFile);
+				return 1;
+			}
+			fread(tpSystem1101.participant_val[i].ticket_type, sizeof(short), tpSystem1101.participant_val[i].Participant_number, intFile);
+#ifdef DEBUG_1101_PRINT
+		for(j = 0; j < tpSystem1101.participant_val[i].Participant_number; j++)
+			PRINTK("participant ticket %04x \n", tpSystem1101.participant_val[i].ticket_type[j]);
+#endif
+		}
+	}
+	
+	if(tpSystem1101.CardParticipantNumber != 0)
+	{
+		for(i = 0; i < tpSystem1101.CardParticipantNumber; i++)
+		{
+			for(j = 0; j < tpSystem1101.CardSpecific[i].CardPhyicalNumber; j++)
+			{
+				if(tpSystem1101.CardSpecific[i].CardPhyical != NULL)
+					free(tpSystem1101.CardSpecific[i].CardPhyical);
+				tpSystem1101.CardSpecific[i].CardPhyical = NULL;
+			}
+		}
+		free(tpSystem1101.CardSpecific);
+		tpSystem1101.CardSpecific = NULL;
+	}
+	fread(&tpSystem1101.CardParticipantNumber, sizeof(long), 1, intFile);
+#ifdef DEBUG_1101_PRINT
+	PRINTK("cardspecificnum %08x\n", tpSystem1101.CardParticipantNumber);
+#endif
+	if(tpSystem1101.CardParticipantNumber != 0)
+	{
+		if(tpSystem1101.CardSpecific != NULL)
+			free(tpSystem1101.CardSpecific);
+		tpSystem1101.CardSpecific = (CardSpecific *)malloc(sizeof(CardSpecific) * tpSystem1101.CardParticipantNumber);
+		for(i = 0; i < tpSystem1101.CardParticipantNumber; i++)
+		{
+			fread(&tpSystem1101.CardSpecific[i], sizeof(CardSpecific) - 4, 1, intFile);
+#ifdef DEBUG_1101_PRINT
+			PRINTK("CS ID %08x, phyical num %02x\n", tpSystem1101.CardSpecific[i].CardParticipantID, tpSystem1101.CardSpecific[i].CardPhyicalNumber);
+#endif
+			tpSystem1101.CardSpecific[i].CardPhyical = NULL;
+			if(tpSystem1101.CardSpecific[i].CardPhyicalNumber != 0)
+			{
+				tpSystem1101.CardSpecific[i].CardPhyical = (CardPhyical_t *)malloc(sizeof(CardPhyical_t) * tpSystem1101.CardSpecific[i].CardPhyicalNumber);
+				if(tpSystem1101.CardSpecific[i].CardPhyical == NULL)
+				{
+					fclose(intFile);
+					return 1;
+				}
+				fread(tpSystem1101.CardSpecific[i].CardPhyical, sizeof(CardPhyical_t), tpSystem1101.CardSpecific[i].CardPhyicalNumber, intFile);
+#ifdef	DEBUG_1101_PRINT
+				for(j = 0; j < tpSystem1101.CardSpecific[i].CardPhyicalNumber; j++)
+					PRINTK("type %02x ver %02x keyver %04x keyset %02x cycle %04x recycle %02x deposit %08x fee %08x\n", tpSystem1101.CardSpecific[i].CardPhyical[j].Cardtype,
+						tpSystem1101.CardSpecific[i].CardPhyical[j].cardFormatVersion, tpSystem1101.CardSpecific[i].CardPhyical[j].encryptionKeyVersion, tpSystem1101.CardSpecific[i].CardPhyical[j].cardKeySetNumber,
+						tpSystem1101.CardSpecific[i].CardPhyical[j].maxLifeCycleCount, tpSystem1101.CardSpecific[i].CardPhyical[j].cardCanBeRecycled, tpSystem1101.CardSpecific[i].CardPhyical[j].cardDeposit, tpSystem1101.CardSpecific[i].CardPhyical[j].cardFee);
+#endif
+			}
+
+		}
+	}
+	
+	fread(&tpSystem1101.ParticipantIDnum, sizeof(short), 1, intFile);
+#ifdef DEBUG_1101_PRINT
+	PRINTK("participantIDcodemap number %04x\n", tpSystem1101.ParticipantIDnum);
+#endif
+	if(tpSystem1101.ParticipantIdCodeMap_val != NULL)
+		free(tpSystem1101.ParticipantIdCodeMap_val);
+	if(tpSystem1101.ParticipantIDnum != 0)
+	{
+		tpSystem1101.ParticipantIdCodeMap_val = (ParticipantIdCodeMap *)malloc(sizeof(ParticipantIdCodeMap) * tpSystem1101.ParticipantIDnum);
+		if(tpSystem1101.ParticipantIdCodeMap_val == NULL)
+		{
+			fclose(intFile);
+			return 1;
+		}
+		fread(tpSystem1101.ParticipantIdCodeMap_val, sizeof(ParticipantIdCodeMap), tpSystem1101.ParticipantIDnum, intFile);
+#ifdef DEBUG_1101_PRINT
+		for(i = 0; i < tpSystem1101.ParticipantIDnum; i++)
+			PRINTK("participantID %08x code %02x\n", tpSystem1101.ParticipantIdCodeMap_val[i].ParticipantId, tpSystem1101.ParticipantIdCodeMap_val[i].ParticipantCode);
+#endif
+	}
+	
+	if(tpSystem1101.Cardphyicalnum != 0)
+	{
+		for(i = 0; i < tpSystem1101.Cardphyicalnum; i++)
+		{
+			for(j = 0; j < tpSystem1101.CardTypeName_val[i].cardLanguagenum; j++)
+			{
+				if(tpSystem1101.CardTypeName_val[i].CardTypeNameLanguage_val != NULL)
+					free(tpSystem1101.CardTypeName_val[i].CardTypeNameLanguage_val);
+				tpSystem1101.CardTypeName_val[i].CardTypeNameLanguage_val = NULL;
+			}
+		}
+		free(tpSystem1101.CardTypeName_val);
+		tpSystem1101.CardTypeName_val = NULL;
+	}
+	fread(&tpSystem1101.CardTypeNameID, sizeof(long), 1, intFile);
+	fread(&tpSystem1101.Cardphyicalnum, 1, 1, intFile);
+#ifdef	DEBUG_1101_PRINT
+	PRINTK("cardtypenameid %08x Card phtycialnum %02x\n", tpSystem1101.CardTypeNameID, tpSystem1101.Cardphyicalnum);
+#endif
+	if(tpSystem1101.CardTypeName_val != NULL)
+		free(tpSystem1101.CardTypeName_val);
+	tpSystem1101.CardTypeName_val = (CardTypeNames_t *)malloc(sizeof(CardTypeNames_t) * tpSystem1101.Cardphyicalnum);
+	for(i = 0; i < tpSystem1101.Cardphyicalnum; i++)
+	{
+		fread(&tpSystem1101.CardTypeName_val[i], sizeof(CardTypeNames_t) - 4, 1, intFile);
+#ifdef	DEBUG_1101_PRINT
+		PRINTK("phyicalcardtype %02x phyicallanguagenum %04x\n", tpSystem1101.CardTypeName_val[i].cardType, tpSystem1101.CardTypeName_val[i].cardLanguagenum);
+#endif
+		tpSystem1101.CardTypeName_val[i].CardTypeNameLanguage_val = NULL;
+		if(tpSystem1101.CardTypeName_val[i].cardLanguagenum != 0)
+		{
+			tpSystem1101.CardTypeName_val[i].CardTypeNameLanguage_val = (CardTypeNameLanguage_t *)malloc(sizeof(CardTypeNameLanguage_t) * tpSystem1101.CardTypeName_val[i].cardLanguagenum);
+			if(tpSystem1101.CardTypeName_val[i].CardTypeNameLanguage_val == NULL)
+			{
+				fclose(intFile);
+				return 1;
+			}
+			fread(tpSystem1101.CardTypeName_val[i].CardTypeNameLanguage_val, sizeof(CardTypeNameLanguage_t), tpSystem1101.CardTypeName_val[i].cardLanguagenum, intFile);
+#ifdef DEBUG_1101_PRINT
+			for(j = 0; j < tpSystem1101.CardTypeName_val[i].cardLanguagenum; j++)
+				PRINTK("cardtypelan %04x cardtypename %s\n", tpSystem1101.CardTypeName_val[i].CardTypeNameLanguage_val[j].CardTypeNameLanguage, 
+						tpSystem1101.CardTypeName_val[i].CardTypeNameLanguage_val[j].CardTypeName);
+#endif
+		}
+	}
+	fclose(intFile);
+    return 0;
+}
+
+
+long PACC_1102_Business()
+{
+FILE *intFile;
+long lngPosition, lngnum, file_len;
+char	filename[100], eod_file[100];
+long i, j;
+
+	memset(eod_file, 0x00, 100);
+	memset(filename, 0x00, 100);
+	sprintf(eod_file, "PARA.1102.");
+	if(0 != FileisExist("./para/", eod_file, filename))
+	{
+		PRINTK("1102 file not exist\n");
+		return 2;
+	}
+	//check the file
+	sprintf(eod_file, "./para/%s", filename);
+    intFile = fopen(eod_file, "rb");
+    if(intFile == NULL)
+    {
+        return 1;
+    }
+    //transfer head 1 + 38
+	fseek(intFile, 0, SEEK_END);
+	file_len = ftell(intFile);
+	fseek(intFile, 0, 0);
+    //fseek(intFile, 39, 0);		//not need read
+    fread(&tpBusiness1102.paratitle, sizeof(ParaTitle), 1, intFile);
+#ifdef	DEBUG_1102_PRINT
+	PRINTK("------1102---------\nformat:%02x source %02x length %08x type %02x%02x ver %04x createtime %02x%02x%02x%02x %02x%02x%02x \nstart %02x%02x%02x%02x offset %04x rfu %02x%02x%02x\n",
+			tpBusiness1102.paratitle.format, tpBusiness1102.paratitle.source, tpBusiness1102.paratitle.length, tpBusiness1102.paratitle.type[0], tpBusiness1102.paratitle.type[1], tpBusiness1102.paratitle.version,
+			tpBusiness1102.paratitle.create_time[0], tpBusiness1102.paratitle.create_time[1], tpBusiness1102.paratitle.create_time[2], tpBusiness1102.paratitle.create_time[3], tpBusiness1102.paratitle.create_time[4], tpBusiness1102.paratitle.create_time[5], tpBusiness1102.paratitle.create_time[6],
+			tpBusiness1102.paratitle.start_time[0], tpBusiness1102.paratitle.start_time[1], tpBusiness1102.paratitle.start_time[2], tpBusiness1102.paratitle.start_time[3],
+			tpBusiness1102.paratitle.section_number, tpBusiness1102.paratitle.rfu[0], tpBusiness1102.paratitle.rfu[1], tpBusiness1102.paratitle.rfu[2]);
+#endif
+    
+    //增加判断保存的参数文件大小
+    if(tpBusiness1102.paratitle.length != file_len)
+    {
+    	fclose(intFile);
+    	memset(&tpBusiness1102.paratitle, 0x00, sizeof(ParaTitle));
+    	remove( eod_file );
+    	return 1;
+    }
+
+    if(tpBusiness1102.paratitle.section_number == 0)
+    {
+    	fclose(intFile);
+    	return 1;
+    }
+    if(tpBusiness1102.offset != NULL)
+    	free(tpBusiness1102.offset);
+    tpBusiness1102.offset = (section_offset *)malloc(sizeof(section_offset) * tpBusiness1102.paratitle.section_number);
+    if(tpBusiness1102.offset == NULL)
+    {
+    	fclose(intFile);
+    	return 1;
+    }
+    fread(tpBusiness1102.offset, sizeof(section_offset), tpBusiness1102.paratitle.section_number, intFile);
+#ifdef DEBUG_1102_PRINT
+    for(i = 0; i < tpBusiness1102.paratitle.section_number; i++)
+    	PRINTK("start_pos %08x  section_rec %08x\n", tpBusiness1102.offset[i].start_pos, tpBusiness1102.offset[i].section_rec);
+#endif
+
+	fread(&tpBusiness1102.BusinessRules_val.ExitTicketProductType, sizeof(short), 1, intFile);
+	fread(&tpBusiness1102.BusinessRules_val.SalesVolumeDiscountCount, sizeof(short), 1, intFile);
+#ifdef DEBUG_1102_PRINT
+	PRINTK("Exitticket type %04x discount number %04x\n", tpBusiness1102.BusinessRules_val.ExitTicketProductType, tpBusiness1102.BusinessRules_val.SalesVolumeDiscountCount);
+#endif
+	if(tpBusiness1102.BusinessRules_val.SalesDiscount_val != NULL)
+		free(tpBusiness1102.BusinessRules_val.SalesDiscount_val);
+	if(tpBusiness1102.BusinessRules_val.SalesVolumeDiscountCount != 0)
+	{
+		tpBusiness1102.BusinessRules_val.SalesDiscount_val = (SalesDiscount_t *)malloc(sizeof(SalesDiscount_t) * tpBusiness1102.BusinessRules_val.SalesVolumeDiscountCount);
+	
+		fread(tpBusiness1102.BusinessRules_val.SalesDiscount_val, sizeof(SalesDiscount_t), tpBusiness1102.BusinessRules_val.SalesVolumeDiscountCount, intFile);
+#ifdef DEBUG_1102_PRINT
+		for(i = 0; i < tpBusiness1102.BusinessRules_val.SalesVolumeDiscountCount; i++)
+			PRINTK("ticketnumber %04x discount %04x\n", tpBusiness1102.BusinessRules_val.SalesDiscount_val[i].Ticketnumber, tpBusiness1102.BusinessRules_val.SalesDiscount_val[i].SalesVolumeDiscount);
+#endif
+	}
+
+	fread(&tpBusiness1102.BusinessRules_val.DeviceLocationsAtFareLocationCount, sizeof(short), 1, intFile);
+#ifdef DEBUG_1102_PRINT
+	PRINTK("devicelocationatfare count %04x\n", tpBusiness1102.BusinessRules_val.DeviceLocationsAtFareLocationCount);
+#endif
+	if(tpBusiness1102.BusinessRules_val.DeviceLocation_val != NULL)
+		free(tpBusiness1102.BusinessRules_val.DeviceLocation_val);
+	if(tpBusiness1102.BusinessRules_val.DeviceLocationsAtFareLocationCount != 0)
+	{
+		tpBusiness1102.BusinessRules_val.DeviceLocation_val = (DeviceLocation_t *) malloc(sizeof(DeviceLocation_t) * tpBusiness1102.BusinessRules_val.DeviceLocationsAtFareLocationCount);
+		if(tpBusiness1102.BusinessRules_val.DeviceLocation_val == NULL)
+		{
+			fclose(intFile);
+			return 1;
+		}
+		fread(tpBusiness1102.BusinessRules_val.DeviceLocation_val, sizeof(DeviceLocation_t), tpBusiness1102.BusinessRules_val.DeviceLocationsAtFareLocationCount, intFile);
+#ifdef DEBUG_1102_PRINT
+		for(i = 0; i < tpBusiness1102.BusinessRules_val.DeviceLocationsAtFareLocationCount; i++)
+		{
+			PRINTK("farelocation %08x devicelocation %08x\n", tpBusiness1102.BusinessRules_val.DeviceLocation_val[i].FareLocationNumber, tpBusiness1102.BusinessRules_val.DeviceLocation_val[i].DeviceLocationNumber);
+		}
+#endif
+	}
+	
+	fread(&tpBusiness1102.BusinessRules_val.ExchangeStationnumber, sizeof(long), 1, intFile);
+#ifdef DEBUG_1102_PRINT
+	PRINTK("exchangestationnumber %08x\n", tpBusiness1102.BusinessRules_val.ExchangeStationnumber);
+#endif
+	if(tpBusiness1102.BusinessRules_val.TransferStation_val != NULL)
+		free(tpBusiness1102.BusinessRules_val.TransferStation_val);
+	if(tpBusiness1102.BusinessRules_val.ExchangeStationnumber != 0)
+	{
+		tpBusiness1102.BusinessRules_val.TransferStation_val = (TransferStation_t *)malloc(sizeof(TransferStation_t) * tpBusiness1102.BusinessRules_val.ExchangeStationnumber);
+		if(tpBusiness1102.BusinessRules_val.TransferStation_val == NULL)
+		{
+			fclose(intFile);
+			return 1;
+		}
+		fread(tpBusiness1102.BusinessRules_val.TransferStation_val, sizeof(TransferStation_t), tpBusiness1102.BusinessRules_val.ExchangeStationnumber, intFile);
+#ifdef DEBUG_1102_PRINT
+		for(i = 0; i < tpBusiness1102.BusinessRules_val.ExchangeStationnumber; i++)
+		{
+			PRINTK("origin %08x dest %08x index %02x\n", tpBusiness1102.BusinessRules_val.TransferStation_val[i].OdTransferStationOrigin, tpBusiness1102.BusinessRules_val.TransferStation_val[i].OdTransferStationDestination, tpBusiness1102.BusinessRules_val.TransferStation_val[i].TransferStationIndex);
+		}
+#endif	
+	}
+	if(tpBusiness1102.BusinessRules_val.ValidExchangenumber != 0)
+	{
+		for(i = 0; i < tpBusiness1102.BusinessRules_val.ValidExchangenumber; i++)
+		{
+			if(tpBusiness1102.BusinessRules_val.TransferMessage_val[i].ExchangestationId != NULL)
+				free(tpBusiness1102.BusinessRules_val.TransferMessage_val[i].ExchangestationId);
+			tpBusiness1102.BusinessRules_val.TransferMessage_val[i].ExchangestationId = NULL;
+		}
+		if(tpBusiness1102.BusinessRules_val.index != NULL)
+			free(tpBusiness1102.BusinessRules_val.index);
+	}
+	fread(&tpBusiness1102.BusinessRules_val.ValidExchangenumber, sizeof(long), 1, intFile);
+#ifdef	DEBUG_1102_PRINT
+	PRINTK("exchange number %08x\n", tpBusiness1102.BusinessRules_val.ValidExchangenumber);
+#endif	
+	if(tpBusiness1102.BusinessRules_val.ValidExchangenumber != 0)
+	{
+		tpBusiness1102.BusinessRules_val.index = (unsigned char *)malloc(sizeof(char) * tpBusiness1102.BusinessRules_val.ValidExchangenumber);
+		fread(tpBusiness1102.BusinessRules_val.index, sizeof(char), tpBusiness1102.BusinessRules_val.ValidExchangenumber, intFile);
+#ifdef	DEBUG_1102_PRINT
+		for(i = 0; i < tpBusiness1102.BusinessRules_val.ValidExchangenumber; i++)
+		{
+			PRINTK("index %02x\n", tpBusiness1102.BusinessRules_val.index[i]);
+		}
+#endif		
+		tpBusiness1102.BusinessRules_val.TransferMessage_val = (TransferMessage_t *)malloc(sizeof(TransferMessage_t) * tpBusiness1102.BusinessRules_val.ValidExchangenumber);
+		for(i = 0; i < tpBusiness1102.BusinessRules_val.ValidExchangenumber; i++)
+		{
+			fread(&tpBusiness1102.BusinessRules_val.TransferMessage_val[i], sizeof(TransferMessage_t) - 4, 1, intFile);
+#ifdef	DEBUG_1102_PRINT
+			PRINTK("exchangenumber %02x index %02x\n", tpBusiness1102.BusinessRules_val.TransferMessage_val[i].Exchangestationnumber, tpBusiness1102.BusinessRules_val.TransferMessage_val[i].Exchangestationindex);
+#endif
+			tpBusiness1102.BusinessRules_val.TransferMessage_val[i].ExchangestationId = NULL;
+			if(tpBusiness1102.BusinessRules_val.TransferMessage_val[i].Exchangestationnumber != 0)
+			{
+				tpBusiness1102.BusinessRules_val.TransferMessage_val[i].ExchangestationId = (unsigned long *)malloc(sizeof(long) * tpBusiness1102.BusinessRules_val.TransferMessage_val[i].Exchangestationnumber);
+				fread(tpBusiness1102.BusinessRules_val.TransferMessage_val[i].ExchangestationId, sizeof(long), 1, intFile);
+#ifdef	DEBUG_1_PRINT
+				for(j = 0; j < tpBusiness1102.BusinessRules_val.TransferMessage_val[i].Exchangestationnumber; j++)
+					PRINTK("exchangestation %08x ", tpBusiness1102.BusinessRules_val.TransferMessage_val[i].ExchangestationId[j]);
+				PRINTK("\n");
+#endif				
+			}
+		}
+	}
+	
+	if(tpBusiness1102.Names_val.NumberofLanguageId != 0)
+	{
+		for(i = 0; i < tpBusiness1102.Names_val.NumberofLanguageId; i++)
+		{
+			if(tpBusiness1102.Names_val.LocationLanguage_val[i].LocationTypeName_val != NULL)
+				free(tpBusiness1102.Names_val.LocationLanguage_val[i].LocationTypeName_val);
+			tpBusiness1102.Names_val.LocationLanguage_val[i].LocationTypeName_val = NULL;
+		}
+	    if(tpBusiness1102.Names_val.LocationLanguage_val!= NULL)
+    		free(tpBusiness1102.Names_val.LocationLanguage_val);
+    }
+	fread(&tpBusiness1102.Names_val.NumberofLanguageId, sizeof(char), 1, intFile);
+#ifdef DEBUG_1102_PRINT
+	PRINTK("languageytype num %02x\n", tpBusiness1102.Names_val.NumberofLanguageId);
+#endif
+	if(tpBusiness1102.Names_val.NumberofLanguageId != 0)
+	{
+    	tpBusiness1102.Names_val.LocationLanguage_val = (LocationLanguage_t *)malloc(sizeof(LocationLanguage_t) * tpBusiness1102.Names_val.NumberofLanguageId);
+		if(tpBusiness1102.Names_val.LocationLanguage_val == NULL)
+		{
+			fclose(intFile);
+			return 1;
+		}
+		for(i = 0; i < tpBusiness1102.Names_val.NumberofLanguageId; i++)
+		{
+			fread(&tpBusiness1102.Names_val.LocationLanguage_val[i], sizeof(LocationLanguage_t) - 4, 1, intFile);
+#ifdef DEBUG_1102_PRINT
+			PRINTK("languageid %04x locationyptenum %04x \n", tpBusiness1102.Names_val.LocationLanguage_val[i].LanguageId, tpBusiness1102.Names_val.LocationLanguage_val[i].LocationTypenumber);
+#endif
+			tpBusiness1102.Names_val.LocationLanguage_val[i].LocationTypeName_val = NULL;
+			if(tpBusiness1102.Names_val.LocationLanguage_val[i].LocationTypenumber != 0)
+			{
+				tpBusiness1102.Names_val.LocationLanguage_val[i].LocationTypeName_val = (LocationTypeName_t *)malloc(sizeof(LocationTypeName_t) * tpBusiness1102.Names_val.LocationLanguage_val[i].LocationTypenumber);
+				if(tpBusiness1102.Names_val.LocationLanguage_val[i].LocationTypeName_val == NULL)
+				{
+					fclose(intFile);
+					return 1;
+				}
+				fread(tpBusiness1102.Names_val.LocationLanguage_val[i].LocationTypeName_val, sizeof(LocationTypeName_t), tpBusiness1102.Names_val.LocationLanguage_val[i].LocationTypenumber, intFile);
+#ifdef DEBUG_1102_PRINT
+				for(j = 0; j < tpBusiness1102.Names_val.LocationLanguage_val[i].LocationTypenumber; j++)
+					PRINTK("locationtype %04x name %s\n", tpBusiness1102.Names_val.LocationLanguage_val[i].LocationTypeName_val[j].LocationTypeID, 
+								tpBusiness1102.Names_val.LocationLanguage_val[i].LocationTypeName_val[j].LocationTypeName);
+#endif
+			}
+		}
+	}
+	
+	if(tpBusiness1102.CardholderFeeTypes_val.Numberofcardtype != 0)
+	{
+		for(i = 0; i < tpBusiness1102.CardholderFeeTypes_val.Numberofcardtype; i++)
+		{
+			if(tpBusiness1102.CardholderFeeTypes_val.CardholderFee_val[i].CardholderFeeValue_val != NULL)
+				free(tpBusiness1102.CardholderFeeTypes_val.CardholderFee_val[i].CardholderFeeValue_val);
+			tpBusiness1102.CardholderFeeTypes_val.CardholderFee_val[i].CardholderFeeValue_val = NULL;
+		}
+		if(tpBusiness1102.CardholderFeeTypes_val.CardholderFee_val != NULL)
+			free(tpBusiness1102.CardholderFeeTypes_val.CardholderFee_val);
+		tpBusiness1102.CardholderFeeTypes_val.CardholderFee_val = NULL;
+	}
+	fread(&tpBusiness1102.CardholderFeeTypes_val.Numberofcardtype, sizeof(char), 1, intFile);
+#ifdef	DEBUG_1102_PRINT
+	PRINTK("card holder fee types num %02x\n", tpBusiness1102.CardholderFeeTypes_val.Numberofcardtype);
+#endif
+	if(tpBusiness1102.CardholderFeeTypes_val.Numberofcardtype != 0)
+	{
+		tpBusiness1102.CardholderFeeTypes_val.CardholderFee_val = (CardholderFee_t *)malloc(sizeof(CardholderFee_t) * tpBusiness1102.CardholderFeeTypes_val.Numberofcardtype);
+		if(tpBusiness1102.CardholderFeeTypes_val.CardholderFee_val == NULL)
+		{
+			fclose(intFile);
+			return 1;
+		}
+		for(i = 0; i < tpBusiness1102.CardholderFeeTypes_val.Numberofcardtype; i++)
+		{
+			fread(&tpBusiness1102.CardholderFeeTypes_val.CardholderFee_val[i], sizeof(CardholderFee_t) - 4, 1, intFile);
+#ifdef	DEBUG_1102_PRINT
+			PRINTK("cardtype %02x cardfee number %04x\n", tpBusiness1102.CardholderFeeTypes_val.CardholderFee_val[i].Cardtype, tpBusiness1102.CardholderFeeTypes_val.CardholderFee_val[i].CardholderFeeCount);
+#endif
+			tpBusiness1102.CardholderFeeTypes_val.CardholderFee_val[i].CardholderFeeValue_val = NULL;
+			if(tpBusiness1102.CardholderFeeTypes_val.CardholderFee_val[i].CardholderFeeCount != 0)
+			{
+				tpBusiness1102.CardholderFeeTypes_val.CardholderFee_val[i].CardholderFeeValue_val = (CardholderFeeValue_t *)malloc(sizeof(CardholderFeeValue_t) * tpBusiness1102.CardholderFeeTypes_val.CardholderFee_val[i].CardholderFeeCount);
+				if(tpBusiness1102.CardholderFeeTypes_val.CardholderFee_val[i].CardholderFeeValue_val == NULL)
+				{
+					fclose(intFile);
+					return 1;
+				}
+				fread(tpBusiness1102.CardholderFeeTypes_val.CardholderFee_val[i].CardholderFeeValue_val, sizeof(CardholderFeeValue_t), tpBusiness1102.CardholderFeeTypes_val.CardholderFee_val[i].CardholderFeeCount, intFile);
+#ifdef DEBUG_1102_PRINT
+				for(j = 0; j < tpBusiness1102.CardholderFeeTypes_val.CardholderFee_val[i].CardholderFeeCount; j++)
+				{
+					PRINTK("feetype %02x feevalue %08x feePercent %04x\n", tpBusiness1102.CardholderFeeTypes_val.CardholderFee_val[i].CardholderFeeValue_val[j].CardholderFeeType,
+						tpBusiness1102.CardholderFeeTypes_val.CardholderFee_val[i].CardholderFeeValue_val[j].CardholderFeeFixedValue,
+						tpBusiness1102.CardholderFeeTypes_val.CardholderFee_val[i].CardholderFeeValue_val[j].CardholderFeePercent);
+				}
+#endif
+			}
+		}
+	}
+	fread(&tpBusiness1102.DeviceParameters_val, sizeof(DeviceParameters_t) - 4, 1, intFile);
+#ifdef	DEBUG_1102_PRINT
+	PRINTK("uploadfrequency %08x uploadtime %04x uploadtxncount %04x Maxcardprocess %02x devicedisplaynum %04x\n", 
+				tpBusiness1102.DeviceParameters_val.UdUploadFrequency, tpBusiness1102.DeviceParameters_val.UdUploadTimeOfDay, tpBusiness1102.DeviceParameters_val.UdUploadTxnCount, 
+				tpBusiness1102.DeviceParameters_val.MaxCardsToProcess, tpBusiness1102.DeviceParameters_val.DeviceDisplaynumber);
+#endif
+	if(tpBusiness1102.DeviceParameters_val.TextString_val != NULL)
+		free(tpBusiness1102.DeviceParameters_val.TextString_val);
+	tpBusiness1102.DeviceParameters_val.TextString_val = (TextString_t *)malloc(sizeof(TextString_t) * tpBusiness1102.DeviceParameters_val.DeviceDisplaynumber);
+	if(tpBusiness1102.DeviceParameters_val.TextString_val == NULL)
+	{
+		fclose(intFile);
+		return 1;
+	}
+	fread(tpBusiness1102.DeviceParameters_val.TextString_val, sizeof(TextString_t), tpBusiness1102.DeviceParameters_val.DeviceDisplaynumber, intFile);
+#ifdef	DEBUG_1102_PRINT
+	for(i = 0; i < tpBusiness1102.DeviceParameters_val.DeviceDisplaynumber; i++)
+	{
+		PRINTK("teststringid %02x languageid %04x string %s\n", tpBusiness1102.DeviceParameters_val.TextString_val[i].TextStringId, 
+			tpBusiness1102.DeviceParameters_val.TextString_val[i].LanguageId, 
+			tpBusiness1102.DeviceParameters_val.TextString_val[i].DeviceDisplayString);
+	}
+#endif	
+	
+	fread(&tpBusiness1102.TimeCodes_val.LanguageTimeCodenumber, sizeof(short), 1, intFile);
+#ifdef	DEBUG_1102_PRINT
+	PRINTK("timecode number %04x\n", tpBusiness1102.TimeCodes_val.LanguageTimeCodenumber);
+#endif
+	if(tpBusiness1102.TimeCodes_val.TimeCodeText_val != NULL)
+		free(tpBusiness1102.TimeCodes_val.TimeCodeText_val);
+	tpBusiness1102.TimeCodes_val.TimeCodeText_val = (TimeCodeText_t *)malloc(sizeof(TimeCodeText_t) * tpBusiness1102.TimeCodes_val.LanguageTimeCodenumber);
+	if(tpBusiness1102.TimeCodes_val.TimeCodeText_val == NULL)
+	{
+		fclose(intFile);
+		return 1;
+	}
+	fread(tpBusiness1102.TimeCodes_val.TimeCodeText_val, sizeof(TimeCodeText_t), tpBusiness1102.TimeCodes_val.LanguageTimeCodenumber, intFile);
+#ifdef	DEBUG_1102_PRINT
+	for(i = 0; i < tpBusiness1102.TimeCodes_val.LanguageTimeCodenumber; i++)
+	{
+		PRINTK("timecodeid %02x languageid %04x timecode name %s\n", 
+			tpBusiness1102.TimeCodes_val.TimeCodeText_val[i].TimeCodeID, 
+			tpBusiness1102.TimeCodes_val.TimeCodeText_val[i].LanguageId, 
+			tpBusiness1102.TimeCodes_val.TimeCodeText_val[i].TimeCodeName);
+	}
+#endif	
+
+	fread(&tpBusiness1102.PassengerTypes_val.LanguagePassengernumber, sizeof(short), 1, intFile);
+#ifdef	DEBUG_1102_PRINT
+	PRINTK("language passenger number %04x\n", tpBusiness1102.PassengerTypes_val.LanguagePassengernumber);
+#endif
+	if(tpBusiness1102.PassengerTypes_val.PassengerText_val != NULL)
+		free(tpBusiness1102.PassengerTypes_val.PassengerText_val);
+	tpBusiness1102.PassengerTypes_val.PassengerText_val = (PassengerText_t *)malloc(sizeof(PassengerText_t) * tpBusiness1102.PassengerTypes_val.LanguagePassengernumber);
+	if(tpBusiness1102.PassengerTypes_val.PassengerText_val == NULL)
+	{
+		fclose(intFile);
+		return 1;
+	}
+	fread(tpBusiness1102.PassengerTypes_val.PassengerText_val, sizeof(PassengerText_t), tpBusiness1102.PassengerTypes_val.LanguagePassengernumber, intFile);
+#ifdef	DEBUG_1102_PRINT
+	for(i = 0; i < tpBusiness1102.PassengerTypes_val.LanguagePassengernumber; i++)
+	{
+		PRINTK("passengertype %02x languageid %04x name %s\n", 
+			tpBusiness1102.PassengerTypes_val.PassengerText_val[i].PassengerType, 
+			tpBusiness1102.PassengerTypes_val.PassengerText_val[i].LanguageId,
+			tpBusiness1102.PassengerTypes_val.PassengerText_val[i].PassengerTypeName);
+	}
+#endif
+	fclose(intFile);
+    return 0;
+}
+
+long PACC_1104_Blacklist()
+{
+FILE *intFile;
+long lngPosition, lngnum, file_len;
+char	filename[100], eod_file[100];
+long i, j;
+
+	memset(eod_file, 0x00, 100);
+	memset(filename, 0x00, 100);
+	sprintf(eod_file, "PARA.1104.");
+	if(0 != FileisExist("./para/", eod_file, filename))
+	{
+		PRINTK("1104 file not exist\n");
+		return 2;
+	}
+	//check the file
+	sprintf(eod_file, "./para/%s", filename);
+    intFile = fopen(eod_file, "rb");
+    if(intFile == NULL)
+    {
+        return 1;
+    }
+    //transfer head 1 + 38
+	fseek(intFile, 0, SEEK_END);
+	file_len = ftell(intFile);
+	fseek(intFile, 0, 0);
+   	//fseek(intFile, 39, 0);	//not nead 
+    fread(&tpBlacklist1104.paratitle, sizeof(ParaTitle), 1, intFile);
+#ifdef	DEBUG_1104_PRINT
+	PRINTK("------1104---------\nformat:%02x source %02x length %08x type %02x%02x ver %04x createtime %02x%02x%02x%02x %02x%02x%02x \nstart %02x%02x%02x%02x offset %04x rfu %02x%02x%02x\n",
+			tpBlacklist1104.paratitle.format, tpBlacklist1104.paratitle.source, tpBlacklist1104.paratitle.length, tpBlacklist1104.paratitle.type[0], tpBlacklist1104.paratitle.type[1], tpBlacklist1104.paratitle.version,
+			tpBlacklist1104.paratitle.create_time[0], tpBlacklist1104.paratitle.create_time[1], tpBlacklist1104.paratitle.create_time[2], tpBlacklist1104.paratitle.create_time[3], tpBlacklist1104.paratitle.create_time[4], tpBlacklist1104.paratitle.create_time[5], tpBlacklist1104.paratitle.create_time[6],
+			tpBlacklist1104.paratitle.start_time[0], tpBlacklist1104.paratitle.start_time[1], tpBlacklist1104.paratitle.start_time[2], tpBlacklist1104.paratitle.start_time[3],
+			tpBlacklist1104.paratitle.section_number, tpBlacklist1104.paratitle.rfu[0], tpBlacklist1104.paratitle.rfu[1], tpBlacklist1104.paratitle.rfu[2]);
+#endif
+    
+    //增加判断保存的参数文件大小
+    if(tpBlacklist1104.paratitle.length != file_len)
+    {
+    	fclose(intFile);
+    	memset(&tpBlacklist1104.paratitle, 0x00, sizeof(ParaTitle));
+    	remove( eod_file );
+    	return 1;
+    }
+
+    if(tpBlacklist1104.paratitle.section_number == 0)
+    {
+    	fclose(intFile);
+    	return 1;
+    }
+    if(tpBlacklist1104.offset != NULL)
+    	free(tpBlacklist1104.offset);
+    tpBlacklist1104.offset = (section_offset *)malloc(sizeof(section_offset) * tpBlacklist1104.paratitle.section_number);
+    if(tpBlacklist1104.offset == NULL)
+    {
+    	fclose(intFile);
+    	return 1;
+    }
+    fread(tpBlacklist1104.offset, sizeof(section_offset), tpBlacklist1104.paratitle.section_number, intFile);
+#ifdef DEBUG_1104_PRINT
+    for(i = 0; i < tpBlacklist1104.paratitle.section_number; i++)
+    	PRINTK("start_pos %08x  section_rec %08x\n", tpBlacklist1104.offset[i].start_pos, tpBlacklist1104.offset[i].section_rec);
+#endif
+	//clear 分段1：独立黑名单卡参数
+	if(tpBlacklist1104.CardBlack_val.blacknum != 0)
+	{
+		if(tpBlacklist1104.CardBlack_val.CardBlacklist_val != NULL)
+			free(tpBlacklist1104.CardBlack_val.CardBlacklist_val);
+		tpBlacklist1104.CardBlack_val.CardBlacklist_val = NULL;
+	}
+	fread(&tpBlacklist1104.CardBlack_val.blacknum, sizeof(long), 1, intFile);
+#ifdef	DEBUG_1104_PRINT
+	PRINTK("cardblack number %08x\n", tpBlacklist1104.CardBlack_val.blacknum);
+#endif
+	if(tpBlacklist1104.CardBlack_val.blacknum != 0)
+	{
+		tpBlacklist1104.CardBlack_val.CardBlacklist_val = (CardBlacklist_t *)malloc(sizeof(CardBlacklist_t) * tpBlacklist1104.CardBlack_val.blacknum);
+		if(tpBlacklist1104.CardBlack_val.CardBlacklist_val == NULL)
+		{
+			fclose(intFile);
+			return 1;
+		}
+		fread(tpBlacklist1104.CardBlack_val.CardBlacklist_val, sizeof(CardBlacklist_t), tpBlacklist1104.CardBlack_val.blacknum, intFile);
+#ifdef	DEBUG_1104_PRINT
+		for(i = 0; i < tpBlacklist1104.CardBlack_val.blacknum; i++)
+			PRINTK("cardid %08 lifecycle %04x cardActionCode %02x cardStatusCode %02x\n", 
+					tpBlacklist1104.CardBlack_val.CardBlacklist_val[i].CardID, tpBlacklist1104.CardBlack_val.CardBlacklist_val[i].LifeCycleCounter,
+					tpBlacklist1104.CardBlack_val.CardBlacklist_val[i].cardActionCode, tpBlacklist1104.CardBlack_val.CardBlacklist_val[i].cardStatusCode);
+#endif		
+	}
+	//clear 分段2：区段黑名单卡参数
+	if(tpBlacklist1104.SectionCardBlack_val.sectionnum != 0)
+	{
+		if(tpBlacklist1104.SectionCardBlack_val.SectionCardBlacklist_val != NULL)
+			free(tpBlacklist1104.SectionCardBlack_val.SectionCardBlacklist_val);
+		tpBlacklist1104.SectionCardBlack_val.SectionCardBlacklist_val = NULL;
+	}
+	fread(&tpBlacklist1104.SectionCardBlack_val.sectionnum, sizeof(short), 1, intFile);
+#ifdef	DEBUG_1104_PRINT
+	PRINTK("section black number %04x\n", tpBlacklist1104.SectionCardBlack_val.sectionnum);
+#endif
+	if(tpBlacklist1104.SectionCardBlack_val.sectionnum != 0)
+	{
+		tpBlacklist1104.SectionCardBlack_val.SectionCardBlacklist_val = (SectionCardBlacklist_t *)malloc(sizeof(SectionCardBlacklist_t) * tpBlacklist1104.SectionCardBlack_val.sectionnum);
+		if(tpBlacklist1104.SectionCardBlack_val.SectionCardBlacklist_val == NULL)
+		{
+			fclose(intFile);
+			return 1;
+		}
+		fread(tpBlacklist1104.SectionCardBlack_val.SectionCardBlacklist_val, sizeof(SectionCardBlacklist_t), tpBlacklist1104.SectionCardBlack_val.sectionnum, intFile);
+#ifdef	DEBUG_1104_PRINT
+		for(i = 0; i < tpBlacklist1104.SectionCardBlack_val.sectionnum; i++)
+			PRINTK("start CardID %08x end CardId %08x cardActionCode %02x cardStatusCode %02x\n", 
+				tpBlacklist1104.SectionCardBlack_val.SectionCardBlacklist_val[i].StartCardID, tpBlacklist1104.SectionCardBlack_val.SectionCardBlacklist_val[i].EndCardID,
+				tpBlacklist1104.SectionCardBlack_val.SectionCardBlacklist_val[i].cardActionCode, tpBlacklist1104.SectionCardBlack_val.SectionCardBlacklist_val[i].cardStatusCode);
+#endif
+	}
+	//clear 分段3：产品黑名单参数
+	if(tpBlacklist1104.ProductBlack_val.productnum != 0)
+	{
+		if(tpBlacklist1104.ProductBlack_val.ProductBlacklist_val != NULL)
+			free(tpBlacklist1104.ProductBlack_val.ProductBlacklist_val);
+		tpBlacklist1104.ProductBlack_val.ProductBlacklist_val = NULL;
+	}
+	fread(&tpBlacklist1104.ProductBlack_val.productnum, sizeof(short), 1, intFile);
+#ifdef	DEBUG_1104_PRINT
+	PRINTK("section black number %04x\n", tpBlacklist1104.ProductBlack_val.productnum);
+#endif
+	if(tpBlacklist1104.ProductBlack_val.productnum != 0)
+	{
+		tpBlacklist1104.ProductBlack_val.ProductBlacklist_val = (ProductBlacklist_t *)malloc(sizeof(ProductBlacklist_t) * tpBlacklist1104.ProductBlack_val.productnum);
+		if(tpBlacklist1104.ProductBlack_val.ProductBlacklist_val == NULL)
+		{
+			fclose(intFile);
+			return 1;
+		}
+		fread(tpBlacklist1104.ProductBlack_val.ProductBlacklist_val, sizeof(ProductBlacklist_t), tpBlacklist1104.ProductBlack_val.productnum, intFile);
+#ifdef	DEBUG_1104_PRINT
+		for(i = 0; i < tpBlacklist1104.ProductBlack_val.productnum; i++)
+		{
+			PRINTK("CardID %08x lifecycleCount %04x productsn %04x productype %04x actionsn %02x productAC %02x productSC %02x\n", 
+				tpBlacklist1104.ProductBlack_val.ProductBlacklist_val[i].CardID, tpBlacklist1104.ProductBlack_val.ProductBlacklist_val[i].LifeCycleCounter,
+				tpBlacklist1104.ProductBlack_val.ProductBlacklist_val[i].ProductSerialNumber, tpBlacklist1104.ProductBlack_val.ProductBlacklist_val[i].ProductType,
+				tpBlacklist1104.ProductBlack_val.ProductBlacklist_val[i].actionSequenceNumber, tpBlacklist1104.ProductBlack_val.ProductBlacklist_val[i].productActionCode,
+				tpBlacklist1104.ProductBlack_val.ProductBlacklist_val[i].productStatusCode);
+		}
+#endif
+	}
+	//clear 分段4： SAM黑名单参数
+	if(tpBlacklist1104.SAMBlack_val.samnum != 0)
+	{
+		if(tpBlacklist1104.SAMBlack_val.SAMBlacklist_val != NULL)
+			free(tpBlacklist1104.SAMBlack_val.SAMBlacklist_val);
+		tpBlacklist1104.SAMBlack_val.SAMBlacklist_val = NULL;
+	}
+	fread(&tpBlacklist1104.SAMBlack_val.samnum, sizeof(short), 1, intFile);
+#ifdef DEBUG_1104_PRINT
+	PRINTK("sam number %04x\n", tpBlacklist1104.SAMBlack_val.samnum);
+#endif
+	if(tpBlacklist1104.SAMBlack_val.samnum != 0)
+	{
+		tpBlacklist1104.SAMBlack_val.SAMBlacklist_val = (SAMBlacklist_t *)malloc(sizeof(SAMBlacklist_t) * tpBlacklist1104.SAMBlack_val.samnum);
+		if(tpBlacklist1104.SAMBlack_val.SAMBlacklist_val == NULL)
+		{
+			fclose(intFile);
+			return 1;
+		}
+		fread(tpBlacklist1104.SAMBlack_val.SAMBlacklist_val, sizeof(SAMBlacklist_t), tpBlacklist1104.SAMBlack_val.samnum, intFile);
+#ifdef	DEBUG_1104_PRINT
+		for(i = 0; i < tpBlacklist1104.SAMBlack_val.samnum; i++)
+		{
+			PRINTK("SAMID %08x StolenStartTime %02x%02x-%02x-%02x %02x:%02x:%02x StolenEndTime %02x%02x-%02x-%02x %02x:%02x:%02x\n",
+				tpBlacklist1104.SAMBlack_val.SAMBlacklist_val[i].SAMID, tpBlacklist1104.SAMBlack_val.SAMBlacklist_val[i].StolenStartTime[0], tpBlacklist1104.SAMBlack_val.SAMBlacklist_val[i].StolenStartTime[1], tpBlacklist1104.SAMBlack_val.SAMBlacklist_val[i].StolenStartTime[2], tpBlacklist1104.SAMBlack_val.SAMBlacklist_val[i].StolenStartTime[3],
+				tpBlacklist1104.SAMBlack_val.SAMBlacklist_val[i].StolenStartTime[4], tpBlacklist1104.SAMBlack_val.SAMBlacklist_val[i].StolenStartTime[5], tpBlacklist1104.SAMBlack_val.SAMBlacklist_val[i].StolenStartTime[6], tpBlacklist1104.SAMBlack_val.SAMBlacklist_val[i].StolenEndTime[0], tpBlacklist1104.SAMBlack_val.SAMBlacklist_val[i].StolenEndTime[1],
+				tpBlacklist1104.SAMBlack_val.SAMBlacklist_val[i].StolenEndTime[2], tpBlacklist1104.SAMBlack_val.SAMBlacklist_val[i].StolenEndTime[3], tpBlacklist1104.SAMBlack_val.SAMBlacklist_val[i].StolenEndTime[4], tpBlacklist1104.SAMBlack_val.SAMBlacklist_val[i].StolenEndTime[5], tpBlacklist1104.SAMBlack_val.SAMBlacklist_val[i].StolenEndTime[6]);
+		}
+#endif
+	}
+	//clear 分段5：高安全黑名单参数
+	if(tpBlacklist1104.HighCardBlack_val.highnum != 0)
+	{
+		if(tpBlacklist1104.HighCardBlack_val.HighCardBlacklist_val != NULL)
+			free(tpBlacklist1104.HighCardBlack_val.HighCardBlacklist_val);
+		tpBlacklist1104.HighCardBlack_val.HighCardBlacklist_val = NULL;
+	}
+	fread(&tpBlacklist1104.HighCardBlack_val.highnum, sizeof(short), 1, intFile);
+#ifdef	DEBUG_1104_PRINT
+	PRINTK("high number %04x\n", tpBlacklist1104.HighCardBlack_val.highnum);
+#endif
+	if(tpBlacklist1104.HighCardBlack_val.highnum != 0)
+	{
+		tpBlacklist1104.HighCardBlack_val.HighCardBlacklist_val = (HighCardBlacklist_t *)malloc(sizeof(HighCardBlacklist_t) * tpBlacklist1104.HighCardBlack_val.highnum);
+		if(tpBlacklist1104.HighCardBlack_val.HighCardBlacklist_val == NULL)
+		{
+			fclose(intFile);
+			return 1;
+		}
+		fread(tpBlacklist1104.HighCardBlack_val.HighCardBlacklist_val, sizeof(HighCardBlacklist_t), tpBlacklist1104.HighCardBlack_val.highnum, intFile);
+#ifdef	DEBUG_1104_PRINT
+		for(i = 0; i < tpBlacklist1104.HighCardBlack_val.highnum; i++)
+			PRINTK("Cardid %08x lifecyclecount %04x\n", tpBlacklist1104.HighCardBlack_val.HighCardBlacklist_val[i].CardID, tpBlacklist1104.HighCardBlack_val.HighCardBlacklist_val[i].LifeCycleCounter);
+#endif
+	}
+	//clear 分段6： 卡批次回收参数
+	if(tpBlacklist1104.CardBatch_val.batchnum != 0)
+	{
+		for(i = 0; i < tpBlacklist1104.CardBatch_val.batchnum; i++)
+		{
+			if(tpBlacklist1104.CardBatch_val.CardBatchlist_val[i].CardBaseDates != NULL)
+				free(tpBlacklist1104.CardBatch_val.CardBatchlist_val[i].CardBaseDates);
+			tpBlacklist1104.CardBatch_val.CardBatchlist_val[i].CardBaseDates = NULL;
+		}
+		if(tpBlacklist1104.CardBatch_val.CardBatchlist_val != NULL)
+			free(tpBlacklist1104.CardBatch_val.CardBatchlist_val);
+		tpBlacklist1104.CardBatch_val.CardBatchlist_val = NULL;
+	}
+	fread(&tpBlacklist1104.CardBatch_val.batchnum, sizeof(short), 1, intFile);
+#ifdef	DEBUG_1104_PRINT
+	PRINTK("card batch number %04x\n", tpBlacklist1104.CardBatch_val.batchnum);
+#endif
+	if(tpBlacklist1104.CardBatch_val.batchnum != 0)
+	{
+		tpBlacklist1104.CardBatch_val.CardBatchlist_val = (CardBatchlist_t *)malloc(sizeof(CardBatchlist_t) * tpBlacklist1104.CardBatch_val.batchnum);
+		if(tpBlacklist1104.CardBatch_val.CardBatchlist_val == NULL)
+		{
+			fclose(intFile);
+			return 1;
+		}
+		for(i = 0; i < tpBlacklist1104.CardBatch_val.batchnum; i++)
+		{
+			fread(&tpBlacklist1104.CardBatch_val.CardBatchlist_val[i], sizeof(CardBatchlist_t), 1, intFile);
+#ifdef	DEBUG_1104_PRINT
+			PRINTK("catch number %08x numberOfcarddates %04x\n", tpBlacklist1104.CardBatch_val.CardBatchlist_val[i].CardBatchNumber, tpBlacklist1104.CardBatch_val.CardBatchlist_val[i].NumberOfCardBaseDates);
+#endif		
+			if(tpBlacklist1104.CardBatch_val.CardBatchlist_val[i].NumberOfCardBaseDates != 0)
+			{
+				tpBlacklist1104.CardBatch_val.CardBatchlist_val[i].CardBaseDates = (unsigned long *)malloc(sizeof(long) * tpBlacklist1104.CardBatch_val.CardBatchlist_val[i].NumberOfCardBaseDates);
+				if(tpBlacklist1104.CardBatch_val.CardBatchlist_val[i].CardBaseDates == NULL)
+				{
+					fclose(intFile);
+					return 1;
+				}
+				fread(tpBlacklist1104.CardBatch_val.CardBatchlist_val[i].CardBaseDates, sizeof(long), tpBlacklist1104.CardBatch_val.CardBatchlist_val[i].NumberOfCardBaseDates, intFile);
+#ifdef	DEBUG_1104_PRINT				
+				for(j = 0; j < tpBlacklist1104.CardBatch_val.CardBatchlist_val[i].NumberOfCardBaseDates; j++)
+				{
+					PRINTK("cardbasedates %04x\n", tpBlacklist1104.CardBatch_val.CardBatchlist_val[i].CardBaseDates);
+				}
+#endif				
+			}
+		}
+	}
+	fclose(intFile);
+	return 0;
+}
+
+long PACC_1105_Product()
+{
+FILE *intFile;
+long lngPosition, lngnum, file_len;
+char	filename[100], eod_file[100];
+long i, j, k;
+
+	memset(eod_file, 0x00, 100);
+	memset(filename, 0x00, 100);
+	sprintf(eod_file, "PARA.1105.");
+	if(0 != FileisExist("./para/", eod_file, filename))
+	{
+		return 2;
+	}
+	//check the file
+	sprintf(eod_file, "./para/%s", filename);
+    intFile = fopen(eod_file, "rb");
+    if(intFile == NULL)
+    {
+    	PRINTK("1105 file not exist\n");
+        return 1;
+    }
+    //transfer head 1 + 38
+	fseek(intFile, 0, SEEK_END);
+	file_len = ftell(intFile);
+	fseek(intFile, 0, 0);
+    //fseek(intFile, 39, 0);	//not nead read
+    fread(&tpProduct1105.paratitle, sizeof(ParaTitle), 1, intFile);
+#ifdef	DEBUG_1105_PRINT
+	PRINTK("------1105---------\nformat:%02x source %02x length %08x type %02x%02x ver %04x createtime %02x%02x%02x%02x %02x%02x%02x \nstart %02x%02x%02x%02x offset %04x rfu %02x%02x%02x\n",
+			tpProduct1105.paratitle.format, tpProduct1105.paratitle.source, tpProduct1105.paratitle.length, tpProduct1105.paratitle.type[0], tpProduct1105.paratitle.type[1], tpProduct1105.paratitle.version,
+			tpProduct1105.paratitle.create_time[0], tpProduct1105.paratitle.create_time[1], tpProduct1105.paratitle.create_time[2], tpProduct1105.paratitle.create_time[3], tpProduct1105.paratitle.create_time[4], tpProduct1105.paratitle.create_time[5], tpProduct1105.paratitle.create_time[6],
+			tpProduct1105.paratitle.start_time[0], tpProduct1105.paratitle.start_time[1], tpProduct1105.paratitle.start_time[2], tpProduct1105.paratitle.start_time[3],
+			tpProduct1105.paratitle.section_number, tpProduct1105.paratitle.rfu[0], tpProduct1105.paratitle.rfu[1], tpProduct1105.paratitle.rfu[2]);
+#endif
+    
+    //增加判断保存的参数文件大小
+    if(tpProduct1105.paratitle.length != file_len)
+    {
+    	fclose(intFile);
+    	memset(&tpProduct1105.paratitle, 0x00, sizeof(ParaTitle));
+    	remove( eod_file );
+    	return 1;
+    }
+
+    if(tpProduct1105.paratitle.section_number == 0)
+    {
+    	fclose(intFile);
+    	return 1;
+    }
+    if(tpProduct1105.offset != NULL)
+    	free(tpProduct1105.offset);
+    tpProduct1105.offset = (section_offset *)malloc(sizeof(section_offset) * tpProduct1105.paratitle.section_number);
+    if(tpProduct1105.offset == NULL)
+    {
+    	fclose(intFile);
+    	return 1;
+    }
+    fread(tpProduct1105.offset, sizeof(section_offset), tpProduct1105.paratitle.section_number, intFile);
+#ifdef DEBUG_1105_PRINT
+    for(i = 0; i < tpProduct1105.paratitle.section_number; i++)
+    	PRINTK("start_pos %08x  section_rec %08x\n", tpProduct1105.offset[i].start_pos, tpProduct1105.offset[i].section_rec);
+#endif
+
+	if(tpProduct1105.TicketParameter_val.Ticketnumber != 0)
+	{
+		for(i = 0; i < tpProduct1105.TicketParameter_val.Ticketnumber; i++)
+		{
+			for(j = 0; j < tpProduct1105.TicketParameter_val.Product_val[i].ProductTypeVariantsCount; j++)
+			{	
+				if(tpProduct1105.TicketParameter_val.Product_val[i].subProduct_val[j].subProductName_val != NULL)
+					free(tpProduct1105.TicketParameter_val.Product_val[i].subProduct_val[j].subProductName_val);
+				tpProduct1105.TicketParameter_val.Product_val[i].subProduct_val[j].subProductName_val = NULL;
+			}
+			if(tpProduct1105.TicketParameter_val.Product_val[i].subProduct_val != NULL)
+				free(tpProduct1105.TicketParameter_val.Product_val[i].subProduct_val);
+			tpProduct1105.TicketParameter_val.Product_val[i].subProduct_val = NULL;
+			
+			if(tpProduct1105.TicketParameter_val.Product_val[i].Passengertype != NULL)
+				free(tpProduct1105.TicketParameter_val.Product_val[i].Passengertype);
+			tpProduct1105.TicketParameter_val.Product_val[i].Passengertype = NULL;
+		
+			if(tpProduct1105.TicketParameter_val.Product_val[i].LoadableFenValues != NULL)
+				free(tpProduct1105.TicketParameter_val.Product_val[i].LoadableFenValues);
+			tpProduct1105.TicketParameter_val.Product_val[i].LoadableFenValues = NULL;
+
+			if(tpProduct1105.TicketParameter_val.Product_val[i].SellableCardTypes != NULL)
+				free(tpProduct1105.TicketParameter_val.Product_val[i].SellableCardTypes);
+			tpProduct1105.TicketParameter_val.Product_val[i].SellableCardTypes = NULL;
+
+			if(tpProduct1105.TicketParameter_val.Product_val[i].SellableDeviceTypes != NULL)
+				free(tpProduct1105.TicketParameter_val.Product_val[i].SellableDeviceTypes);
+			tpProduct1105.TicketParameter_val.Product_val[i].SellableDeviceTypes = NULL;
+
+			if(tpProduct1105.TicketParameter_val.Product_val[i].ProductName_val != NULL)
+				free(tpProduct1105.TicketParameter_val.Product_val[i].ProductName_val);
+			tpProduct1105.TicketParameter_val.Product_val[i].ProductName_val = NULL;
+		}
+		if(tpProduct1105.TicketParameter_val.Product_val != NULL)
+			free(tpProduct1105.TicketParameter_val.Product_val);
+		if(tpProduct1105.TicketParameter_val.ProductOffset_val != NULL)
+			free(tpProduct1105.TicketParameter_val.ProductOffset_val);
+	}
+
+	fread(&tpProduct1105.TicketParameter_val.Ticketnumber, sizeof(short), 1, intFile);
+#ifdef DEBUG_1105_PRINT
+	PRINTK("product number %04x\n", tpProduct1105.TicketParameter_val.Ticketnumber);
+#endif
+	if(tpProduct1105.TicketParameter_val.Ticketnumber == 0)
+	{
+		fclose(intFile);
+		return 0;
+	}
+	tpProduct1105.TicketParameter_val.ProductOffset_val = (ProductOffset_t *)malloc(sizeof(ProductOffset_t) * tpProduct1105.TicketParameter_val.Ticketnumber);
+	if(tpProduct1105.TicketParameter_val.ProductOffset_val == NULL)
+	{
+		fclose(intFile);
+		return 1;
+	}
+	fread(tpProduct1105.TicketParameter_val.ProductOffset_val, sizeof(ProductOffset_t), tpProduct1105.TicketParameter_val.Ticketnumber, intFile);
+#ifdef DEBUG_1105_PRINT
+	for(i = 0; i < tpProduct1105.TicketParameter_val.Ticketnumber; i++)
+		PRINTK("productissuer %08x producttype %04x offset %08x\n", tpProduct1105.TicketParameter_val.ProductOffset_val[i].ProductIssuer, tpProduct1105.TicketParameter_val.ProductOffset_val[i].ProductType, tpProduct1105.TicketParameter_val.ProductOffset_val[i].ProductParam_Offset);
+#endif
+	
+	tpProduct1105.TicketParameter_val.Product_val = (Product_t *)malloc(sizeof(Product_t) * tpProduct1105.TicketParameter_val.Ticketnumber);
+	if(tpProduct1105.TicketParameter_val.Product_val == NULL)
+	{
+		fclose(intFile);
+		return 1;
+	}
+	for(i = 0; i < tpProduct1105.TicketParameter_val.Ticketnumber; i++)
+	{
+		fread(&tpProduct1105.TicketParameter_val.Product_val[i], sizeof(Product_t) - (6 * 4) - (5 * sizeof(short)), 1, intFile);
+		
+#ifdef	DEBUG_1105_PRINT
+		PRINTK("productissuer %08x type %04x free %02x discount %02x CalendarId %04x personalised %02x recycled %02x refund %02x lost %02x added %02x deposit %02x charge %02x checkout %02x damaged %08x FareCode %04x FarePattern %04x FareTable %04x issuedstation %02x freeride %02x ignoreentry %02x ignorefund %02x ignoretime %02x ignorepassback %02x autolaodable %02x issuedactive %02x maxpurse %08x maxtransfer %02x minpurse %08x minremaining %08x penalty %08x override %02x productCategory %02x refundfee %02x singleuse %02x trainfault %02x\n", 
+			tpProduct1105.TicketParameter_val.Product_val[i].ProductIssuer, tpProduct1105.TicketParameter_val.Product_val[i].ProductType, tpProduct1105.TicketParameter_val.Product_val[i].CanAllowFreeRide,
+			tpProduct1105.TicketParameter_val.Product_val[i].CanApplySalesVolumeDiscount, tpProduct1105.TicketParameter_val.Product_val[i].CalendarId, tpProduct1105.TicketParameter_val.Product_val[i].CanBePersonalised,
+			tpProduct1105.TicketParameter_val.Product_val[i].CanBeRecycled, tpProduct1105.TicketParameter_val.Product_val[i].CanBeRefunded, tpProduct1105.TicketParameter_val.Product_val[i].CanBeReportedLost, 
+			tpProduct1105.TicketParameter_val.Product_val[i].CanHaveValueAdded, tpProduct1105.TicketParameter_val.Product_val[i].ChargeCardDeposit,
+			tpProduct1105.TicketParameter_val.Product_val[i].ChargeCardFee, tpProduct1105.TicketParameter_val.Product_val[i].ChargeFareOnCheckout, 
+			tpProduct1105.TicketParameter_val.Product_val[i].DamagedCardInvalidTicketFine, tpProduct1105.TicketParameter_val.Product_val[i].FareCodeTableId,
+			tpProduct1105.TicketParameter_val.Product_val[i].FarePatternId, tpProduct1105.TicketParameter_val.Product_val[i].FareTableId,
+			tpProduct1105.TicketParameter_val.Product_val[i].FirstUseAtStationOfIssue, tpProduct1105.TicketParameter_val.Product_val[i].FreeRideAtStationOfIssue, tpProduct1105.TicketParameter_val.Product_val[i].IgnoreEntryExitSequence,
+			tpProduct1105.TicketParameter_val.Product_val[i].IgnoreInsufficientFunds, tpProduct1105.TicketParameter_val.Product_val[i].IgnoreMaxJourneyTime, tpProduct1105.TicketParameter_val.Product_val[i].IgnorePassback,
+			tpProduct1105.TicketParameter_val.Product_val[i].IsProductAutoloadable, tpProduct1105.TicketParameter_val.Product_val[i].IsIssuedActivated, tpProduct1105.TicketParameter_val.Product_val[i].MaxPurseReload, 
+			tpProduct1105.TicketParameter_val.Product_val[i].MaxTransfersAllowed, tpProduct1105.TicketParameter_val.Product_val[i].MinPurseReload, tpProduct1105.TicketParameter_val.Product_val[i].MinRemainingValue,
+			tpProduct1105.TicketParameter_val.Product_val[i].MultipleMinimumFareFine, tpProduct1105.TicketParameter_val.Product_val[i].OverrideFirstUseAtStationOfIssue, tpProduct1105.TicketParameter_val.Product_val[i].ProductCategory,
+			tpProduct1105.TicketParameter_val.Product_val[i].RefundHandlingFee, tpProduct1105.TicketParameter_val.Product_val[i].IsSingleUseOnly, tpProduct1105.TicketParameter_val.Product_val[i].IsTicketCapturedIfTrainFault);
+			
+		PRINTK("subproduct number %04x\n", tpProduct1105.TicketParameter_val.Product_val[i].ProductTypeVariantsCount);
+#endif
+		tpProduct1105.TicketParameter_val.Product_val[i].subProduct_val = NULL;
+		tpProduct1105.TicketParameter_val.Product_val[i].Passengertype = NULL;
+		tpProduct1105.TicketParameter_val.Product_val[i].LoadableFenValues = NULL;
+		tpProduct1105.TicketParameter_val.Product_val[i].SellableCardTypes = NULL;
+		tpProduct1105.TicketParameter_val.Product_val[i].SellableDeviceTypes = NULL;
+		if(tpProduct1105.TicketParameter_val.Product_val[i].ProductTypeVariantsCount != 0)
+		{
+			tpProduct1105.TicketParameter_val.Product_val[i].subProduct_val = (subProduct_t *)malloc(sizeof(subProduct_t) * tpProduct1105.TicketParameter_val.Product_val[i].ProductTypeVariantsCount);
+			for(j = 0; j < tpProduct1105.TicketParameter_val.Product_val[i].ProductTypeVariantsCount; j++)
+			{
+				fread(&tpProduct1105.TicketParameter_val.Product_val[i].subProduct_val[j], sizeof(subProduct_t) - 4, 1, intFile);
+#ifdef	DEBUG_1105_PRINT
+				PRINTK("subproducttype %04x ifdest %02x inputdes %2x iforigin %02x inputorigin %02x ifstarttime %02x ifdestocur %02x\n iforgintocur %02x rides %02x SaleCodeTableId %04x SalesPatternId %04x SaleTableId %04x life %02x%02x%02x%02x %02x%02x%02x\n dest %08x duration %04x orgin %08x starttime %02x%02x%02x%02x %02x%02x%02x\n", 
+					tpProduct1105.TicketParameter_val.Product_val[i].subProduct_val[j].ProductTypeVariants, tpProduct1105.TicketParameter_val.Product_val[i].subProduct_val[j].IsDestinationRequired,tpProduct1105.TicketParameter_val.Product_val[i].subProduct_val[j].IsDestinationUserInput,
+					tpProduct1105.TicketParameter_val.Product_val[i].subProduct_val[j].IsOriginRequired, tpProduct1105.TicketParameter_val.Product_val[i].subProduct_val[j].IsOriginUserInput, tpProduct1105.TicketParameter_val.Product_val[i].subProduct_val[j].IsStartDateTimeUserInput,
+					tpProduct1105.TicketParameter_val.Product_val[i].subProduct_val[j].IsValidityDestinationCurrentStation,tpProduct1105.TicketParameter_val.Product_val[i].subProduct_val[j].IsValidityOriginCurrentStation,
+					tpProduct1105.TicketParameter_val.Product_val[i].subProduct_val[j].NumberOfRides, tpProduct1105.TicketParameter_val.Product_val[i].subProduct_val[j].SalesCodeTableId, tpProduct1105.TicketParameter_val.Product_val[i].subProduct_val[j].SalesPatternId, tpProduct1105.TicketParameter_val.Product_val[i].subProduct_val[j].SalesTableId,
+					tpProduct1105.TicketParameter_val.Product_val[i].subProduct_val[j].ShelfLife[0], tpProduct1105.TicketParameter_val.Product_val[i].subProduct_val[j].ShelfLife[1], tpProduct1105.TicketParameter_val.Product_val[i].subProduct_val[j].ShelfLife[2], tpProduct1105.TicketParameter_val.Product_val[i].subProduct_val[j].ShelfLife[3],
+					tpProduct1105.TicketParameter_val.Product_val[i].subProduct_val[j].ShelfLife[4], tpProduct1105.TicketParameter_val.Product_val[i].subProduct_val[j].ShelfLife[5], tpProduct1105.TicketParameter_val.Product_val[i].subProduct_val[j].ShelfLife[6], tpProduct1105.TicketParameter_val.Product_val[i].subProduct_val[j].ValidityDestination,
+					tpProduct1105.TicketParameter_val.Product_val[i].subProduct_val[j].Duration, tpProduct1105.TicketParameter_val.Product_val[i].subProduct_val[j].ValidityOrigin, tpProduct1105.TicketParameter_val.Product_val[i].subProduct_val[j].ValidityStartDateTime[0], tpProduct1105.TicketParameter_val.Product_val[i].subProduct_val[j].ValidityStartDateTime[1],
+					tpProduct1105.TicketParameter_val.Product_val[i].subProduct_val[j].ValidityStartDateTime[2], tpProduct1105.TicketParameter_val.Product_val[i].subProduct_val[j].ValidityStartDateTime[3], tpProduct1105.TicketParameter_val.Product_val[i].subProduct_val[j].ValidityStartDateTime[4], tpProduct1105.TicketParameter_val.Product_val[i].subProduct_val[j].ValidityStartDateTime[5],
+					tpProduct1105.TicketParameter_val.Product_val[i].subProduct_val[j].ValidityStartDateTime[6]);
+				PRINTK("subprodct name number %04x\n", tpProduct1105.TicketParameter_val.Product_val[i].subProduct_val[j].ProductTypeVariantNameLanguagesCount);
+#endif
+				tpProduct1105.TicketParameter_val.Product_val[i].subProduct_val[j].subProductName_val = NULL;
+				if(tpProduct1105.TicketParameter_val.Product_val[i].subProduct_val[j].ProductTypeVariantNameLanguagesCount != 0)
+				{
+					tpProduct1105.TicketParameter_val.Product_val[i].subProduct_val[j].subProductName_val = (subProductName_t *)malloc(sizeof(subProductName_t) * tpProduct1105.TicketParameter_val.Product_val[i].subProduct_val[j].ProductTypeVariantNameLanguagesCount);
+					if(tpProduct1105.TicketParameter_val.Product_val[i].subProduct_val[j].subProductName_val == NULL)
+					{
+						fclose(intFile);
+						return 1;
+					}
+					fread(tpProduct1105.TicketParameter_val.Product_val[i].subProduct_val[j].subProductName_val, sizeof(subProductName_t), tpProduct1105.TicketParameter_val.Product_val[i].subProduct_val[j].ProductTypeVariantNameLanguagesCount, intFile);
+#ifdef	DEBUG_1105_PRINT
+					for(k = 0; k < tpProduct1105.TicketParameter_val.Product_val[i].subProduct_val[j].ProductTypeVariantNameLanguagesCount; k++)
+					{
+						PRINTK("subproduct lang %04x name %s\n", 
+						tpProduct1105.TicketParameter_val.Product_val[i].subProduct_val[j].subProductName_val[k].ProductTypeVariantNameLanguages,
+						tpProduct1105.TicketParameter_val.Product_val[i].subProduct_val[j].subProductName_val[k].ProductTypeVariantName);
+					}
+#endif					
+				}
+			}
+		}
+		
+		fread(&tpProduct1105.TicketParameter_val.Product_val[i].Passengernumber, sizeof(short), 1, intFile);
+#ifdef	DEBUG_1105_PRINT
+		PRINTK("passengernumber %04x\n", tpProduct1105.TicketParameter_val.Product_val[i].Passengernumber);
+#endif		
+		if(tpProduct1105.TicketParameter_val.Product_val[i].Passengernumber != 0)
+		{
+			tpProduct1105.TicketParameter_val.Product_val[i].Passengertype = (unsigned char *)malloc(sizeof(char) * tpProduct1105.TicketParameter_val.Product_val[i].Passengernumber);
+			fread(tpProduct1105.TicketParameter_val.Product_val[i].Passengertype, sizeof(char), tpProduct1105.TicketParameter_val.Product_val[i].Passengernumber, intFile);
+#ifdef	DEBUG_1105_PRINT
+			for(k = 0; k < tpProduct1105.TicketParameter_val.Product_val[i].Passengernumber; k++)
+			{
+				PRINTK("passengertype %02x ", tpProduct1105.TicketParameter_val.Product_val[i].Passengertype[k]);
+			}
+			PRINTK("\n");
+#endif			
+		}
+		
+		fread(&tpProduct1105.TicketParameter_val.Product_val[i].LoadableFenValuesCount, sizeof(short), 1, intFile);
+#ifdef	DEBUG_1105_PRINT
+		PRINTK("loadablefenvaluecount %04x\n", tpProduct1105.TicketParameter_val.Product_val[i].LoadableFenValuesCount);
+#endif		
+		if(tpProduct1105.TicketParameter_val.Product_val[i].LoadableFenValuesCount != 0)
+		{
+			tpProduct1105.TicketParameter_val.Product_val[i].LoadableFenValues = (unsigned long *)malloc(sizeof(long) * tpProduct1105.TicketParameter_val.Product_val[i].LoadableFenValuesCount);
+			fread(tpProduct1105.TicketParameter_val.Product_val[i].LoadableFenValues, sizeof(long), tpProduct1105.TicketParameter_val.Product_val[i].LoadableFenValuesCount, intFile);
+#ifdef	DEBUG_1105_PRINT
+			for(k = 0; k < tpProduct1105.TicketParameter_val.Product_val[i].LoadableFenValuesCount; k++)
+			{
+				PRINTK("loadablefenvalue %08x ", tpProduct1105.TicketParameter_val.Product_val[i].LoadableFenValues[k]);
+			}
+			PRINTK("\n");
+#endif			
+		}
+		
+		fread(&tpProduct1105.TicketParameter_val.Product_val[i].SellableCardTypesCount, sizeof(short), 1, intFile);
+#ifdef	DEBUG_1105_PRINT
+		PRINTK("sellablecardtypecount %04x\n", tpProduct1105.TicketParameter_val.Product_val[i].SellableCardTypesCount);
+#endif		
+		if(tpProduct1105.TicketParameter_val.Product_val[i].SellableCardTypesCount != 0)
+		{
+			tpProduct1105.TicketParameter_val.Product_val[i].SellableCardTypes = (unsigned char *)malloc(sizeof(char) * tpProduct1105.TicketParameter_val.Product_val[i].SellableCardTypesCount);
+			fread(tpProduct1105.TicketParameter_val.Product_val[i].SellableCardTypes, sizeof(char), tpProduct1105.TicketParameter_val.Product_val[i].SellableCardTypesCount, intFile);
+#ifdef	DEBUG_1105_PRINT
+			for(k = 0; k < tpProduct1105.TicketParameter_val.Product_val[i].SellableCardTypesCount; k++)
+			{
+				PRINTK("sellablecardtype %02x ", tpProduct1105.TicketParameter_val.Product_val[i].SellableCardTypes[k]);
+			}
+			PRINTK("\n");
+#endif			
+		}
+		
+		fread(&tpProduct1105.TicketParameter_val.Product_val[i].SellableDeviceTypesCount, sizeof(short), 1, intFile);
+#ifdef	DEBUG_1105_PRINT
+		PRINTK("sellabledevicetypecount %04x\n", tpProduct1105.TicketParameter_val.Product_val[i].SellableDeviceTypesCount);
+#endif		
+		if(tpProduct1105.TicketParameter_val.Product_val[i].SellableDeviceTypesCount != 0)
+		{
+			tpProduct1105.TicketParameter_val.Product_val[i].SellableDeviceTypes = (unsigned short *)malloc(sizeof(short) * tpProduct1105.TicketParameter_val.Product_val[i].SellableDeviceTypesCount);
+			fread(tpProduct1105.TicketParameter_val.Product_val[i].SellableDeviceTypes, sizeof(short), tpProduct1105.TicketParameter_val.Product_val[i].SellableDeviceTypesCount, intFile);
+#ifdef	DEBUG_1105_PRINT
+			for(k = 0; k < tpProduct1105.TicketParameter_val.Product_val[i].SellableDeviceTypesCount; k++)
+			{
+				PRINTK("sellabledevicetype %04x ", tpProduct1105.TicketParameter_val.Product_val[i].SellableDeviceTypes[k]);
+			}
+			PRINTK("\n");
+#endif			
+		}
+		
+		fread(&tpProduct1105.TicketParameter_val.Product_val[i].ProductNameLanguagesCount, sizeof(short), 1, intFile);
+#ifdef	DEBUG_1105_PRINT
+		PRINTK("productdevicenamecount %04x\n", tpProduct1105.TicketParameter_val.Product_val[i].ProductNameLanguagesCount);
+#endif		
+		if(tpProduct1105.TicketParameter_val.Product_val[i].ProductNameLanguagesCount != 0)
+		{
+			tpProduct1105.TicketParameter_val.Product_val[i].ProductName_val = (ProductName_t *)malloc(sizeof(ProductName_t) * tpProduct1105.TicketParameter_val.Product_val[i].ProductNameLanguagesCount);
+			fread(tpProduct1105.TicketParameter_val.Product_val[i].ProductName_val, sizeof(ProductName_t), tpProduct1105.TicketParameter_val.Product_val[i].ProductNameLanguagesCount, intFile);
+#ifdef	DEBUG_1105_PRINT
+			for(k = 0; k < tpProduct1105.TicketParameter_val.Product_val[i].ProductNameLanguagesCount; k++)
+			{
+				PRINTK("productdevice lang %04x name %s  ", 
+					tpProduct1105.TicketParameter_val.Product_val[i].ProductName_val[k].ProductNameLanguages,
+					tpProduct1105.TicketParameter_val.Product_val[i].ProductName_val[k].ProductName);
+			}
+			PRINTK("\n");
+#endif			
+		}
+	}
+	fclose(intFile);
+    return 0;
+}
+
+
+long PACC_1106_Location()
+{
+FILE *intFile;
+long lngPosition, lngnum, file_len;
+char	filename[100], eod_file[100];
+long i, j, k;
+
+	memset(eod_file, 0x00, 100);
+	memset(filename, 0x00, 100);
+	sprintf(eod_file, "PARA.1106.");
+	if(0 != FileisExist("./para/", eod_file, filename))
+	{
+		PRINTK("1106 file not exist\n");
+		return 2;
+	}
+	//check the file
+	sprintf(eod_file, "./para/%s", filename);
+    intFile = fopen(eod_file, "rb");
+    if(intFile == NULL)
+    {
+        return 1;
+    }
+    //transfer head 1 + 38
+	fseek(intFile, 0, SEEK_END);
+	file_len = ftell(intFile);
+	fseek(intFile, 0, 0);
+   // fseek(intFile, 39, 0);	// not nead read
+    fread(&tpLocation1106.paratitle, sizeof(ParaTitle), 1, intFile);
+#ifdef	DEBUG_1106_PRINT
+	PRINTK("------1106---------\nformat:%02x source %02x length %08x type %02x%02x ver %04x createtime %02x%02x%02x%02x %02x%02x%02x \nstart %02x%02x%02x%02x offset %04x rfu %02x%02x%02x\n",
+			tpLocation1106.paratitle.format, tpLocation1106.paratitle.source, tpLocation1106.paratitle.length, tpLocation1106.paratitle.type[0], tpLocation1106.paratitle.type[1], tpLocation1106.paratitle.version,
+			tpLocation1106.paratitle.create_time[0], tpLocation1106.paratitle.create_time[1], tpLocation1106.paratitle.create_time[2], tpLocation1106.paratitle.create_time[3], tpLocation1106.paratitle.create_time[4], tpLocation1106.paratitle.create_time[5], tpLocation1106.paratitle.create_time[6],
+			tpLocation1106.paratitle.start_time[0], tpLocation1106.paratitle.start_time[1], tpLocation1106.paratitle.start_time[2], tpLocation1106.paratitle.start_time[3],
+			tpLocation1106.paratitle.section_number, tpLocation1106.paratitle.rfu[0], tpLocation1106.paratitle.rfu[1], tpLocation1106.paratitle.rfu[2]);
+#endif
+    
+    //增加判断保存的参数文件大小
+    if(tpLocation1106.paratitle.length != file_len)
+    {
+    	fclose(intFile);
+    	memset(&tpLocation1106.paratitle, 0x00, sizeof(ParaTitle));
+    	remove( eod_file );
+    	return 1;
+    }
+
+    if(tpLocation1106.paratitle.section_number == 0)
+    {
+    	fclose(intFile);
+    	return 1;
+    }
+    if(tpLocation1106.offset != NULL)
+    	free(tpLocation1106.offset);
+    tpLocation1106.offset = (section_offset *)malloc(sizeof(section_offset) * tpLocation1106.paratitle.section_number);
+    if(tpLocation1106.offset == NULL)
+    {
+    	fclose(intFile);
+    	return 1;
+    }
+    fread(tpLocation1106.offset, sizeof(section_offset), tpLocation1106.paratitle.section_number, intFile);
+#ifdef DEBUG_1106_PRINT
+    for(i = 0; i < tpLocation1106.paratitle.section_number; i++)
+    	PRINTK("start_pos %08x  section_rec %08x\n", tpLocation1106.offset[i].start_pos, tpLocation1106.offset[i].section_rec);
+#endif
+
+	fread(&tpLocation1106.Locations_val.Locationnumber, sizeof(long), 1, intFile);
+#ifdef DEBUG_1106_PRINT
+	PRINTK("location number %04x\n", tpLocation1106.Locations_val.Locationnumber);
+#endif
+	if(tpLocation1106.Locations_val.Location_val != NULL)
+		free(tpLocation1106.Locations_val.Location_val);
+	tpLocation1106.Locations_val.Location_val = (Location_t *)malloc(sizeof(Location_t) * tpLocation1106.Locations_val.Locationnumber);
+	
+	fread(tpLocation1106.Locations_val.Location_val, sizeof(Location_t), tpLocation1106.Locations_val.Locationnumber, intFile);
+#ifdef DEBUG_1106_PRINT
+	for(i = 0; i < tpLocation1106.Locations_val.Locationnumber; i++)
+		PRINTK("locationcode %08x name %s name %s istransfer %02x IsGate %02x farelocation %08x over %02x numberofsec %02x\n", 
+			tpLocation1106.Locations_val.Location_val[i].Location_Number, tpLocation1106.Locations_val.Location_val[i].LocationNamech, tpLocation1106.Locations_val.Location_val[i].LocationNameen,
+			tpLocation1106.Locations_val.Location_val[i].IsTransferStation, tpLocation1106.Locations_val.Location_val[i].IsGatedTransfer, tpLocation1106.Locations_val.Location_val[i].fareLocationNumber,
+			tpLocation1106.Locations_val.Location_val[i].OverrideFirstUseAtStationOfIssue, tpLocation1106.Locations_val.Location_val[i].Numberofsection);
+#endif
+	if(tpLocation1106.Locations_val.sectionnumber != 0)
+	{
+		for(i = 0; i < tpLocation1106.Locations_val.sectionnumber; i++)
+		{
+			if(tpLocation1106.Locations_val.SectionLocation_val[i].LocationNumber_Station != NULL)
+				free(tpLocation1106.Locations_val.SectionLocation_val[i].LocationNumber_Station);
+			tpLocation1106.Locations_val.SectionLocation_val[i].LocationNumber_Station = NULL;
+		}
+	}
+	fread(&tpLocation1106.Locations_val.sectionnumber, sizeof(long), 1, intFile);
+#ifdef	DEBUG_1106_PRINT
+	PRINTK("section number %08x\n", tpLocation1106.Locations_val.sectionnumber);
+#endif
+	tpLocation1106.Locations_val.SectionLocation_val = (SectionLocation_t *)malloc(sizeof(SectionLocation_t) * tpLocation1106.Locations_val.sectionnumber);
+	if(tpLocation1106.Locations_val.SectionLocation_val == NULL)
+	{
+		fclose(intFile);
+		return 1;
+	}
+	for(i = 0; i < tpLocation1106.Locations_val.sectionnumber; i++)
+	{
+		fread(&tpLocation1106.Locations_val.SectionLocation_val[i], sizeof(SectionLocation_t) - 4, 1, intFile);
+#ifdef	DEBUG_1106_PRINT
+		PRINTK("locationgroup %08x number %02x\n", tpLocation1106.Locations_val.SectionLocation_val[i].Location_Number_Group, tpLocation1106.Locations_val.SectionLocation_val[i].NumberofLocation);
+#endif		
+		tpLocation1106.Locations_val.SectionLocation_val[i].LocationNumber_Station = NULL;
+		if(tpLocation1106.Locations_val.SectionLocation_val[i].NumberofLocation != 0)
+		{
+			tpLocation1106.Locations_val.SectionLocation_val[i].LocationNumber_Station = (unsigned long *)malloc(sizeof(long) * tpLocation1106.Locations_val.SectionLocation_val[i].NumberofLocation);
+			fread(tpLocation1106.Locations_val.SectionLocation_val[i].LocationNumber_Station, sizeof(long), tpLocation1106.Locations_val.SectionLocation_val[i].NumberofLocation, intFile);
+#ifdef	DEBUG_1106_PRINT
+			for(j = 0; j < tpLocation1106.Locations_val.SectionLocation_val[i].NumberofLocation; j++)
+			{
+				PRINTK("%08x ", tpLocation1106.Locations_val.SectionLocation_val[i].LocationNumber_Station[j]);
+			}
+			PRINTK("\n");
+#endif			
+		}
+	}
+	
+	fread(&tpLocation1106.LocationNumberCodeMap_val.LocationNumberCodeMapnumber, sizeof(short), 1, intFile);
+#ifdef	DEBUG_1106_PRINT
+	PRINTK("mapnumber%06x\n", tpLocation1106.LocationNumberCodeMap_val.LocationNumberCodeMapnumber);
+#endif
+	if(tpLocation1106.LocationNumberCodeMap_val.LocationCard_val != NULL)
+		free(tpLocation1106.LocationNumberCodeMap_val.LocationCard_val);
+	tpLocation1106.LocationNumberCodeMap_val.LocationCard_val = (LocationCard_t *)malloc(sizeof(LocationCard_t) * tpLocation1106.LocationNumberCodeMap_val.LocationNumberCodeMapnumber);
+	if(tpLocation1106.LocationNumberCodeMap_val.LocationCard_val == NULL)
+	{
+		fclose(intFile);
+		return 1;
+	}
+	fread(tpLocation1106.LocationNumberCodeMap_val.LocationCard_val, sizeof(LocationCard_t), tpLocation1106.LocationNumberCodeMap_val.LocationNumberCodeMapnumber, intFile);
+#ifdef	DEBUG_1106_PRINT
+	for(i = 0; i < tpLocation1106.LocationNumberCodeMap_val.LocationNumberCodeMapnumber; i++)
+	{
+		PRINTK("locatonnumber %08x cardlocation %04x \n", 
+			tpLocation1106.LocationNumberCodeMap_val.LocationCard_val[i].LocationNumber, tpLocation1106.LocationNumberCodeMap_val.LocationCard_val[i].CardLocationCode);
+	}
+#endif
+
+	fread(&tpLocation1106.LocationCodeMap_val.LocationCodeMapnumber, sizeof(short), 1, intFile);
+#ifdef	DEBUG_1106_PRINT
+	PRINTK("location to card %04x \n", tpLocation1106.LocationCodeMap_val.LocationCodeMapnumber);
+#endif
+	if(tpLocation1106.LocationCodeMap_val.CardLocation_val != NULL)
+		free(tpLocation1106.LocationCodeMap_val.CardLocation_val);
+	tpLocation1106.LocationCodeMap_val.CardLocation_val = (CardLocation_t *)malloc(sizeof(CardLocation_t) * tpLocation1106.LocationCodeMap_val.LocationCodeMapnumber);
+	if(tpLocation1106.LocationCodeMap_val.CardLocation_val == NULL)
+	{
+		fclose(intFile);
+		return 1;
+	}
+	fread(tpLocation1106.LocationCodeMap_val.CardLocation_val, sizeof(CardLocation_t), tpLocation1106.LocationCodeMap_val.LocationCodeMapnumber, intFile);
+#ifdef	DEBUG_1106_PRINT
+	for(i = 0; i < tpLocation1106.LocationCodeMap_val.LocationCodeMapnumber; i++)
+	{
+		PRINTK("cardlocaton %04x location %08x\n", 
+			tpLocation1106.LocationCodeMap_val.CardLocation_val[i].CardLocationCode, tpLocation1106.LocationCodeMap_val.CardLocation_val[i].LocationNumber);
+	}
+#endif
+	fclose(intFile);
+    return 0;
+}
+
+
+long PACC_1107_Calendar()
+{
+FILE *intFile;
+long lngPosition, lngnum, file_len;
+char	filename[100], eod_file[100];
+long i, j, k;
+
+	memset(eod_file, 0x00, 100);
+	memset(filename, 0x00, 100);
+	sprintf(eod_file, "PARA.1107.");
+	if(0 != FileisExist("./para/", eod_file, filename))
+	{
+		PRINTK("1107 file not exist\n");
+		return 2;
+	}
+	//check the file
+	sprintf(eod_file, "./para/%s", filename);
+    intFile = fopen(eod_file, "rb");
+    if(intFile == NULL)
+    {
+        return 1;
+    }
+    //transfer head 1 + 38
+	fseek(intFile, 0, SEEK_END);
+	file_len = ftell(intFile);
+	fseek(intFile, 0, 0);
+    //fseek(intFile, 39, 0);		//not nead read 
+    fread(&tpCalendar1107.paratitle, sizeof(ParaTitle), 1, intFile);
+#ifdef	DEBUG_1107_PRINT
+	PRINTK("------1107---------\nformat:%02x source %02x length %08x type %02x%02x ver %04x createtime %02x%02x%02x%02x %02x%02x%02x \nstart %02x%02x%02x%02x offset %04x rfu %02x%02x%02x\n",
+			tpCalendar1107.paratitle.format, tpCalendar1107.paratitle.source, tpCalendar1107.paratitle.length, tpCalendar1107.paratitle.type[0], tpCalendar1107.paratitle.type[1], tpCalendar1107.paratitle.version,
+			tpCalendar1107.paratitle.create_time[0], tpCalendar1107.paratitle.create_time[1], tpCalendar1107.paratitle.create_time[2], tpCalendar1107.paratitle.create_time[3], tpCalendar1107.paratitle.create_time[4], tpCalendar1107.paratitle.create_time[5], tpCalendar1107.paratitle.create_time[6],
+			tpCalendar1107.paratitle.start_time[0], tpCalendar1107.paratitle.start_time[1], tpCalendar1107.paratitle.start_time[2], tpCalendar1107.paratitle.start_time[3],
+			tpCalendar1107.paratitle.section_number, tpCalendar1107.paratitle.rfu[0], tpCalendar1107.paratitle.rfu[1], tpCalendar1107.paratitle.rfu[2]);
+#endif
+    
+    //增加判断保存的参数文件大小
+    if(tpCalendar1107.paratitle.length != file_len)
+    {
+    	fclose(intFile);
+    	memset(&tpCalendar1107.paratitle, 0x00, sizeof(ParaTitle));
+    	remove( eod_file );
+    	return 1;
+    }
+
+    if(tpCalendar1107.paratitle.section_number == 0)
+    {
+    	fclose(intFile);
+    	return 1;
+    }
+    if(tpCalendar1107.offset != NULL)
+    	free(tpCalendar1107.offset);
+    tpCalendar1107.offset = (section_offset *)malloc(sizeof(section_offset) * tpCalendar1107.paratitle.section_number);
+    if(tpCalendar1107.offset == NULL)
+    {
+    	fclose(intFile);
+    	return 1;
+    }
+    fread(tpCalendar1107.offset, sizeof(section_offset), tpCalendar1107.paratitle.section_number, intFile);
+#ifdef DEBUG_1107_PRINT
+    for(i = 0; i < tpCalendar1107.paratitle.section_number; i++)
+    	PRINTK("start_pos %08x  section_rec %08x\n", tpCalendar1107.offset[i].start_pos, tpCalendar1107.offset[i].section_rec);
+#endif
+
+	if(tpCalendar1107.Calendars_val.calendarnumber != 0)
+	{
+		for(i = 0; i < tpCalendar1107.Calendars_val.calendarnumber; i++)
+		{
+			if(tpCalendar1107.Calendars_val.Calendar_val[i].DateTypeId_val != NULL)
+				free(tpCalendar1107.Calendars_val.Calendar_val[i].DateTypeId_val);
+			tpCalendar1107.Calendars_val.Calendar_val[i].DateTypeId_val = NULL;
+		}
+	}
+
+	fread(&tpCalendar1107.Calendars_val.calendarnumber, sizeof(short), 1, intFile);
+#ifdef DEBUG_1107_PRINT
+	PRINTK("calendar number %04x\n", tpCalendar1107.Calendars_val.calendarnumber);
+#endif
+	if(tpCalendar1107.Calendars_val.Calendar_val != NULL)
+		free(tpCalendar1107.Calendars_val.Calendar_val);
+	tpCalendar1107.Calendars_val.Calendar_val = (Calendar_t *)malloc(sizeof(Calendar_t) * tpCalendar1107.Calendars_val.calendarnumber);
+	for(i = 0; i < tpCalendar1107.Calendars_val.calendarnumber; i++)
+	{
+		fread(&tpCalendar1107.Calendars_val.Calendar_val[i], sizeof(Calendar_t) - 4, 1, intFile);
+#ifdef DEBUG_1107_PRINT
+		PRINTK("calendarid %04x calendarnuber %04x\n", 
+				tpCalendar1107.Calendars_val.Calendar_val[i].calendarId, 
+				tpCalendar1107.Calendars_val.Calendar_val[i].calendardatenumber);
+#endif
+		tpCalendar1107.Calendars_val.Calendar_val[i].DateTypeId_val = NULL;
+		if(tpCalendar1107.Calendars_val.Calendar_val[i].calendardatenumber != 0)
+		{
+			tpCalendar1107.Calendars_val.Calendar_val[i].DateTypeId_val = (DateTypeId_t *)malloc(sizeof(DateTypeId_t) * tpCalendar1107.Calendars_val.Calendar_val[i].calendardatenumber);
+			if(tpCalendar1107.Calendars_val.Calendar_val[i].DateTypeId_val == NULL)
+			{
+				fclose(intFile);
+				return 1;
+			}
+			fread(tpCalendar1107.Calendars_val.Calendar_val[i].DateTypeId_val, sizeof(DateTypeId_t), tpCalendar1107.Calendars_val.Calendar_val[i].calendardatenumber, intFile);
+#ifdef	DEBUG_1107_PRINT
+			for(j = 0; j < tpCalendar1107.Calendars_val.Calendar_val[i].calendardatenumber; j++)
+			{
+				PRINTK("date %02x%02x%02x%02x dateypeid %04x\n", 
+					tpCalendar1107.Calendars_val.Calendar_val[i].DateTypeId_val[j].calendardate[0], tpCalendar1107.Calendars_val.Calendar_val[i].DateTypeId_val[j].calendardate[1],
+					tpCalendar1107.Calendars_val.Calendar_val[i].DateTypeId_val[j].calendardate[2], tpCalendar1107.Calendars_val.Calendar_val[i].DateTypeId_val[j].calendardate[3],
+					tpCalendar1107.Calendars_val.Calendar_val[i].DateTypeId_val[j].datetypeId);
+			}
+#endif
+		}
+	}
+	
+	if(tpCalendar1107.DateTimes_val.calendartypenumber != 0)
+	{
+		for(i = 0; i < tpCalendar1107.DateTimes_val.calendartypenumber; i++)
+		{
+			if(tpCalendar1107.DateTimes_val.DateTime_val[i].Time_val != NULL)
+				free(tpCalendar1107.DateTimes_val.DateTime_val[i].Time_val);
+			tpCalendar1107.DateTimes_val.DateTime_val[i].Time_val = NULL;
+		}
+	}
+	fread(&tpCalendar1107.DateTimes_val.calendartypenumber, sizeof(char), 1, intFile);
+#ifdef	DEBUG_1107_PRINT
+	PRINTK("calendartypenumber %02x\n", tpCalendar1107.DateTimes_val.calendartypenumber);
+#endif
+	if(tpCalendar1107.DateTimes_val.DateTime_val != NULL)
+		free(tpCalendar1107.DateTimes_val.DateTime_val);
+	
+	tpCalendar1107.DateTimes_val.DateTime_val = (DateTime_t *)malloc(sizeof(DateTime_t) * tpCalendar1107.DateTimes_val.calendartypenumber);
+	for(i = 0; i < tpCalendar1107.DateTimes_val.calendartypenumber; i++)
+	{
+		fread(&tpCalendar1107.DateTimes_val.DateTime_val[i], sizeof(DateTime_t) - 4, 1, intFile);
+#ifdef	DEBUG_1107_PRINT
+		PRINTK("dateypeid %04x timecodenumber %02x \n",
+			tpCalendar1107.DateTimes_val.DateTime_val[i].datetypeId, tpCalendar1107.DateTimes_val.DateTime_val[i].timecodenumber);
+#endif
+		tpCalendar1107.DateTimes_val.DateTime_val[i].Time_val = NULL;
+		if(tpCalendar1107.DateTimes_val.DateTime_val[i].timecodenumber != 0)
+		{
+			tpCalendar1107.DateTimes_val.DateTime_val[i].Time_val = (Time_t *)malloc(sizeof(Time_t) * tpCalendar1107.DateTimes_val.DateTime_val[i].timecodenumber);
+			if(tpCalendar1107.DateTimes_val.DateTime_val[i].Time_val == NULL)
+			{
+				fclose(intFile);
+				return 1;
+			}
+			fread(tpCalendar1107.DateTimes_val.DateTime_val[i].Time_val, sizeof(Time_t), tpCalendar1107.DateTimes_val.DateTime_val[i].timecodenumber, intFile);
+#ifdef	DEBUG_1107_PRINT
+			for(j = 0; j < tpCalendar1107.DateTimes_val.DateTime_val[i].timecodenumber; j++)
+			{
+				PRINTK("endtime %02x%02x TimeCodeID %02x\n", 
+					tpCalendar1107.DateTimes_val.DateTime_val[i].Time_val[j].endtime[0], 
+					tpCalendar1107.DateTimes_val.DateTime_val[i].Time_val[j].endtime[1],
+					tpCalendar1107.DateTimes_val.DateTime_val[i].Time_val[j].timeCodeId);
+			}
+#endif			
+		}
+	}
+	fclose(intFile);
+    return 0;
+}
+
+
+long PACC_1108_FareTable()
+{
+FILE *intFile;
+long lngPosition, lngnum, file_len;
+char	filename[100], eod_file[100];
+long i, j, k;
+
+	memset(eod_file, 0x00, 100);
+	memset(filename, 0x00, 100);
+	sprintf(eod_file, "PARA.1108.");
+	if(0 != FileisExist("./para/", eod_file, filename))
+	{
+		PRINTK("1108 file not exist\n");
+		return 2;
+	}
+	//check the file
+	sprintf(eod_file, "./para/%s", filename);
+    intFile = fopen(eod_file, "rb");
+    if(intFile == NULL)
+    {
+    	PRINTK("1108 file open failure\n");
+        return 1;
+    }
+    //transfer head 1 + 38
+	fseek(intFile, 0, SEEK_END);
+	file_len = ftell(intFile);
+	fseek(intFile, 0, 0);
+    //fseek(intFile, 39, 0);		//not nead read
+    fread(&tpFareTable1108.paratitle, sizeof(ParaTitle), 1, intFile);
+#ifdef	DEBUG_1108_PRINT
+	PRINTK("------1108---------\nformat:%02x source %02x length %08x type %02x%02x ver %04x createtime %02x%02x%02x%02x %02x%02x%02x \nstart %02x%02x%02x%02x offset %04x rfu %02x%02x%02x\n",
+			tpFareTable1108.paratitle.format, tpFareTable1108.paratitle.source, tpFareTable1108.paratitle.length, tpFareTable1108.paratitle.type[0], tpFareTable1108.paratitle.type[1], tpFareTable1108.paratitle.version,
+			tpFareTable1108.paratitle.create_time[0], tpFareTable1108.paratitle.create_time[1], tpFareTable1108.paratitle.create_time[2], tpFareTable1108.paratitle.create_time[3], tpFareTable1108.paratitle.create_time[4], tpFareTable1108.paratitle.create_time[5], tpFareTable1108.paratitle.create_time[6],
+			tpFareTable1108.paratitle.start_time[0], tpFareTable1108.paratitle.start_time[1], tpFareTable1108.paratitle.start_time[2], tpFareTable1108.paratitle.start_time[3],
+			tpFareTable1108.paratitle.section_number, tpFareTable1108.paratitle.rfu[0], tpFareTable1108.paratitle.rfu[1], tpFareTable1108.paratitle.rfu[2]);
+#endif
+    
+    //增加判断保存的参数文件大小
+    if(tpFareTable1108.paratitle.length != file_len)
+    {
+    	fclose(intFile);
+    	memset(&tpFareTable1108.paratitle, 0x00, sizeof(ParaTitle));
+    	remove( eod_file );
+    	return 1;
+    }
+
+    if(tpFareTable1108.paratitle.section_number == 0)
+    {
+    	fclose(intFile);
+    	return 1;
+    }
+    if(tpFareTable1108.offset != NULL)
+    	free(tpFareTable1108.offset);
+    tpFareTable1108.offset = (section_offset *)malloc(sizeof(section_offset) * tpFareTable1108.paratitle.section_number);
+    if(tpFareTable1108.offset == NULL)
+    {
+    	fclose(intFile);
+    	return 1;
+    }
+    fread(tpFareTable1108.offset, sizeof(section_offset), tpFareTable1108.paratitle.section_number, intFile);
+#ifdef DEBUG_1108_PRINT
+    for(i = 0; i < tpFareTable1108.paratitle.section_number; i++)
+    	PRINTK("start_pos %08x  section_rec %08x\n", tpFareTable1108.offset[i].start_pos, tpFareTable1108.offset[i].section_rec);
+#endif
+
+	if(tpFareTable1108.FareTableMatrix_val.FareTableMatrixnumber != 0)
+	{
+		if(tpFareTable1108.FareTableMatrix_val.FareTableID_val != NULL)
+			free(tpFareTable1108.FareTableMatrix_val.FareTableID_val);
+		for(i = 0; i < tpFareTable1108.FareTableMatrix_val.FareTableMatrixnumber; i++)
+		{
+			if(tpFareTable1108.FareTableMatrix_val.FareTable_val[i].FareSetID != NULL)
+				free(tpFareTable1108.FareTableMatrix_val.FareTable_val[i].FareSetID);
+			tpFareTable1108.FareTableMatrix_val.FareTable_val[i].FareSetID = NULL;
+			if(tpFareTable1108.FareTableMatrix_val.FareTable_val[i].FareCode != NULL)
+				free(tpFareTable1108.FareTableMatrix_val.FareTable_val[i].FareCode);
+			tpFareTable1108.FareTableMatrix_val.FareTable_val[i].FareCode = NULL;
+			if(tpFareTable1108.FareTableMatrix_val.FareTable_val[i].FarePrice != NULL)
+				free(tpFareTable1108.FareTableMatrix_val.FareTable_val[i].FarePrice);
+			tpFareTable1108.FareTableMatrix_val.FareTable_val[i].FarePrice = NULL;
+		}
+		if(tpFareTable1108.FareTableMatrix_val.FareTable_val != NULL)
+			free(tpFareTable1108.FareTableMatrix_val.FareTable_val);
+		tpFareTable1108.FareTableMatrix_val.FareTable_val = NULL;
+	}
+
+	fread(&tpFareTable1108.FareTableMatrix_val.FareTableMatrixnumber, sizeof(short), 1, intFile);
+#ifdef DEBUG_1108_PRINT
+	PRINTK("FareTable number %04x\n", tpFareTable1108.FareTableMatrix_val.FareTableMatrixnumber);
+#endif
+	tpFareTable1108.FareTableMatrix_val.FareTableID_val = (FareTableID_t *)malloc(sizeof(FareTable_t) * tpFareTable1108.FareTableMatrix_val.FareTableMatrixnumber);
+	if(tpFareTable1108.FareTableMatrix_val.FareTableID_val == NULL)
+	{
+		fclose(intFile);
+		return 1;
+	}
+	fread(tpFareTable1108.FareTableMatrix_val.FareTableID_val, sizeof(FareTableID_t), tpFareTable1108.FareTableMatrix_val.FareTableMatrixnumber, intFile);
+#ifdef	DEBUG_1108_PRINT
+	for(i = 0; i < tpFareTable1108.FareTableMatrix_val.FareTableMatrixnumber; i++)
+	{
+		PRINTK("faretableid %04x offset %08x \n", 
+			tpFareTable1108.FareTableMatrix_val.FareTableID_val[i].FaretableID, 
+			tpFareTable1108.FareTableMatrix_val.FareTableID_val[i].offset);
+	}
+#endif
+	tpFareTable1108.FareTableMatrix_val.FareTable_val = (FareTable_t *)malloc(sizeof(FareTable_t) * tpFareTable1108.FareTableMatrix_val.FareTableMatrixnumber);
+	for(i = 0; i < tpFareTable1108.FareTableMatrix_val.FareTableMatrixnumber; i++)
+	{
+		fread(&tpFareTable1108.FareTableMatrix_val.FareTable_val[i], sizeof(FareTable_t) - 12 - sizeof(short), 1, intFile);
+#ifdef	DEBUG_1108_PRINT
+		PRINTK("faretableid %04x min %08x max %08x fareset number %02x\n",
+			tpFareTable1108.FareTableMatrix_val.FareTable_val[i].FaretableID,
+			tpFareTable1108.FareTableMatrix_val.FareTable_val[i].minFare,
+			tpFareTable1108.FareTableMatrix_val.FareTable_val[i].maxFare,
+			tpFareTable1108.FareTableMatrix_val.FareTable_val[i].NumberofFareSet);
+#endif
+		tpFareTable1108.FareTableMatrix_val.FareTable_val[i].FareSetID = NULL;
+		if(tpFareTable1108.FareTableMatrix_val.FareTable_val[i].NumberofFareSet != 0)
+		{
+			tpFareTable1108.FareTableMatrix_val.FareTable_val[i].FareSetID = (unsigned char *)malloc(sizeof(char) * tpFareTable1108.FareTableMatrix_val.FareTable_val[i].NumberofFareSet);
+			if(tpFareTable1108.FareTableMatrix_val.FareTable_val[i].FareSetID == NULL)
+			{
+				fclose(intFile);
+				return 1;
+			}
+			fread(tpFareTable1108.FareTableMatrix_val.FareTable_val[i].FareSetID, sizeof(char), tpFareTable1108.FareTableMatrix_val.FareTable_val[i].NumberofFareSet, intFile);
+#ifdef 	DEBUG_1108_PRINT
+			for(j = 0; j < tpFareTable1108.FareTableMatrix_val.FareTable_val[i].NumberofFareSet; j++)
+			{
+				PRINTK("faresetid %02x ", tpFareTable1108.FareTableMatrix_val.FareTable_val[i].FareSetID[j]);
+			}
+			PRINTK("\n");
+#endif
+		}
+
+		fread(&tpFareTable1108.FareTableMatrix_val.FareTable_val[i].NumberofFareCode, sizeof(short), 1, intFile);
+#ifdef	DEBUG_1108_PRINT
+		PRINTK("farecode number %04x\n", tpFareTable1108.FareTableMatrix_val.FareTable_val[i].NumberofFareCode);
+#endif		
+		tpFareTable1108.FareTableMatrix_val.FareTable_val[i].FareCode = NULL;
+		if(tpFareTable1108.FareTableMatrix_val.FareTable_val[i].NumberofFareCode != 0)
+		{
+			tpFareTable1108.FareTableMatrix_val.FareTable_val[i].FareCode = (unsigned short *)malloc(sizeof(short) * tpFareTable1108.FareTableMatrix_val.FareTable_val[i].NumberofFareCode);
+			if(tpFareTable1108.FareTableMatrix_val.FareTable_val[i].FareCode == NULL)
+			{
+				fclose(intFile);
+				return 1;
+			}
+			fread(tpFareTable1108.FareTableMatrix_val.FareTable_val[i].FareCode, sizeof(short), tpFareTable1108.FareTableMatrix_val.FareTable_val[i].NumberofFareCode, intFile);
+#ifdef	DEBUG_1108_PRINT
+			for(j = 0; j < tpFareTable1108.FareTableMatrix_val.FareTable_val[i].NumberofFareCode; j++)
+			{
+				PRINTK("farecode %04x  ", tpFareTable1108.FareTableMatrix_val.FareTable_val[i].FareCode[j]);
+			}
+			PRINTK("\n");
+#endif			
+		}
+		tpFareTable1108.FareTableMatrix_val.FareTable_val[i].FarePrice = NULL;
+		if((tpFareTable1108.FareTableMatrix_val.FareTable_val[i].NumberofFareSet != 0) &&
+			(tpFareTable1108.FareTableMatrix_val.FareTable_val[i].NumberofFareCode != 0))
+		{
+			tpFareTable1108.FareTableMatrix_val.FareTable_val[i].FarePrice = (unsigned long *)malloc(sizeof(long) * tpFareTable1108.FareTableMatrix_val.FareTable_val[i].NumberofFareCode * tpFareTable1108.FareTableMatrix_val.FareTable_val[i].NumberofFareSet);
+			if(tpFareTable1108.FareTableMatrix_val.FareTable_val[i].FarePrice == NULL)
+			{
+				fclose(intFile);
+				return 1;
+			}
+			fread(tpFareTable1108.FareTableMatrix_val.FareTable_val[i].FarePrice, sizeof(long), tpFareTable1108.FareTableMatrix_val.FareTable_val[i].NumberofFareCode * tpFareTable1108.FareTableMatrix_val.FareTable_val[i].NumberofFareSet, intFile);
+#ifdef	DEBUG_1108_PRINT
+			for(j = 0; j < tpFareTable1108.FareTableMatrix_val.FareTable_val[i].NumberofFareCode; j++)
+			{
+				PRINTK("farecode %02x:", j);
+				for(k = 0; k < tpFareTable1108.FareTableMatrix_val.FareTable_val[i].NumberofFareSet; k++)
+				{
+					PRINTK("%08x ", tpFareTable1108.FareTableMatrix_val.FareTable_val[i].FarePrice[j * tpFareTable1108.FareTableMatrix_val.FareTable_val[i].NumberofFareSet + k]);
+				}
+				PRINTK("\n");
+			}
+#endif
+		}
+	}
+	
+	if(tpFareTable1108.FarePatternMatrix_val.FarePatternMatrixnumber != 0)
+	{
+		if(tpFareTable1108.FarePatternMatrix_val.FarepatternOffset_val != NULL)
+			free(tpFareTable1108.FarePatternMatrix_val.FarepatternOffset_val);
+		tpFareTable1108.FarePatternMatrix_val.FarepatternOffset_val = NULL;
+		
+		for(i = 0; i < tpFareTable1108.FarePatternMatrix_val.FarePatternMatrixnumber; i++)
+		{
+			if(tpFareTable1108.FarePatternMatrix_val.Farepattern_val[i].TimeCode != NULL)
+				free(tpFareTable1108.FarePatternMatrix_val.Farepattern_val[i].TimeCode);
+			tpFareTable1108.FarePatternMatrix_val.Farepattern_val[i].TimeCode = NULL;
+			if(tpFareTable1108.FarePatternMatrix_val.Farepattern_val[i].FarePassengerTimecode_val != NULL)
+				free(tpFareTable1108.FarePatternMatrix_val.Farepattern_val[i].FarePassengerTimecode_val);
+			tpFareTable1108.FarePatternMatrix_val.Farepattern_val[i].FarePassengerTimecode_val = NULL;
+		}
+		if(tpFareTable1108.FarePatternMatrix_val.Farepattern_val != NULL)
+			free(tpFareTable1108.FarePatternMatrix_val.Farepattern_val);
+		tpFareTable1108.FarePatternMatrix_val.Farepattern_val = NULL;
+	}
+	fread(&tpFareTable1108.FarePatternMatrix_val.FarePatternMatrixnumber, sizeof(short), 1, intFile);
+#ifdef	DEBUG_1108_PRINT
+	PRINTK("FarePattern number %04x\n", tpFareTable1108.FarePatternMatrix_val.FarePatternMatrixnumber);
+#endif
+	if(tpFareTable1108.FarePatternMatrix_val.FarePatternMatrixnumber != 0)
+	{
+		tpFareTable1108.FarePatternMatrix_val.FarepatternOffset_val = (FarepatternOffset_t *)malloc(sizeof(FarepatternOffset_t) * tpFareTable1108.FarePatternMatrix_val.FarePatternMatrixnumber);
+		if(tpFareTable1108.FarePatternMatrix_val.FarepatternOffset_val == NULL)
+		{
+			fclose(intFile);
+			return 1;
+		}
+		fread(tpFareTable1108.FarePatternMatrix_val.FarepatternOffset_val, sizeof(FarepatternOffset_t), tpFareTable1108.FarePatternMatrix_val.FarePatternMatrixnumber, intFile);
+#ifdef	DEBUG_1108_PRINT
+		for(i = 0; i < tpFareTable1108.FarePatternMatrix_val.FarePatternMatrixnumber; i++)
+		{
+			PRINTK("farepatternid %04x offset %08x\n", 
+				tpFareTable1108.FarePatternMatrix_val.FarepatternOffset_val[i].FarepatternID,
+				tpFareTable1108.FarePatternMatrix_val.FarepatternOffset_val[i].offset);
+		}
+#endif		
+		tpFareTable1108.FarePatternMatrix_val.Farepattern_val = (Farepattern_t *)malloc(sizeof(Farepattern_t) * tpFareTable1108.FarePatternMatrix_val.FarePatternMatrixnumber);
+		if(tpFareTable1108.FarePatternMatrix_val.Farepattern_val == NULL)
+		{
+			fclose(intFile);
+			return 1;
+		}
+		for(i = 0; i < tpFareTable1108.FarePatternMatrix_val.FarePatternMatrixnumber; i++)
+		{
+			fread(&tpFareTable1108.FarePatternMatrix_val.Farepattern_val[i], sizeof(Farepattern_t) - 8, 1, intFile);
+#ifdef	DEBUG_1108_PRINT
+			PRINTK("farepatternid %04x timecodenumber %02x \n", 
+				tpFareTable1108.FarePatternMatrix_val.Farepattern_val[i].FarepatternID,
+				tpFareTable1108.FarePatternMatrix_val.Farepattern_val[i].Timecodenumbers);
+#endif
+			tpFareTable1108.FarePatternMatrix_val.Farepattern_val[i].TimeCode = NULL;
+			tpFareTable1108.FarePatternMatrix_val.Farepattern_val[i].FarePassengerTimecode_val = NULL;
+			if(tpFareTable1108.FarePatternMatrix_val.Farepattern_val[i].Timecodenumbers != 0)
+			{
+				tpFareTable1108.FarePatternMatrix_val.Farepattern_val[i].TimeCode = (unsigned char *)malloc(sizeof(char) * tpFareTable1108.FarePatternMatrix_val.Farepattern_val[i].Timecodenumbers);
+				if(tpFareTable1108.FarePatternMatrix_val.Farepattern_val[i].TimeCode == NULL)
+				{
+					fclose(intFile);
+					return 1;
+				}
+				fread(tpFareTable1108.FarePatternMatrix_val.Farepattern_val[i].TimeCode, sizeof(char), tpFareTable1108.FarePatternMatrix_val.Farepattern_val[i].Timecodenumbers, intFile);
+#ifdef	DEBUG_1108_PRINT
+				for(j = 0; j < tpFareTable1108.FarePatternMatrix_val.Farepattern_val[i].Timecodenumbers; j++)
+				{
+					PRINTK("timecode %02x ", tpFareTable1108.FarePatternMatrix_val.Farepattern_val[i].TimeCode[j]);
+				}
+				PRINTK("\n");
+#endif
+				tpFareTable1108.FarePatternMatrix_val.Farepattern_val[i].FarePassengerTimecode_val = (FarePassengerTimecode_t *)malloc(sizeof(FarePassengerTimecode_t) * tpFareTable1108.FarePatternMatrix_val.Farepattern_val[i].Timecodenumbers);
+				if(tpFareTable1108.FarePatternMatrix_val.Farepattern_val[i].FarePassengerTimecode_val == NULL)
+				{
+					fclose(intFile);
+					return 1;
+				}
+				fread(tpFareTable1108.FarePatternMatrix_val.Farepattern_val[i].FarePassengerTimecode_val, sizeof(FarePassengerTimecode_t), tpFareTable1108.FarePatternMatrix_val.Farepattern_val[i].Timecodenumbers, intFile);
+#ifdef	DEBUG_1108_PRINT
+				for(j = 0; j < tpFareTable1108.FarePatternMatrix_val.Farepattern_val[i].Timecodenumbers; j++)
+				{
+					PRINTK("adult %02x children %02x old %02x student %02x soldier %02x disable %02x emploeyy %02x \n", 
+						tpFareTable1108.FarePatternMatrix_val.Farepattern_val[i].FarePassengerTimecode_val[j].AdultFareSetID,
+						tpFareTable1108.FarePatternMatrix_val.Farepattern_val[i].FarePassengerTimecode_val[j].ChildrenFareSetID,
+						tpFareTable1108.FarePatternMatrix_val.Farepattern_val[i].FarePassengerTimecode_val[j].OldFareSetID,
+						tpFareTable1108.FarePatternMatrix_val.Farepattern_val[i].FarePassengerTimecode_val[j].StudentFareSetID,
+						tpFareTable1108.FarePatternMatrix_val.Farepattern_val[i].FarePassengerTimecode_val[j].SoldierFareSetID,
+						tpFareTable1108.FarePatternMatrix_val.Farepattern_val[i].FarePassengerTimecode_val[j].DisabledFareSetID,
+						tpFareTable1108.FarePatternMatrix_val.Farepattern_val[i].FarePassengerTimecode_val[j].EmployeeFareSetID);
+				}
+#endif
+			}
+		}
+	}
+	
+	if(tpFareTable1108.FareCodeMatrix_val.FareCodeMatrixnumber != 0)
+	{
+		if(tpFareTable1108.FareCodeMatrix_val.FareCodeMatrixOffset_val != NULL)
+			free(tpFareTable1108.FareCodeMatrix_val.FareCodeMatrixOffset_val);
+		tpFareTable1108.FareCodeMatrix_val.FareCodeMatrixOffset_val = NULL;
+		for(i = 0; i < tpFareTable1108.FareCodeMatrix_val.FareCodeMatrixnumber; i++)
+		{
+			if(tpFareTable1108.FareCodeMatrix_val.FareCode_val[i].locationcode != NULL)
+				free(tpFareTable1108.FareCodeMatrix_val.FareCode_val[i].locationcode);
+			tpFareTable1108.FareCodeMatrix_val.FareCode_val[i].locationcode = NULL;
+			if(tpFareTable1108.FareCodeMatrix_val.FareCode_val[i].FareCode != NULL)
+				free(tpFareTable1108.FareCodeMatrix_val.FareCode_val[i].FareCode);
+			tpFareTable1108.FareCodeMatrix_val.FareCode_val[i].FareCode = NULL;
+		}
+		if(tpFareTable1108.FareCodeMatrix_val.FareCode_val != NULL)
+			free(tpFareTable1108.FareCodeMatrix_val.FareCode_val);
+		tpFareTable1108.FareCodeMatrix_val.FareCode_val = NULL;
+	}
+	fread(&tpFareTable1108.FareCodeMatrix_val.FareCodeMatrixnumber, sizeof(short), 1, intFile);
+#ifdef	DEBUG_1108_PRINT
+	PRINTK("farecode number %04x \n", tpFareTable1108.FareCodeMatrix_val.FareCodeMatrixnumber);
+#endif
+	if(tpFareTable1108.FareCodeMatrix_val.FareCodeMatrixnumber != 0)
+	{
+		tpFareTable1108.FareCodeMatrix_val.FareCodeMatrixOffset_val = (FareCodeMatrixOffset_t *)malloc(sizeof(FareCodeMatrixOffset_t) * tpFareTable1108.FareCodeMatrix_val.FareCodeMatrixnumber);
+		if(tpFareTable1108.FareCodeMatrix_val.FareCodeMatrixOffset_val == NULL)
+		{
+			fclose(intFile);
+			return 1;
+		}
+		fread(tpFareTable1108.FareCodeMatrix_val.FareCodeMatrixOffset_val, sizeof(FareCodeMatrixOffset_t), tpFareTable1108.FareCodeMatrix_val.FareCodeMatrixnumber, intFile);
+#ifdef	DEBUG_1108_PRINT
+		for(i = 0; i < tpFareTable1108.FareCodeMatrix_val.FareCodeMatrixnumber; i++)
+		{
+			PRINTK("farecode id %04x offset %08x \n", 
+				tpFareTable1108.FareCodeMatrix_val.FareCodeMatrixOffset_val[i].FareCodeMatrixId,
+				tpFareTable1108.FareCodeMatrix_val.FareCodeMatrixOffset_val[i].offset);
+		}
+#endif		
+		tpFareTable1108.FareCodeMatrix_val.FareCode_val = (FareCode_t *)malloc(sizeof(FareCode_t) * tpFareTable1108.FareCodeMatrix_val.FareCodeMatrixnumber);
+		if(tpFareTable1108.FareCodeMatrix_val.FareCode_val == NULL)
+		{
+			fclose(intFile);
+			return 1;
+		}
+		for(i = 0; i < tpFareTable1108.FareCodeMatrix_val.FareCodeMatrixnumber; i++)
+		{
+			fread(&tpFareTable1108.FareCodeMatrix_val.FareCode_val[i], sizeof(FareCode_t) - 8, 1, intFile);
+#ifdef	DEBUG_1108_PRINT
+			PRINTK("farecode id %04x stationnumber %04x\n", 
+				tpFareTable1108.FareCodeMatrix_val.FareCode_val[i].FareCodeMatrixId,
+				tpFareTable1108.FareCodeMatrix_val.FareCode_val[i].stationnumber);
+#endif
+			tpFareTable1108.FareCodeMatrix_val.FareCode_val[i].locationcode = NULL;
+			tpFareTable1108.FareCodeMatrix_val.FareCode_val[i].FareCode = NULL;
+			if(tpFareTable1108.FareCodeMatrix_val.FareCode_val[i].stationnumber != 0)
+			{
+				tpFareTable1108.FareCodeMatrix_val.FareCode_val[i].locationcode = (unsigned long *)malloc(sizeof(long) * tpFareTable1108.FareCodeMatrix_val.FareCode_val[i].stationnumber);
+				if(tpFareTable1108.FareCodeMatrix_val.FareCode_val[i].locationcode == NULL)
+				{
+					fclose(intFile);
+					return 1;
+				}
+				fread(tpFareTable1108.FareCodeMatrix_val.FareCode_val[i].locationcode, sizeof(long), tpFareTable1108.FareCodeMatrix_val.FareCode_val[i].stationnumber, intFile);
+#ifdef	DEBUG_1108_PRINT
+				for(j = 0; j < tpFareTable1108.FareCodeMatrix_val.FareCode_val[i].stationnumber; j++)
+				{
+					PRINTK("%08x ", tpFareTable1108.FareCodeMatrix_val.FareCode_val[i].locationcode[j]);
+				}
+				PRINTK("\n");
+#endif
+				tpFareTable1108.FareCodeMatrix_val.FareCode_val[i].FareCode = (unsigned short *)malloc(sizeof(short) * tpFareTable1108.FareCodeMatrix_val.FareCode_val[i].stationnumber * tpFareTable1108.FareCodeMatrix_val.FareCode_val[i].stationnumber);
+				if(tpFareTable1108.FareCodeMatrix_val.FareCode_val[i].FareCode == NULL)
+				{
+					fclose(intFile);
+					return 1;
+				}
+				fread(tpFareTable1108.FareCodeMatrix_val.FareCode_val[i].FareCode, sizeof(short), tpFareTable1108.FareCodeMatrix_val.FareCode_val[i].stationnumber * tpFareTable1108.FareCodeMatrix_val.FareCode_val[i].stationnumber, intFile);
+#ifdef	DEBUG_1108_PRINT
+				for(j = 0; j < tpFareTable1108.FareCodeMatrix_val.FareCode_val[i].stationnumber; j++)
+				{
+					for(k = 0; k < tpFareTable1108.FareCodeMatrix_val.FareCode_val[i].stationnumber; k++)
+					{
+						PRINTK("%04x ", tpFareTable1108.FareCodeMatrix_val.FareCode_val[i].FareCode[j * tpFareTable1108.FareCodeMatrix_val.FareCode_val[i].stationnumber + k]);
+					}
+					PRINTK("\n");
+				}
+#endif
+			}
+		}
+	}
+	fclose(intFile);
+    return 0;
+}
+
+long PACC_1109_SaleTable()
+{
+FILE *intFile;
+long lngPosition, lngnum, file_len;
+char	filename[100], eod_file[100];
+long i, j, k;
+
+	memset(eod_file, 0x00, 100);
+	memset(filename, 0x00, 100);
+	sprintf(eod_file, "PARA.1109.");
+	if(0 != FileisExist("./para/", eod_file, filename))
+	{
+		PRINTK("1109 file not exist\n");
+		return 2;
+	}
+	//check the file
+	sprintf(eod_file, "./para/%s", filename);
+    intFile = fopen(eod_file, "rb");
+    if(intFile == NULL)
+    {
+    	PRINTK("1109 file open failure\n");
+        return 1;
+    }
+    //transfer head 1 + 38
+	fseek(intFile, 0, SEEK_END);
+	file_len = ftell(intFile);
+	fseek(intFile, 0, 0);
+    //fseek(intFile, 39, 0);
+    fread(&tpSaleTable1109.paratitle, sizeof(ParaTitle), 1, intFile);
+#ifdef	DEBUG_1109_PRINT
+	PRINTK("------1109---------\nformat:%02x source %02x length %08x type %02x%02x ver %04x createtime %02x%02x%02x%02x %02x%02x%02x \nstart %02x%02x%02x%02x offset %04x rfu %02x%02x%02x\n",
+			tpSaleTable1109.paratitle.format, tpSaleTable1109.paratitle.source, tpSaleTable1109.paratitle.length, tpSaleTable1109.paratitle.type[0], tpSaleTable1109.paratitle.type[1], tpSaleTable1109.paratitle.version,
+			tpSaleTable1109.paratitle.create_time[0], tpSaleTable1109.paratitle.create_time[1], tpSaleTable1109.paratitle.create_time[2], tpSaleTable1109.paratitle.create_time[3], tpSaleTable1109.paratitle.create_time[4], tpSaleTable1109.paratitle.create_time[5], tpSaleTable1109.paratitle.create_time[6],
+			tpSaleTable1109.paratitle.start_time[0], tpSaleTable1109.paratitle.start_time[1], tpSaleTable1109.paratitle.start_time[2], tpSaleTable1109.paratitle.start_time[3],
+			tpSaleTable1109.paratitle.section_number, tpSaleTable1109.paratitle.rfu[0], tpSaleTable1109.paratitle.rfu[1], tpSaleTable1109.paratitle.rfu[2]);
+#endif
+    
+    //增加判断保存的参数文件大小
+    if(tpSaleTable1109.paratitle.length != file_len)
+    {
+    	fclose(intFile);
+    	memset(&tpSaleTable1109.paratitle, 0x00, sizeof(ParaTitle));
+    	remove( eod_file );
+    	return 1;
+    }
+
+    if(tpSaleTable1109.paratitle.section_number == 0)
+    {
+    	fclose(intFile);
+    	return 1;
+    }
+    if(tpSaleTable1109.offset != NULL)
+    	free(tpSaleTable1109.offset);
+    tpSaleTable1109.offset = (section_offset *)malloc(sizeof(section_offset) * tpSaleTable1109.paratitle.section_number);
+    if(tpSaleTable1109.offset == NULL)
+    {
+    	fclose(intFile);
+    	return 1;
+    }
+    fread(tpSaleTable1109.offset, sizeof(section_offset), tpSaleTable1109.paratitle.section_number, intFile);
+#ifdef DEBUG_1109_PRINT
+    for(i = 0; i < tpSaleTable1109.paratitle.section_number; i++)
+    	PRINTK("start_pos %08x  section_rec %08x\n", tpSaleTable1109.offset[i].start_pos, tpSaleTable1109.offset[i].section_rec);
+#endif
+
+	if(tpSaleTable1109.FareTableMatrix_val.FareTableMatrixnumber != 0)
+	{
+		if(tpSaleTable1109.FareTableMatrix_val.FareTableID_val != NULL)
+			free(tpSaleTable1109.FareTableMatrix_val.FareTableID_val);
+		for(i = 0; i < tpSaleTable1109.FareTableMatrix_val.FareTableMatrixnumber; i++)
+		{
+			if(tpSaleTable1109.FareTableMatrix_val.FareTable_val[i].FareSetID != NULL)
+				free(tpSaleTable1109.FareTableMatrix_val.FareTable_val[i].FareSetID);
+			tpSaleTable1109.FareTableMatrix_val.FareTable_val[i].FareSetID = NULL;
+			if(tpSaleTable1109.FareTableMatrix_val.FareTable_val[i].FareCode != NULL)
+				free(tpSaleTable1109.FareTableMatrix_val.FareTable_val[i].FareCode);
+			tpSaleTable1109.FareTableMatrix_val.FareTable_val[i].FareCode = NULL;
+			if(tpSaleTable1109.FareTableMatrix_val.FareTable_val[i].FarePrice != NULL)
+				free(tpSaleTable1109.FareTableMatrix_val.FareTable_val[i].FarePrice);
+			tpSaleTable1109.FareTableMatrix_val.FareTable_val[i].FarePrice = NULL;
+		}
+		if(tpSaleTable1109.FareTableMatrix_val.FareTable_val != NULL)
+			free(tpSaleTable1109.FareTableMatrix_val.FareTable_val);
+		tpSaleTable1109.FareTableMatrix_val.FareTable_val = NULL;
+	}
+
+	fread(&tpSaleTable1109.FareTableMatrix_val.FareTableMatrixnumber, sizeof(short), 1, intFile);
+#ifdef DEBUG_1109_PRINT
+	PRINTK("FareTable number %04x\n", tpSaleTable1109.FareTableMatrix_val.FareTableMatrixnumber);
+#endif
+	if(tpSaleTable1109.FareTableMatrix_val.FareTableMatrixnumber != 0)
+	{
+		tpSaleTable1109.FareTableMatrix_val.FareTableID_val = (FareTableID_t *)malloc(sizeof(FareTable_t) * tpSaleTable1109.FareTableMatrix_val.FareTableMatrixnumber);
+		if(tpSaleTable1109.FareTableMatrix_val.FareTableID_val == NULL)
+		{
+			fclose(intFile);
+			return 1;
+		}
+		fread(tpSaleTable1109.FareTableMatrix_val.FareTableID_val, sizeof(FareTableID_t), tpSaleTable1109.FareTableMatrix_val.FareTableMatrixnumber, intFile);
+#ifdef	DEBUG_1109_PRINT
+		for(i = 0; i < tpSaleTable1109.FareTableMatrix_val.FareTableMatrixnumber; i++)
+		{
+			PRINTK("faretableid %04x offset %08x \n", 
+				tpSaleTable1109.FareTableMatrix_val.FareTableID_val[i].FaretableID, 
+				tpSaleTable1109.FareTableMatrix_val.FareTableID_val[i].offset);
+		}
+#endif
+		tpSaleTable1109.FareTableMatrix_val.FareTable_val = (FareTable_t *)malloc(sizeof(FareTable_t) * tpSaleTable1109.FareTableMatrix_val.FareTableMatrixnumber);
+		for(i = 0; i < tpSaleTable1109.FareTableMatrix_val.FareTableMatrixnumber; i++)
+		{
+			fread(&tpSaleTable1109.FareTableMatrix_val.FareTable_val[i], sizeof(FareTable_t) - 12 - sizeof(short), 1, intFile);
+#ifdef	DEBUG_1109_PRINT
+			PRINTK("faretableid %04x min %08x max %08x fareset number %02x\n",
+				tpSaleTable1109.FareTableMatrix_val.FareTable_val[i].FaretableID,
+				tpSaleTable1109.FareTableMatrix_val.FareTable_val[i].minFare,
+				tpSaleTable1109.FareTableMatrix_val.FareTable_val[i].maxFare,
+				tpSaleTable1109.FareTableMatrix_val.FareTable_val[i].NumberofFareSet);
+#endif			
+			if(tpSaleTable1109.FareTableMatrix_val.FareTable_val[i].NumberofFareSet != 0)
+			{
+				tpSaleTable1109.FareTableMatrix_val.FareTable_val[i].FareSetID = (unsigned char *)malloc(sizeof(char) * tpSaleTable1109.FareTableMatrix_val.FareTable_val[i].NumberofFareSet);
+				if(tpSaleTable1109.FareTableMatrix_val.FareTable_val[i].FareSetID == NULL)
+				{
+					fclose(intFile);
+					return 1;
+				}
+				fread(tpSaleTable1109.FareTableMatrix_val.FareTable_val[i].FareSetID, sizeof(char), tpSaleTable1109.FareTableMatrix_val.FareTable_val[i].NumberofFareSet, intFile);
+#ifdef 	DEBUG_1109_PRINT
+				for(j = 0; j < tpSaleTable1109.FareTableMatrix_val.FareTable_val[i].NumberofFareSet; j++)
+				{
+					PRINTK("faresetid %02x ", tpSaleTable1109.FareTableMatrix_val.FareTable_val[i].FareSetID[j]);
+				}
+				PRINTK("\n");
+#endif
+			}
+
+			fread(&tpSaleTable1109.FareTableMatrix_val.FareTable_val[i].NumberofFareCode, sizeof(short), 1, intFile);
+#ifdef	DEBUG_1109_PRINT
+			PRINTK("farecode number %04x\n", tpSaleTable1109.FareTableMatrix_val.FareTable_val[i].NumberofFareCode);
+#endif		
+			if(tpSaleTable1109.FareTableMatrix_val.FareTable_val[i].NumberofFareCode != 0)
+			{
+				tpSaleTable1109.FareTableMatrix_val.FareTable_val[i].FareCode = (unsigned short *)malloc(sizeof(short) * tpSaleTable1109.FareTableMatrix_val.FareTable_val[i].NumberofFareCode);
+				if(tpSaleTable1109.FareTableMatrix_val.FareTable_val[i].FareCode == NULL)
+				{
+					fclose(intFile);
+					return 1;
+				}
+				fread(tpSaleTable1109.FareTableMatrix_val.FareTable_val[i].FareCode, sizeof(short), tpSaleTable1109.FareTableMatrix_val.FareTable_val[i].NumberofFareCode, intFile);
+#ifdef	DEBUG_1109_PRINT
+				for(j = 0; j < tpSaleTable1109.FareTableMatrix_val.FareTable_val[i].NumberofFareCode; j++)
+				{
+					PRINTK("farecode %04x  ", tpSaleTable1109.FareTableMatrix_val.FareTable_val[i].FareCode[j]);
+				}
+				PRINTK("\n");
+#endif			
+			}
+			if((tpSaleTable1109.FareTableMatrix_val.FareTable_val[i].NumberofFareSet != 0) &&
+				(tpSaleTable1109.FareTableMatrix_val.FareTable_val[i].NumberofFareCode != 0))
+			{
+				tpSaleTable1109.FareTableMatrix_val.FareTable_val[i].FarePrice = (unsigned long *)malloc(sizeof(long) * tpSaleTable1109.FareTableMatrix_val.FareTable_val[i].NumberofFareCode * tpSaleTable1109.FareTableMatrix_val.FareTable_val[i].NumberofFareSet);
+				if(tpSaleTable1109.FareTableMatrix_val.FareTable_val[i].FarePrice == NULL)
+				{
+					fclose(intFile);
+					return 1;
+				}	
+				fread(tpSaleTable1109.FareTableMatrix_val.FareTable_val[i].FarePrice, sizeof(long), tpSaleTable1109.FareTableMatrix_val.FareTable_val[i].NumberofFareCode * tpSaleTable1109.FareTableMatrix_val.FareTable_val[i].NumberofFareSet, intFile);
+#ifdef	DEBUG_1109_PRINT
+				for(j = 0; j < tpSaleTable1109.FareTableMatrix_val.FareTable_val[i].NumberofFareCode; j++)
+				{
+					PRINTK("farecode %02x:", j);
+					for(k = 0; k < tpSaleTable1109.FareTableMatrix_val.FareTable_val[i].NumberofFareSet; k++)
+					{
+						PRINTK("%08x ", tpSaleTable1109.FareTableMatrix_val.FareTable_val[i].FarePrice[j * tpSaleTable1109.FareTableMatrix_val.FareTable_val[i].NumberofFareSet + k]);
+					}
+					PRINTK("\n");
+				}
+#endif
+			}
+		}
+	}
+	
+	if(tpSaleTable1109.FarePatternMatrix_Sales_val.FarePatternMatrixSalesnumber != 0)
+	{
+		if(tpSaleTable1109.FarePatternMatrix_Sales_val.FarepatternOffset_val != NULL)
+			free(tpSaleTable1109.FarePatternMatrix_Sales_val.FarepatternOffset_val);
+		tpSaleTable1109.FarePatternMatrix_Sales_val.FarepatternOffset_val = NULL;
+		
+		for(i = 0; i < tpSaleTable1109.FarePatternMatrix_Sales_val.SaleFarePattern_val[i].Productnumbers; i++)
+		{
+			if(tpSaleTable1109.FarePatternMatrix_Sales_val.SaleFarePattern_val[i].SalesubProduct_val != NULL)
+				free(tpSaleTable1109.FarePatternMatrix_Sales_val.SaleFarePattern_val[i].SalesubProduct_val);
+			tpSaleTable1109.FarePatternMatrix_Sales_val.SaleFarePattern_val[i].SalesubProduct_val = NULL;
+			if(tpSaleTable1109.FarePatternMatrix_Sales_val.SaleFarePattern_val[i].FarePassengerTimecode_val != NULL)
+				free(tpSaleTable1109.FarePatternMatrix_Sales_val.SaleFarePattern_val[i].FarePassengerTimecode_val);
+			tpSaleTable1109.FarePatternMatrix_Sales_val.SaleFarePattern_val[i].FarePassengerTimecode_val = NULL;
+		}
+		if(tpSaleTable1109.FarePatternMatrix_Sales_val.SaleFarePattern_val!= NULL)
+			free(tpSaleTable1109.FarePatternMatrix_Sales_val.SaleFarePattern_val);
+		tpSaleTable1109.FarePatternMatrix_Sales_val.SaleFarePattern_val= NULL;
+	}
+	fread(&tpSaleTable1109.FarePatternMatrix_Sales_val.FarePatternMatrixSalesnumber, sizeof(short), 1, intFile);
+#ifdef	DEBUG_1109_PRINT
+	PRINTK("FarePattern number %04x\n", tpSaleTable1109.FarePatternMatrix_Sales_val.FarePatternMatrixSalesnumber);
+#endif
+	if(tpSaleTable1109.FarePatternMatrix_Sales_val.FarePatternMatrixSalesnumber != 0)
+	{
+		tpSaleTable1109.FarePatternMatrix_Sales_val.FarepatternOffset_val = (FarepatternOffset_t *)malloc(sizeof(FarepatternOffset_t) * tpSaleTable1109.FarePatternMatrix_Sales_val.FarePatternMatrixSalesnumber);
+		if(tpSaleTable1109.FarePatternMatrix_Sales_val.FarepatternOffset_val == NULL)
+		{
+			fclose(intFile);
+			return 1;
+		}
+		fread(tpSaleTable1109.FarePatternMatrix_Sales_val.FarepatternOffset_val, sizeof(FarepatternOffset_t), tpSaleTable1109.FarePatternMatrix_Sales_val.FarePatternMatrixSalesnumber, intFile);
+#ifdef	DEBUG_1109_PRINT
+		for(i = 0; i < tpSaleTable1109.FarePatternMatrix_Sales_val.FarePatternMatrixSalesnumber; i++)
+		{
+			PRINTK("farepatternid %04x offset %08x\n", 
+				tpSaleTable1109.FarePatternMatrix_Sales_val.FarepatternOffset_val[i].FarepatternID,
+				tpSaleTable1109.FarePatternMatrix_Sales_val.FarepatternOffset_val[i].offset);
+		}
+#endif		
+		tpSaleTable1109.FarePatternMatrix_Sales_val.SaleFarePattern_val = (SaleFarePattern_t *)malloc(sizeof(SaleFarePattern_t) * tpSaleTable1109.FarePatternMatrix_Sales_val.FarePatternMatrixSalesnumber);
+		if(tpSaleTable1109.FarePatternMatrix_Sales_val.SaleFarePattern_val == NULL)
+		{
+			fclose(intFile);
+			return 1;
+		}
+		for(i = 0; i < tpSaleTable1109.FarePatternMatrix_Sales_val.FarePatternMatrixSalesnumber; i++)
+		{
+			fread(&tpSaleTable1109.FarePatternMatrix_Sales_val.SaleFarePattern_val[i], sizeof(SaleFarePattern_t) - 8, 1, intFile);
+#ifdef	DEBUG_1109_PRINT
+			PRINTK("farepatternid %04x productnumber %02x \n", 
+				tpSaleTable1109.FarePatternMatrix_Sales_val.SaleFarePattern_val[i].FarepatternID,
+				tpSaleTable1109.FarePatternMatrix_Sales_val.SaleFarePattern_val[i].Productnumbers);
+#endif			
+			if(tpSaleTable1109.FarePatternMatrix_Sales_val.SaleFarePattern_val[i].Productnumbers != 0)
+			{
+				tpSaleTable1109.FarePatternMatrix_Sales_val.SaleFarePattern_val[i].SalesubProduct_val = (SalesubProduct_t *)malloc(sizeof(SalesubProduct_t) * tpSaleTable1109.FarePatternMatrix_Sales_val.SaleFarePattern_val[i].Productnumbers);
+				if(tpSaleTable1109.FarePatternMatrix_Sales_val.SaleFarePattern_val[i].SalesubProduct_val == NULL)
+				{
+					fclose(intFile);
+					return 1;
+				}
+				fread(tpSaleTable1109.FarePatternMatrix_Sales_val.SaleFarePattern_val[i].SalesubProduct_val, sizeof(SalesubProduct_t), tpSaleTable1109.FarePatternMatrix_Sales_val.SaleFarePattern_val[i].Productnumbers, intFile);
+#ifdef	DEBUG_1109_PRINT
+				for(j = 0; j < tpSaleTable1109.FarePatternMatrix_Sales_val.SaleFarePattern_val[i].Productnumbers; j++)
+				{
+					PRINTK("product type %04x sub product %04x \n", 
+						tpSaleTable1109.FarePatternMatrix_Sales_val.SaleFarePattern_val[i].SalesubProduct_val[j].ProductType,
+						tpSaleTable1109.FarePatternMatrix_Sales_val.SaleFarePattern_val[i].SalesubProduct_val[j].ProductVariantID);
+				}
+#endif
+				tpSaleTable1109.FarePatternMatrix_Sales_val.SaleFarePattern_val[i].FarePassengerTimecode_val = (FarePassengerTimecode_t *)malloc(sizeof(FarePassengerTimecode_t) * tpSaleTable1109.FarePatternMatrix_Sales_val.SaleFarePattern_val[i].Productnumbers);
+				if(tpSaleTable1109.FarePatternMatrix_Sales_val.SaleFarePattern_val[i].FarePassengerTimecode_val == NULL)
+				{
+					fclose(intFile);
+					return 1;
+				}
+				fread(tpSaleTable1109.FarePatternMatrix_Sales_val.SaleFarePattern_val[i].FarePassengerTimecode_val, sizeof(FarePassengerTimecode_t), tpSaleTable1109.FarePatternMatrix_Sales_val.SaleFarePattern_val[i].Productnumbers, intFile);
+#ifdef	DEBUG_1109_PRINT
+				for(j = 0; j < tpSaleTable1109.FarePatternMatrix_Sales_val.SaleFarePattern_val[i].Productnumbers; j++)
+				{
+					PRINTK("adult %02x children %02x old %02x student %02x soldier %02x emploeyy %02x \n", 
+						tpSaleTable1109.FarePatternMatrix_Sales_val.SaleFarePattern_val[i].FarePassengerTimecode_val[j].AdultFareSetID,
+						tpSaleTable1109.FarePatternMatrix_Sales_val.SaleFarePattern_val[i].FarePassengerTimecode_val[j].ChildrenFareSetID,
+						tpSaleTable1109.FarePatternMatrix_Sales_val.SaleFarePattern_val[i].FarePassengerTimecode_val[j].OldFareSetID,
+						tpSaleTable1109.FarePatternMatrix_Sales_val.SaleFarePattern_val[i].FarePassengerTimecode_val[j].StudentFareSetID,
+						tpSaleTable1109.FarePatternMatrix_Sales_val.SaleFarePattern_val[i].FarePassengerTimecode_val[j].SoldierFareSetID,
+						tpSaleTable1109.FarePatternMatrix_Sales_val.SaleFarePattern_val[i].FarePassengerTimecode_val[j].DisabledFareSetID,
+						tpSaleTable1109.FarePatternMatrix_Sales_val.SaleFarePattern_val[i].FarePassengerTimecode_val[j].EmployeeFareSetID);
+				}
+#endif
+			}
+		}
+	}
+	
+	fread(&tpSaleTable1109.FareCodeMatrix_val.FareCodeMatrixnumber, sizeof(short), 1, intFile);
+#ifdef	DEBUG_1109_PRINT
+	PRINTK("farecode number %04x \n", tpSaleTable1109.FareCodeMatrix_val.FareCodeMatrixnumber);
+#endif
+	if(tpSaleTable1109.FareCodeMatrix_val.FareCodeMatrixnumber != 0)
+	{
+		tpSaleTable1109.FareCodeMatrix_val.FareCodeMatrixOffset_val = (FareCodeMatrixOffset_t *)malloc(sizeof(FareCodeMatrixOffset_t) * tpSaleTable1109.FareCodeMatrix_val.FareCodeMatrixnumber);
+		if(tpSaleTable1109.FareCodeMatrix_val.FareCodeMatrixOffset_val == NULL)
+		{
+			fclose(intFile);
+			return 1;
+		}
+		fread(tpSaleTable1109.FareCodeMatrix_val.FareCodeMatrixOffset_val, sizeof(FareCodeMatrixOffset_t), tpSaleTable1109.FareCodeMatrix_val.FareCodeMatrixnumber, intFile);
+#ifdef	DEBUG_1109_PRINT
+		for(i = 0; i < tpSaleTable1109.FareCodeMatrix_val.FareCodeMatrixnumber; i++)
+		{
+			PRINTK("farecode id %04x offset %08x \n", 
+				tpSaleTable1109.FareCodeMatrix_val.FareCodeMatrixOffset_val[i].FareCodeMatrixId,
+				tpSaleTable1109.FareCodeMatrix_val.FareCodeMatrixOffset_val[i].offset);
+		}
+#endif		
+		tpSaleTable1109.FareCodeMatrix_val.FareCode_val = (FareCode_t *)malloc(sizeof(FareCode_t) * tpSaleTable1109.FareCodeMatrix_val.FareCodeMatrixnumber);
+		if(tpSaleTable1109.FareCodeMatrix_val.FareCode_val == NULL)
+		{
+			fclose(intFile);
+			return 1;
+		}
+		for(i = 0; i < tpSaleTable1109.FareCodeMatrix_val.FareCodeMatrixnumber; i++)
+		{
+			fread(&tpSaleTable1109.FareCodeMatrix_val.FareCode_val[i], sizeof(FareCode_t) - 8, 1, intFile);
+#ifdef	DEBUG_1109_PRINT
+			PRINTK("farecode id %04x stationnumber %04x\n", 
+				tpSaleTable1109.FareCodeMatrix_val.FareCode_val[i].FareCodeMatrixId,
+				tpSaleTable1109.FareCodeMatrix_val.FareCode_val[i].stationnumber);
+#endif
+			if(tpSaleTable1109.FareCodeMatrix_val.FareCode_val[i].stationnumber != 0)
+			{
+				tpSaleTable1109.FareCodeMatrix_val.FareCode_val[i].locationcode = (unsigned long *)malloc(sizeof(long) * tpSaleTable1109.FareCodeMatrix_val.FareCode_val[i].stationnumber);
+				if(tpSaleTable1109.FareCodeMatrix_val.FareCode_val[i].locationcode == NULL)
+				{
+					fclose(intFile);
+					return 1;
+				}
+				fread(tpSaleTable1109.FareCodeMatrix_val.FareCode_val[i].locationcode, sizeof(long), tpSaleTable1109.FareCodeMatrix_val.FareCode_val[i].stationnumber, intFile);
+#ifdef	DEBUG_1109_PRINT
+				for(j = 0; j < tpSaleTable1109.FareCodeMatrix_val.FareCode_val[i].stationnumber; j++)
+				{
+					PRINTK("%08x ", tpSaleTable1109.FareCodeMatrix_val.FareCode_val[i].locationcode[j]);
+				}
+				PRINTK("\n");
+#endif
+				tpSaleTable1109.FareCodeMatrix_val.FareCode_val[i].FareCode = (unsigned short *)malloc(sizeof(short) * tpSaleTable1109.FareCodeMatrix_val.FareCode_val[i].stationnumber *tpSaleTable1109.FareCodeMatrix_val.FareCode_val[i].stationnumber);
+				if(tpSaleTable1109.FareCodeMatrix_val.FareCode_val[i].FareCode == NULL)
+				{
+					fclose(intFile);
+					return 1;
+				}
+				fread(tpSaleTable1109.FareCodeMatrix_val.FareCode_val[i].FareCode, sizeof(short), tpSaleTable1109.FareCodeMatrix_val.FareCode_val[i].stationnumber * tpSaleTable1109.FareCodeMatrix_val.FareCode_val[i].stationnumber, intFile);
+#ifdef	DEBUG_1109_PRINT
+				for(j = 0; j < tpSaleTable1109.FareCodeMatrix_val.FareCode_val[i].stationnumber; j++)
+				{
+					for(k = 0; k < tpSaleTable1109.FareCodeMatrix_val.FareCode_val[i].stationnumber; k++)
+					{
+						PRINTK("%04x ", tpSaleTable1109.FareCodeMatrix_val.FareCode_val[i].FareCode[j * tpSaleTable1109.FareCodeMatrix_val.FareCode_val[i].stationnumber + k]);
+					}
+					PRINTK("\n");
+				}
+#endif
+			}
+		}
+	}
+	fclose(intFile);
+    return 0;
+}
+
+
+long LCC_1103()
+{
+FILE *intFile;
+long lngPosition, lngnum, file_len;
+char	filename[100], eod_file[100];
+long i, j, k;
+
+	memset(eod_file, 0x00, 100);
+	memset(filename, 0x00, 100);
+	sprintf(eod_file, "PARA.1103.");
+	if(0 != FileisExist("./para/", eod_file, filename))
+	{
+		PRINTK("1103 file not exist\n");
+		return 2;
+	}
+	//check the file
+	sprintf(eod_file, "./para/%s", filename);
+    intFile = fopen(eod_file, "rb");
+    if(intFile == NULL)
+    {
+    	PRINTK("1103 file open failure\n");
+        return 1;
+    }
+    //transfer head 1 + 38
+	fseek(intFile, 0, SEEK_END);
+	file_len = ftell(intFile);
+	fseek(intFile, 0, 0);
+    //fseek(intFile, 39, 0);
+    fread(&tpPACC1103.paratitle, sizeof(ParaTitle), 1, intFile);
+#ifdef	DEBUG_1103_PRINT
+	PRINTK("------1103---------\nformat:%02x source %02x length %08x type %02x%02x ver %04x createtime %02x%02x%02x%02x %02x%02x%02x \nstart %02x%02x%02x%02x offset %04x rfu %02x%02x%02x\n",
+			tpPACC1103.paratitle.format, tpPACC1103.paratitle.source, tpPACC1103.paratitle.length, tpPACC1103.paratitle.type[0], tpPACC1103.paratitle.type[1], tpPACC1103.paratitle.version,
+			tpPACC1103.paratitle.create_time[0], tpPACC1103.paratitle.create_time[1], tpPACC1103.paratitle.create_time[2], tpPACC1103.paratitle.create_time[3], tpPACC1103.paratitle.create_time[4], tpPACC1103.paratitle.create_time[5], tpPACC1103.paratitle.create_time[6],
+			tpPACC1103.paratitle.start_time[0], tpPACC1103.paratitle.start_time[1], tpPACC1103.paratitle.start_time[2], tpPACC1103.paratitle.start_time[3],
+			tpPACC1103.paratitle.section_number, tpPACC1103.paratitle.rfu[0], tpPACC1103.paratitle.rfu[1], tpPACC1103.paratitle.rfu[2]);
+#endif
+    //增加判断保存的参数文件大小
+    if(tpPACC1103.paratitle.length != file_len)
+    {
+    	fclose(intFile);
+    	memset(&tpPACC1103.paratitle, 0x00, sizeof(ParaTitle));
+    	remove( eod_file );
+    	return 1;
+    }
+
+	fclose(intFile);
+	return 0;
+}
+
+long LCC_1097()
+{
+FILE *intFile;
+long lngPosition, lngnum, file_len;
+char	filename[100], eod_file[100];
+long i, j, k;
+
+	memset(eod_file, 0x00, 100);
+	memset(filename, 0x00, 100);
+	sprintf(eod_file, "PARA.1097.");
+	if(0 != FileisExist("./para/", eod_file, filename))
+	{
+		PRINTK("1097 file not exist\n");
+		return 2;
+	}
+	//check the file
+	sprintf(eod_file, "./para/%s", filename);
+    intFile = fopen(eod_file, "rb");
+    if(intFile == NULL)
+    {
+    	PRINTK("1097 file open failure\n");
+        return 1;
+    }
+    //transfer head 1 + 38
+	fseek(intFile, 0, SEEK_END);
+	file_len = ftell(intFile);
+	fseek(intFile, 0, 0);
+    //fseek(intFile, 39, 0);
+    fread(&tpLCC1097.paratitle, sizeof(ParaTitle), 1, intFile);
+#ifdef	DEBUG_1103_PRINT
+	PRINTK("------1103---------\nformat:%02x source %02x length %08x type %02x%02x ver %04x createtime %02x%02x%02x%02x %02x%02x%02x \nstart %02x%02x%02x%02x offset %04x rfu %02x%02x%02x\n",
+			tpSaleTable1109.paratitle.format, tpSaleTable1109.paratitle.source, tpSaleTable1109.paratitle.length, tpSaleTable1109.paratitle.type[0], tpSaleTable1109.paratitle.type[1], tpSaleTable1109.paratitle.version,
+			tpSaleTable1109.paratitle.create_time[0], tpSaleTable1109.paratitle.create_time[1], tpSaleTable1109.paratitle.create_time[2], tpSaleTable1109.paratitle.create_time[3], tpSaleTable1109.paratitle.create_time[4], tpSaleTable1109.paratitle.create_time[5], tpSaleTable1109.paratitle.create_time[6],
+			tpSaleTable1109.paratitle.start_time[0], tpSaleTable1109.paratitle.start_time[1], tpSaleTable1109.paratitle.start_time[2], tpSaleTable1109.paratitle.start_time[3],
+			tpSaleTable1109.paratitle.section_number, tpSaleTable1109.paratitle.rfu[0], tpSaleTable1109.paratitle.rfu[1], tpSaleTable1109.paratitle.rfu[2]);
+#endif
+    //增加判断保存的参数文件大小
+    if(tpLCC1097.paratitle.length != file_len)
+    {
+    	fclose(intFile);
+    	memset(&tpLCC1097.paratitle, 0x00, sizeof(ParaTitle));
+    	remove( eod_file );
+    	return 1;
+    }
+
+	fclose(intFile);
+	return 0;
+}
+
+long LCC_1002()
+{
+FILE *intFile;
+long lngPosition, lngnum, file_len;
+char	filename[100], eod_file[100];
+long i, j, k;
+
+	memset(eod_file, 0x00, 100);
+	memset(filename, 0x00, 100);
+	sprintf(eod_file, "PARA.1002.");
+	if(0 != FileisExist("./para/", eod_file, filename))
+	{
+		PRINTK("1002 file not exist\n");
+		return 2;
+	}
+	//check the file
+	sprintf(eod_file, "./para/%s", filename);
+    intFile = fopen(eod_file, "rb");
+    if(intFile == NULL)
+    {
+    	PRINTK("1002 file open failure\n");
+        return 1;
+    }
+    //transfer head 1 + 38
+	fseek(intFile, 0, SEEK_END);
+	file_len = ftell(intFile);
+	fseek(intFile, 0, 0);
+    //fseek(intFile, 39, 0);
+    fread(&tpLCC1002.paratitle, sizeof(ParaTitle), 1, intFile);
+#ifdef	DEBUG_1002_PRINT
+	PRINTK("------1103---------\nformat:%02x source %02x length %08x type %02x%02x ver %04x createtime %02x%02x%02x%02x %02x%02x%02x \nstart %02x%02x%02x%02x offset %04x rfu %02x%02x%02x\n",
+			tpSaleTable1109.paratitle.format, tpSaleTable1109.paratitle.source, tpSaleTable1109.paratitle.length, tpSaleTable1109.paratitle.type[0], tpSaleTable1109.paratitle.type[1], tpSaleTable1109.paratitle.version,
+			tpSaleTable1109.paratitle.create_time[0], tpSaleTable1109.paratitle.create_time[1], tpSaleTable1109.paratitle.create_time[2], tpSaleTable1109.paratitle.create_time[3], tpSaleTable1109.paratitle.create_time[4], tpSaleTable1109.paratitle.create_time[5], tpSaleTable1109.paratitle.create_time[6],
+			tpSaleTable1109.paratitle.start_time[0], tpSaleTable1109.paratitle.start_time[1], tpSaleTable1109.paratitle.start_time[2], tpSaleTable1109.paratitle.start_time[3],
+			tpSaleTable1109.paratitle.section_number, tpSaleTable1109.paratitle.rfu[0], tpSaleTable1109.paratitle.rfu[1], tpSaleTable1109.paratitle.rfu[2]);
+#endif
+
+    //增加判断保存的参数文件大小
+    if(tpLCC1002.paratitle.length != file_len)
+    {
+    	fclose(intFile);
+    	memset(&tpLCC1002.paratitle, 0x00, sizeof(ParaTitle));
+    	remove( eod_file );
+    	return 1;
+    }
+
+	fclose(intFile);
+	return 0;
+}
+
+long YKT_1901_Blacklist()
+{
+FILE *intFile;
+long lngPosition, lngnum, file_len;
+char	filename[100], eod_file[100];
+long i, j;
+
+	memset(eod_file, 0x00, 100);
+	memset(filename, 0x00, 100);
+	sprintf(eod_file, "PARA.1901.");
+	if(0 != FileisExist("./para/", eod_file, filename))
+	{
+		PRINTK("1901 file not exist\n");
+		return 2;
+	}
+	//check the file
+	sprintf(eod_file, "./para/%s", filename);
+    intFile = fopen(eod_file, "rb");
+    if(intFile == NULL)
+    {
+        return 1;
+    }
+    //transfer head 1 + 38
+	fseek(intFile, 0, SEEK_END);
+	file_len = ftell(intFile);
+	fseek(intFile, 0, 0);
+   	//fseek(intFile, 39, 0);	//not nead
+    fread(&tpBlacklist1901.paratitle, sizeof(ParaTitle), 1, intFile);
+#ifdef	DEBUG_1901_PRINT
+	PRINTK("------1901---------\nformat:%02x source %02x length %08x type %02x%02x ver %04x createtime %02x%02x%02x%02x %02x%02x%02x \nstart %02x%02x%02x%02x offset %04x rfu %02x%02x%02x\n",
+			tpBlacklist1901.paratitle.format, tpBlacklist1901.paratitle.source, tpBlacklist1901.paratitle.length, tpBlacklist1901.paratitle.type[0], tpBlacklist1901.paratitle.type[1], tpBlacklist1901.paratitle.version,
+			tpBlacklist1901.paratitle.create_time[0], tpBlacklist1901.paratitle.create_time[1], tpBlacklist1901.paratitle.create_time[2], tpBlacklist1901.paratitle.create_time[3], tpBlacklist1901.paratitle.create_time[4], tpBlacklist1901.paratitle.create_time[5], tpBlacklist1901.paratitle.create_time[6],
+			tpBlacklist1901.paratitle.start_time[0], tpBlacklist1901.paratitle.start_time[1], tpBlacklist1901.paratitle.start_time[2], tpBlacklist1901.paratitle.start_time[3],
+			tpBlacklist1901.paratitle.section_number, tpBlacklist1901.paratitle.rfu[0], tpBlacklist1901.paratitle.rfu[1], tpBlacklist1901.paratitle.rfu[2]);
+#endif
+    
+    //增加判断保存的参数文件大小
+    if(tpBlacklist1901.paratitle.length != file_len)
+    {
+    	fclose(intFile);
+    	memset(&tpBlacklist1901.paratitle, 0x00, sizeof(ParaTitle));
+    	remove( eod_file );
+    	return 1;
+    }
+
+    if(tpBlacklist1901.paratitle.section_number == 0)
+    {
+    	fclose(intFile);
+    	return 1;
+    }
+
+    if(tpBlacklist1901.offset != NULL)
+    {
+	   	if(tpBlacklist1901.offset[0].section_rec != 0)
+	   	{
+	   		if(tpBlacklist1901.YKTBlack_val != NULL)
+	   			free(tpBlacklist1901.YKTBlack_val);
+	   		tpBlacklist1901.YKTBlack_val = NULL;
+	   	}
+    	free(tpBlacklist1901.offset);
+    	tpBlacklist1901.offset = NULL;
+    }
+    tpBlacklist1901.offset = (section_offset *)malloc(sizeof(section_offset) * tpBlacklist1901.paratitle.section_number);
+    if(tpBlacklist1901.offset == NULL)
+    {
+    	fclose(intFile);
+    	return 1;
+    }
+    fread(tpBlacklist1901.offset, sizeof(section_offset), tpBlacklist1901.paratitle.section_number, intFile);
+#ifdef DEBUG_1901_PRINT
+    for(i = 0; i < tpBlacklist1901.paratitle.section_number; i++)
+    	PRINTK("start_pos %08x  section_rec %08x\n", tpBlacklist1901.offset[i].start_pos, tpBlacklist1901.offset[i].section_rec);
+#endif
+	//
+	if(tpBlacklist1901.offset[0].section_rec != 0)
+	{
+		tpBlacklist1901.YKTBlack_val = (YKTBlack_t *)malloc(sizeof(YKTBlack_t) * tpBlacklist1901.offset[0].section_rec);
+		if(tpBlacklist1901.YKTBlack_val == NULL)
+		{
+			fclose(intFile);
+			return 1;
+		}
+		fread(tpBlacklist1901.YKTBlack_val, sizeof(YKTBlack_t), tpBlacklist1901.offset[0].section_rec, intFile);
+#ifdef	DEBUG_1901_PRINT
+		for(i = 0; i < tpBlacklist1901.offset[0].section_rec; i++)
+			PRINTK("citycode %02x%02x business %02x%02x cardid %02x%02x%02x%02x %02x%02x%02x%02x\n",
+				tpBlacklist1901.YKTBlack_val[i].CityCode[0], tpBlacklist1901.YKTBlack_val[i].CityCode[1], tpBlacklist1901.YKTBlack_val[i].Business[0], tpBlacklist1901.YKTBlack_val[i].Business[1],
+				tpBlacklist1901.YKTBlack_val[i].cardid[0], tpBlacklist1901.YKTBlack_val[i].cardid[1], tpBlacklist1901.YKTBlack_val[i].cardid[2], tpBlacklist1901.YKTBlack_val[i].cardid[3],
+				tpBlacklist1901.YKTBlack_val[i].cardid[4], tpBlacklist1901.YKTBlack_val[i].cardid[5], tpBlacklist1901.YKTBlack_val[i].cardid[6], tpBlacklist1901.YKTBlack_val[i].cardid[7]);
+#endif
+	}
+	fclose(intFile);
+	return 0;
+}
+
+
+long YKT_1912_Card()
+{
+FILE *intFile;
+long lngPosition, lngnum, file_len;
+char	filename[100], eod_file[100];
+long i, j, k;
+
+	memset(eod_file, 0x00, 100);
+	memset(filename, 0x00, 100);
+	sprintf(eod_file, "PARA.1912.");
+	if(0 != FileisExist("./para/", eod_file, filename))
+	{
+		PRINTK("1912 file not exist\n");
+		return 2;
+	}
+	//check the file
+	sprintf(eod_file, "./para/%s", filename);
+    intFile = fopen(eod_file, "rb");
+    if(intFile == NULL)
+    {
+    	PRINTK("1912 file open failure\n");
+        return 1;
+    }
+    //transfer head 1 + 38
+	fseek(intFile, 0, SEEK_END);
+	file_len = ftell(intFile);
+	fseek(intFile, 0, 0);
+    //fseek(intFile, 39, 0);		//not nead read
+    fread(&tpCard1912.paratitle, sizeof(ParaTitle), 1, intFile);
+#ifdef	DEBUG_1912_PRINT
+	PRINTK("------1912---------\nformat:%02x source %02x length %08x type %02x%02x ver %08x createtime %02x%02x%02x%02x %02x%02x%02x \nstart %02x%02x%02x%02x offset %04x rfu %02x%02x%02x\n",
+			tpCard1912.paratitle.format, tpCard1912.paratitle.source, tpCard1912.paratitle.length, tpCard1912.paratitle.type[0], tpCard1912.paratitle.type[1], tpCard1912.paratitle.version,
+			tpCard1912.paratitle.create_time[0], tpCard1912.paratitle.create_time[1], tpCard1912.paratitle.create_time[2], tpCard1912.paratitle.create_time[3], tpCard1912.paratitle.create_time[4], tpCard1912.paratitle.create_time[5], tpCard1912.paratitle.create_time[6],
+			tpCard1912.paratitle.start_time[0], tpCard1912.paratitle.start_time[1], tpCard1912.paratitle.start_time[2], tpCard1912.paratitle.start_time[3],
+			tpCard1912.paratitle.section_number, tpCard1912.paratitle.rfu[0], tpCard1912.paratitle.rfu[1], tpCard1912.paratitle.rfu[2]);
+#endif 
+    //增加判断保存的参数文件大小
+    if(tpCard1912.paratitle.length != file_len)
+    {
+    	fclose(intFile);
+    	memset(&tpCard1912.paratitle, 0x00, sizeof(ParaTitle));
+    	remove( eod_file );
+    	return 1;
+    }
+
+    if(tpCard1912.paratitle.section_number == 0)
+    {
+    	fclose(intFile);
+    	return 1;
+    }
+    if(tpCard1912.offset != NULL)
+    	free(tpCard1912.offset);
+    tpCard1912.offset = (section_offset *)malloc(sizeof(section_offset) * tpCard1912.paratitle.section_number);
+    if(tpCard1912.offset == NULL)
+    {
+    	fclose(intFile);
+    	return 1;
+    }
+    fread(tpCard1912.offset, sizeof(section_offset), tpCard1912.paratitle.section_number, intFile);
+#ifdef DEBUG_1912_PRINT
+    for(i = 0; i < tpCard1912.paratitle.section_number; i++)
+    	PRINTK("start_pos %08x  section_rec %08x\n", tpCard1912.offset[i].start_pos, tpCard1912.offset[i].section_rec);
+#endif
+
+	if(tpCard1912.YKTParameter_val != NULL)
+		free(tpCard1912.YKTParameter_val);
+	tpCard1912.YKTParameter_val = NULL;
+	fread(&tpCard1912.Appmode, sizeof(char), 1, intFile);
+	fread(&tpCard1912.cardnumber, sizeof(short), 1, intFile);
+#ifdef	DEBUG_1912_PRINT
+	PRINTK("AppMode %02x\nconsume card number %04x\n", tpCard1912.Appmode, tpCard1912.cardnumber);
+#endif	
+	if(tpCard1912.cardnumber != 0)
+	{
+		tpCard1912.YKTParameter_val = (YKTParameter_t *)malloc(sizeof(YKTParameter_t) * tpCard1912.cardnumber);
+		if(tpCard1912.YKTParameter_val == NULL)
+		{
+			fclose(intFile);
+			return 1;
+		}
+		fread(tpCard1912.YKTParameter_val, sizeof(YKTParameter_t), tpCard1912.cardnumber, intFile);
+#ifdef	DEBUG_1912_PRINT
+		for(i = 0; i < tpCard1912.cardnumber; i++)
+		{
+			PRINTK("phyical %02x s-type %02x m-type %02x name %02x%02x... card property %02x rfu %02x%02x...\n",
+				tpCard1912.YKTParameter_val[i].phyical, tpCard1912.YKTParameter_val[i].subtype, tpCard1912.YKTParameter_val[i].maintype,
+				tpCard1912.YKTParameter_val[i].name[0], tpCard1912.YKTParameter_val[i].name[1], tpCard1912.YKTParameter_val[i].property, 
+				tpCard1912.YKTParameter_val[i].ruf[0], tpCard1912.YKTParameter_val[i].ruf[1]);
+		}
+#endif		
+	}
+	
+	if(tpCard1912.YKTPassengeMap_val != NULL)
+		free(tpCard1912.YKTPassengeMap_val);
+	tpCard1912.YKTPassengeMap_val = NULL;
+	
+	fread(&tpCard1912.mapnumber, sizeof(short), 1, intFile);
+#ifdef	DEBUG_1912_PRINT
+	PRINTK("map number %04x\n", tpCard1912.mapnumber);
+#endif	
+	if(tpCard1912.mapnumber != 0)
+	{
+		tpCard1912.YKTPassengeMap_val = (YKTPassengeMap_t *)malloc(sizeof(YKTPassengeMap_t) * tpCard1912.mapnumber);
+		if(tpCard1912.YKTPassengeMap_val == NULL)
+		{
+			fclose(intFile);
+			return 1;
+		}
+		fread(tpCard1912.YKTPassengeMap_val, sizeof(YKTPassengeMap_t), tpCard1912.mapnumber, intFile);
+#ifdef	DEBUG_1912_PRINT
+		for(i = 0; i < tpCard1912.mapnumber; i++)
+			PRINTK("YKT passenger %02x METRO passenger %02x\n", 
+				tpCard1912.YKTPassengeMap_val[i].YKTpassenage, tpCard1912.YKTPassengeMap_val[i].passenage);
+#endif		
+	}	
+	fclose(intFile);
+	return 0;
+}
+
+long YKT_1913_Property()
+{
+FILE *intFile;
+long lngPosition, lngnum, file_len;
+char	filename[100], eod_file[100];
+long i, j, k;
+
+	memset(eod_file, 0x00, 100);
+	memset(filename, 0x00, 100);
+	sprintf(eod_file, "PARA.1913.");
+	if(0 != FileisExist("./para/", eod_file, filename))
+	{
+		PRINTK("1913 file not exist\n");
+		return 2;
+	}
+	//check the file
+	sprintf(eod_file, "./para/%s", filename);
+    intFile = fopen(eod_file, "rb");
+    if(intFile == NULL)
+    {
+    	PRINTK("1913 file open failure\n");
+        return 1;
+    }
+    //transfer head 1 + 38
+	fseek(intFile, 0, SEEK_END);
+	file_len = ftell(intFile);
+	fseek(intFile, 0, 0);
+    //fseek(intFile, 39, 0);		// not nead read
+    fread(&tpProperty1913.paratitle, sizeof(ParaTitle), 1, intFile);
+#ifdef	DEBUG_1913_PRINT
+	PRINTK("------1913---------\nformat:%02x source %02x length %08x type %02x%02x ver %04x createtime %02x%02x%02x%02x %02x%02x%02x \nstart %02x%02x%02x%02x offset %04x rfu %02x%02x%02x\n",
+			tpProperty1913.paratitle.format, tpProperty1913.paratitle.source, tpProperty1913.paratitle.length, tpProperty1913.paratitle.type[0], tpProperty1913.paratitle.type[1], tpProperty1913.paratitle.version,
+			tpProperty1913.paratitle.create_time[0], tpProperty1913.paratitle.create_time[1], tpProperty1913.paratitle.create_time[2], tpProperty1913.paratitle.create_time[3], tpProperty1913.paratitle.create_time[4], tpProperty1913.paratitle.create_time[5], tpProperty1913.paratitle.create_time[6],
+			tpProperty1913.paratitle.start_time[0], tpProperty1913.paratitle.start_time[1], tpProperty1913.paratitle.start_time[2], tpProperty1913.paratitle.start_time[3],
+			tpProperty1913.paratitle.section_number, tpProperty1913.paratitle.rfu[0], tpProperty1913.paratitle.rfu[1], tpProperty1913.paratitle.rfu[2]);
+#endif
+    
+    //增加判断保存的参数文件大小
+    if(tpProperty1913.paratitle.length != file_len)
+    {
+    	fclose(intFile);
+    	memset(&tpProperty1913.paratitle, 0x00, sizeof(ParaTitle));
+    	remove( eod_file );
+    	return 1;
+    }
+
+    if(tpProperty1913.paratitle.section_number == 0)
+    {
+    	fclose(intFile);
+    	return 1;
+    }
+    if(tpProperty1913.offset != NULL)
+    	free(tpProperty1913.offset);
+    tpProperty1913.offset = (section_offset *)malloc(sizeof(section_offset) * tpProperty1913.paratitle.section_number);
+    if(tpProperty1913.offset == NULL)
+    {
+    	fclose(intFile);
+    	return 1;
+    }
+    fread(tpProperty1913.offset, sizeof(section_offset), tpProperty1913.paratitle.section_number, intFile);
+#ifdef DEBUG_1913_PRINT
+    for(i = 0; i < tpProperty1913.paratitle.section_number; i++)
+    	PRINTK("start_pos %08x  section_rec %08x\n", tpProperty1913.offset[i].start_pos, tpProperty1913.offset[i].section_rec);
+#endif
+
+	if(tpProperty1913.YKTProperty_val != NULL)
+		free(tpProperty1913.YKTProperty_val);
+	tpProperty1913.YKTProperty_val = NULL;
+	if(tpProperty1913.offset[0].section_rec != 0)
+	{
+		tpProperty1913.YKTProperty_val = (YKTProperty_t *)malloc(sizeof(YKTProperty_t) * tpProperty1913.offset[0].section_rec);
+		if(tpProperty1913.YKTProperty_val == NULL)
+		{
+			fclose(intFile);
+			return 1;
+		}
+		fread(tpProperty1913.YKTProperty_val, sizeof(YKTProperty_t), tpProperty1913.offset[0].section_rec, intFile);
+	}
+	
+	fclose(intFile);
+	return 0;
+}
+
+long YKT_1914_Load()
+{
+FILE *intFile;
+long lngPosition, lngnum, file_len;
+char	filename[100], eod_file[100];
+long i, j, k;
+
+	memset(eod_file, 0x00, 100);
+	memset(filename, 0x00, 100);
+	sprintf(eod_file, "PARA.1914.");
+	if(0 != FileisExist("./para/", eod_file, filename))
+	{
+		PRINTK("1914 file not exist\n");
+		return 2;
+	}
+	//check the file
+	sprintf(eod_file, "./para/%s", filename);
+    intFile = fopen(eod_file, "rb");
+    if(intFile == NULL)
+    {
+    	PRINTK("1914 file open failure\n");
+        return 1;
+    }
+    //transfer head 1 + 38
+	fseek(intFile, 0, SEEK_END);
+	file_len = ftell(intFile);
+	fseek(intFile, 0, 0);
+    //fseek(intFile, 39, 0);		//not nead read
+    fread(&tpLoad1914.paratitle, sizeof(ParaTitle), 1, intFile);
+#ifdef	DEBUG_1914_PRINT
+	PRINTK("------1914---------\nformat:%02x source %02x length %08x type %02x%02x ver %04x createtime %02x%02x%02x%02x %02x%02x%02x \nstart %02x%02x%02x%02x offset %04x rfu %02x%02x%02x\n",
+			tpLoad1914.paratitle.format, tpLoad1914.paratitle.source, tpLoad1914.paratitle.length, tpLoad1914.paratitle.type[0], tpLoad1914.paratitle.type[1], tpLoad1914.paratitle.version,
+			tpLoad1914.paratitle.create_time[0], tpLoad1914.paratitle.create_time[1], tpLoad1914.paratitle.create_time[2], tpLoad1914.paratitle.create_time[3], tpLoad1914.paratitle.create_time[4], tpLoad1914.paratitle.create_time[5], tpLoad1914.paratitle.create_time[6],
+			tpLoad1914.paratitle.start_time[0], tpLoad1914.paratitle.start_time[1], tpLoad1914.paratitle.start_time[2], tpLoad1914.paratitle.start_time[3],
+			tpLoad1914.paratitle.section_number, tpLoad1914.paratitle.rfu[0], tpLoad1914.paratitle.rfu[1], tpLoad1914.paratitle.rfu[2]);
+#endif
+    
+    //增加判断保存的参数文件大小
+    if(tpLoad1914.paratitle.length != file_len)
+    {
+    	fclose(intFile);
+    	memset(&tpLoad1914.paratitle, 0x00, sizeof(ParaTitle));
+    	remove( eod_file );
+    	return 1;
+    }
+
+    if(tpLoad1914.paratitle.section_number == 0)
+    {
+    	fclose(intFile);
+    	return 1;
+    }
+    if(tpLoad1914.offset != NULL)
+    	free(tpProperty1913.offset);
+    tpLoad1914.offset = (section_offset *)malloc(sizeof(section_offset) * tpLoad1914.paratitle.section_number);
+    if(tpLoad1914.offset == NULL)
+    {
+    	fclose(intFile);
+    	return 1;
+    }
+    fread(tpLoad1914.offset, sizeof(section_offset), tpLoad1914.paratitle.section_number, intFile);
+#ifdef DEBUG_1914_PRINT
+    for(i = 0; i < tpLoad1914.paratitle.section_number; i++)
+    	PRINTK("start_pos %08x  section_rec %08x\n", tpLoad1914.offset[i].start_pos, tpLoad1914.offset[i].section_rec);
+#endif
+
+	if(tpLoad1914.YKTLoad_val != NULL)
+		free(tpLoad1914.YKTLoad_val);
+	tpLoad1914.YKTLoad_val = NULL;
+	if(tpLoad1914.offset[0].section_rec != 0)
+	{
+		tpLoad1914.YKTLoad_val = (YKTLoad_t *)malloc(sizeof(YKTLoad_t) * tpLoad1914.offset[0].section_rec);
+		if(tpLoad1914.YKTLoad_val == NULL)
+		{
+			fclose(intFile);
+			return 1;
+		}
+		fread(tpLoad1914.YKTLoad_val, sizeof(YKTLoad_t), tpLoad1914.offset[0].section_rec, intFile);
+	}
+#ifdef	DEBUG_1914_PRINT
+	for(i = 0; i < tpLoad1914.offset[0].section_rec; i++)
+	{
+		PRINTK("phyical %02x subtype %02x maintype %02x name %s allowissue %02x allowadd %02x minamont %04x perload %04x maxamount %08x manbalance %08x delayday %08x\n",
+			tpLoad1914.YKTLoad_val[i].phyical, tpLoad1914.YKTLoad_val[i].subtype, tpLoad1914.YKTLoad_val[i].maintype, tpLoad1914.YKTLoad_val[i].name, tpLoad1914.YKTLoad_val[i].enabledsale,
+			tpLoad1914.YKTLoad_val[i].enableload, tpLoad1914.YKTLoad_val[i].firstloadvalue, tpLoad1914.YKTLoad_val[i].perloadvalue, tpLoad1914.YKTLoad_val[i].maxloadvalue,
+			tpLoad1914.YKTLoad_val[i].maxbalance, tpLoad1914.YKTLoad_val[i].extentiondays);
+	}
+#endif	
+	fclose(intFile);
+	return 0;
+}
+
+long YKT_1919_Terminal()
+{
+FILE *intFile;
+long lngPosition, lngnum, file_len;
+char	filename[100], eod_file[100];
+long i, j, k;
+
+	memset(eod_file, 0x00, 100);
+	memset(filename, 0x00, 100);
+	sprintf(eod_file, "PARA.1919.");
+	if(0 != FileisExist("./para/", eod_file, filename))
+	{
+		PRINTK("1919 file not exist\n");
+		return 2;
+	}
+	//check the file
+	sprintf(eod_file, "./para/%s", filename);
+    intFile = fopen(eod_file, "rb");
+    if(intFile == NULL)
+    {
+    	PRINTK("1919 file open failure\n");
+        return 1;
+    }
+    //transfer head 1 + 38
+	fseek(intFile, 0, SEEK_END);
+	file_len = ftell(intFile);
+	fseek(intFile, 0, 0);
+    //fseek(intFile, 39, 0);		//not nead read
+    fread(&tpTerminal1919.paratitle, sizeof(ParaTitle), 1, intFile);
+#ifdef	DEBUG_1919_PRINT
+	PRINTK("------1919---------\nformat:%02x source %02x length %08x type %02x%02x ver %04x createtime %02x%02x%02x%02x %02x%02x%02x \nstart %02x%02x%02x%02x offset %04x rfu %02x%02x%02x\n",
+			tpTerminal1919.paratitle.format, tpTerminal1919.paratitle.source, tpTerminal1919.paratitle.length, tpTerminal1919.paratitle.type[0], tpTerminal1919.paratitle.type[1], tpTerminal1919.paratitle.version,
+			tpTerminal1919.paratitle.create_time[0], tpTerminal1919.paratitle.create_time[1], tpTerminal1919.paratitle.create_time[2], tpTerminal1919.paratitle.create_time[3], tpTerminal1919.paratitle.create_time[4], tpTerminal1919.paratitle.create_time[5], tpTerminal1919.paratitle.create_time[6],
+			tpTerminal1919.paratitle.start_time[0], tpTerminal1919.paratitle.start_time[1], tpTerminal1919.paratitle.start_time[2], tpTerminal1919.paratitle.start_time[3],
+			tpTerminal1919.paratitle.section_number, tpTerminal1919.paratitle.rfu[0], tpTerminal1919.paratitle.rfu[1], tpTerminal1919.paratitle.rfu[2]);
+#endif
+    
+    //增加判断保存的参数文件大小
+    if(tpTerminal1919.paratitle.length != file_len)
+    {
+    	fclose(intFile);
+    	memset(&tpTerminal1919.paratitle, 0x00, sizeof(ParaTitle));
+    	remove( eod_file );
+    	return 1;
+    }
+
+    if(tpTerminal1919.paratitle.section_number == 0)
+    {
+    	fclose(intFile);
+    	return 1;
+    }
+    if(tpTerminal1919.offset != NULL)
+    	free(tpTerminal1919.offset);
+    tpTerminal1919.offset = (section_offset *)malloc(sizeof(section_offset) * tpTerminal1919.paratitle.section_number);
+    if(tpTerminal1919.offset == NULL)
+    {
+    	fclose(intFile);
+    	return 1;
+    }
+    fread(tpTerminal1919.offset, sizeof(section_offset), tpTerminal1919.paratitle.section_number, intFile);
+#ifdef DEBUG_1919_PRINT
+    for(i = 0; i < tpTerminal1919.paratitle.section_number; i++)
+    	PRINTK("start_pos %08x  section_rec %08x\n", tpTerminal1919.offset[i].start_pos, tpTerminal1919.offset[i].section_rec);
+#endif
+
+	if(tpTerminal1919.YKTTerminal_val != NULL)
+		free(tpTerminal1919.YKTTerminal_val);
+	tpTerminal1919.YKTTerminal_val = NULL;
+	if(tpTerminal1919.offset[0].section_rec != 0)
+	{
+		tpTerminal1919.YKTTerminal_val = (YKTTerminal_t *)malloc(sizeof(YKTTerminal_t) * tpTerminal1919.offset[0].section_rec);
+		if(tpTerminal1919.YKTTerminal_val == NULL)
+		{
+			fclose(intFile);
+			return 1;
+		}
+		fread(tpTerminal1919.YKTTerminal_val, sizeof(YKTTerminal_t), tpTerminal1919.offset[0].section_rec, intFile);
+	}
+#ifdef	DEBUG_1919_PRINT
+	for(i = 0; i < tpTerminal1919.offset[0].section_rec; i++)
+	{
+		PRINTK("phyical %02x subtype %02x maintype %02x rfu %04x minbalance %04x overdraft %04x \n",
+			tpTerminal1919.YKTTerminal_val[i].phyical, tpTerminal1919.YKTTerminal_val[i].subtype, tpTerminal1919.YKTTerminal_val[i].maintype,
+			tpTerminal1919.YKTTerminal_val[i].rfu1, tpTerminal1919.YKTTerminal_val[i].minbalance, tpTerminal1919.YKTTerminal_val[i].max);
+	}
+#endif	
+	fclose(intFile);
+	return 0;
+}
+
+long YKT_1920_Continue()
+{
+FILE *intFile;
+long lngPosition, lngnum, file_len;
+char	filename[100], eod_file[100];
+long i, j, k;
+
+	memset(eod_file, 0x00, 100);
+	memset(filename, 0x00, 100);
+	sprintf(eod_file, "PARA.1920.");
+	if(0 != FileisExist("./para/", eod_file, filename))
+	{
+		PRINTK("1920 file not exist\n");
+		return 2;
+	}
+	//check the file
+	sprintf(eod_file, "./para/%s", filename);
+    intFile = fopen(eod_file, "rb");
+    if(intFile == NULL)
+    {
+    	PRINTK("1920 file open failure\n");
+        return 1;
+    }
+    //transfer head 1 + 38
+	fseek(intFile, 0, SEEK_END);
+	file_len = ftell(intFile);
+	fseek(intFile, 0, 0);
+    //fseek(intFile, 39, 0);		// not nead read
+    fread(&tpContinue1920.paratitle, sizeof(ParaTitle), 1, intFile);
+#ifdef	DEBUG_1920_PRINT
+	PRINTK("------1920---------\nformat:%02x source %02x length %08x type %02x%02x ver %04x createtime %02x%02x%02x%02x %02x%02x%02x \nstart %02x%02x%02x%02x offset %04x rfu %02x%02x%02x\n",
+			tpContinue1920.paratitle.format, tpContinue1920.paratitle.source, tpContinue1920.paratitle.length, tpContinue1920.paratitle.type[0], tpContinue1920.paratitle.type[1], tpContinue1920.paratitle.version,
+			tpContinue1920.paratitle.create_time[0], tpContinue1920.paratitle.create_time[1], tpContinue1920.paratitle.create_time[2], tpContinue1920.paratitle.create_time[3], tpContinue1920.paratitle.create_time[4], tpContinue1920.paratitle.create_time[5], tpContinue1920.paratitle.create_time[6],
+			tpContinue1920.paratitle.start_time[0], tpContinue1920.paratitle.start_time[1], tpContinue1920.paratitle.start_time[2], tpContinue1920.paratitle.start_time[3],
+			tpContinue1920.paratitle.section_number, tpContinue1920.paratitle.rfu[0], tpContinue1920.paratitle.rfu[1], tpContinue1920.paratitle.rfu[2]);
+#endif
+    
+    //增加判断保存的参数文件大小
+    if(tpContinue1920.paratitle.length != file_len)
+    {
+    	fclose(intFile);
+    	memset(&tpContinue1920.paratitle, 0x00, sizeof(ParaTitle));
+    	remove( eod_file );
+    	return 1;
+    }
+
+    if(tpContinue1920.paratitle.section_number == 0)
+    {
+    	fclose(intFile);
+    	return 1;
+    }
+    if(tpContinue1920.offset != NULL)
+    	free(tpContinue1920.offset);
+    tpContinue1920.offset = (section_offset *)malloc(sizeof(section_offset) * tpContinue1920.paratitle.section_number);
+    if(tpContinue1920.offset == NULL)
+    {
+    	fclose(intFile);
+    	return 1;
+    }
+    fread(tpContinue1920.offset, sizeof(section_offset), tpContinue1920.paratitle.section_number, intFile);
+#ifdef DEBUG_1920_PRINT
+    for(i = 0; i < tpContinue1920.paratitle.section_number; i++)
+    	PRINTK("start_pos %08x  section_rec %08x\n", tpContinue1920.offset[i].start_pos, tpContinue1920.offset[i].section_rec);
+#endif
+
+	if(tpContinue1920.YKTContinue_val != NULL)
+		free(tpContinue1920.YKTContinue_val);
+	tpContinue1920.YKTContinue_val = NULL;
+	if(tpContinue1920.offset[0].section_rec != 0)
+	{
+		tpContinue1920.YKTContinue_val = (YKTContinue_t *)malloc(sizeof(YKTContinue_t) * tpContinue1920.offset[0].section_rec);
+		if(tpContinue1920.YKTContinue_val == NULL)
+		{
+			fclose(intFile);
+			return 1;
+		}
+		fread(tpContinue1920.YKTContinue_val, sizeof(YKTContinue_t), tpContinue1920.offset[0].section_rec, intFile);
+	}
+#ifdef	DEBUG_1920_PRINT
+	for(i = 0; i < tpContinue1920.offset[0].section_rec; i++)
+	{
+		PRINTK("con-participant %02x%02x%02x con-min %04x percent-bonus %04x bonusvalue %04x\n",
+			tpContinue1920.YKTContinue_val[i].operation[0], tpContinue1920.YKTContinue_val[i].operation[1], tpContinue1920.YKTContinue_val[i].operation[2],
+			tpContinue1920.YKTContinue_val[i].continueminute, tpContinue1920.YKTContinue_val[i].bonuspercent, tpContinue1920.YKTContinue_val[i].bonusvalue);
+	}
+#endif	
+	fclose(intFile);
+	return 0;
+}
+
+long LCC_3021_Sensitive()
+{
+FILE *intFile;
+long lngPosition, lngnum, file_len;
+char	filename[100], eod_file[100];
+long i, j, k;
+unsigned long 	lngFileLen;
+unsigned short  shFailureCode;
+
+	memset(eod_file, 0x00, 100);
+	memset(filename, 0x00, 100);
+	sprintf(eod_file, "PARA.3021.");
+	if(0 != FileisExist("./para/", eod_file, filename))
+	{
+		PRINTK("3021 file not exist\n");
+		return 2;
+	}
+	//check the file
+	sprintf(eod_file, "./para/%s", filename);
+    intFile = fopen(eod_file, "rb");
+    if(intFile == NULL)
+    {
+    	PRINTK("3021 file open failure\n");
+        return 1;
+    }
+    //get the file length
+    //transfer head 1 + 38
+	fseek(intFile, 0, SEEK_END);
+	file_len = ftell(intFile);
+	fseek(intFile, 0, 0);
+    //fseek(intFile, 39, 0);		// not nead read
+    fread(&tpSensitive3021.paratitle, sizeof(ParaTitle), 1, intFile);
+#ifdef	DEBUG_3021_PRINT
+	PRINTK("------3021---------\nformat:%02x source %02x length %08x type %02x%02x ver %04x createtime %02x%02x%02x%02x %02x%02x%02x \nstart %02x%02x%02x%02x offset %04x rfu %02x%02x%02x\n",
+			tpSensitive3021.paratitle.format, tpSensitive3021.paratitle.source, tpSensitive3021.paratitle.length, tpSensitive3021.paratitle.type[0], tpSensitive3021.paratitle.type[1], tpSensitive3021.paratitle.version,
+			tpSensitive3021.paratitle.create_time[0], tpSensitive3021.paratitle.create_time[1], tpSensitive3021.paratitle.create_time[2], tpSensitive3021.paratitle.create_time[3], tpSensitive3021.paratitle.create_time[4], tpSensitive3021.paratitle.create_time[5], tpSensitive3021.paratitle.create_time[6],
+			tpSensitive3021.paratitle.start_time[0], tpSensitive3021.paratitle.start_time[1], tpSensitive3021.paratitle.start_time[2], tpSensitive3021.paratitle.start_time[3],
+			tpSensitive3021.paratitle.section_number, tpSensitive3021.paratitle.rfu[0], tpSensitive3021.paratitle.rfu[1], tpSensitive3021.paratitle.rfu[2]);
+#endif
+    
+    //增加判断保存的参数文件大小
+    if(tpSensitive3021.paratitle.length != file_len)
+    {
+    	fclose(intFile);
+    	memset(&tpSensitive3021.paratitle, 0x00, sizeof(ParaTitle));
+    	remove( eod_file );
+    	return 1;
+    }
+    
+	if(tpSensitive3021.Sensitive_Failure_val != NULL)
+		free(tpSensitive3021.Sensitive_Failure_val);
+	tpSensitive3021.Sensitive_Failure_val = NULL;
+	//增加判断文件大小
+	if(file_len < sizeof(ParaTitle) )
+	{
+		fclose(intFile);
+    	memset(&tpSensitive3021.paratitle, 0x00, sizeof(ParaTitle));
+    	remove( eod_file );
+    	return 1;
+	}
+	//
+	lngnum = (file_len - sizeof(tpSensitive3021.paratitle)) / (sizeof(Sensitive_Failure_t));
+	tpSensitive3021.offset.section_rec = lngnum;
+#ifdef	DEBUG_3021_PRINT
+	PRINTK("sensitive failure number %08x\n", lngnum);
+#endif
+	if(lngnum != 0)
+	{
+		tpSensitive3021.Sensitive_Failure_val = (Sensitive_Failure_t *)malloc(lngnum * sizeof(Sensitive_Failure_t));
+		fread(tpSensitive3021.Sensitive_Failure_val, sizeof(Sensitive_Failure_t), lngnum, intFile);
+		for(i = 0; i < lngnum; i++)
+		{
+			shFailureCode = tpSensitive3021.Sensitive_Failure_val[i].failure_code;
+			tpSensitive3021.Sensitive_Failure_val[i].failure_code = ((shFailureCode & 0xFF) << 8) + (shFailureCode >> 8);
+#ifdef	DEBUG_3021_PRINT
+			PRINTK("EXE SLE %02x%02x%02x%02x FailureCode %04x start %02x%02x-%02x-%02x %02x:%02x:%02x end %02x%02x-%02x-%02x %02x:%02x:%02x sensitive %02x%02x-%02x-%02x\n", 
+				tpSensitive3021.Sensitive_Failure_val[i].execute_sle[0], tpSensitive3021.Sensitive_Failure_val[i].execute_sle[1], tpSensitive3021.Sensitive_Failure_val[i].execute_sle[2], tpSensitive3021.Sensitive_Failure_val[i].execute_sle[3],
+				tpSensitive3021.Sensitive_Failure_val[i].failure_code, 
+				tpSensitive3021.Sensitive_Failure_val[i].failure_start_time[0], tpSensitive3021.Sensitive_Failure_val[i].failure_start_time[1], tpSensitive3021.Sensitive_Failure_val[i].failure_start_time[2], tpSensitive3021.Sensitive_Failure_val[i].failure_start_time[3],
+				tpSensitive3021.Sensitive_Failure_val[i].failure_start_time[4], tpSensitive3021.Sensitive_Failure_val[i].failure_start_time[5], tpSensitive3021.Sensitive_Failure_val[i].failure_start_time[6],
+				tpSensitive3021.Sensitive_Failure_val[i].failure_end_time[0], tpSensitive3021.Sensitive_Failure_val[i].failure_end_time[1], tpSensitive3021.Sensitive_Failure_val[i].failure_end_time[2], tpSensitive3021.Sensitive_Failure_val[i].failure_end_time[3],
+				tpSensitive3021.Sensitive_Failure_val[i].failure_end_time[4], tpSensitive3021.Sensitive_Failure_val[i].failure_end_time[5], tpSensitive3021.Sensitive_Failure_val[i].failure_end_time[6],
+				tpSensitive3021.Sensitive_Failure_val[i].sensitive_time[0], tpSensitive3021.Sensitive_Failure_val[i].sensitive_time[1], tpSensitive3021.Sensitive_Failure_val[i].sensitive_time[2], tpSensitive3021.Sensitive_Failure_val[i].sensitive_time[3]);
+#endif			
+		}
+	}
+	fclose(intFile);
+	return 0;
+}
+
+/*
+*/
+unsigned char binFileManage(unsigned short shcmd, unsigned char *cmd_buf, int cmd_len, unsigned char *out_buf, unsigned short *out_len)
+{
+unsigned char chEodnum;
+unsigned char chret, filename[100], cache_file[150];
+FILE	*fl;
+unsigned long lngbyte4, i;
+unsigned short shbyte2, mode_days, shFramelen;
+char  *filebuf, filepath[200], chfile[40], chprefix[20];
+int	ret;
+
+	switch(shcmd)
+	{
+	case 0x5454:
+		memcpy(out_buf, "\x00\x00\x00\x00", 4);
+		chret = CE_OK;
+		*out_len = 4;
+		break;
+	case 0x5342:
+		//set station mode
+		memcpy(&shbyte2, &cmd_buf[6], 2);
+		tpStationWaiverMode.waivermode_len = shbyte2;
+		if(tpStationWaiverMode.waivermode_val != NULL)
+		{
+			free(tpStationWaiverMode.waivermode_val);
+			tpStationWaiverMode.waivermode_val = NULL;
+		}
+		if(tpStationWaiverMode.waivermode_len != 0)
+			tpStationWaiverMode.waivermode_val = (unsigned char *)malloc((long)tpStationWaiverMode.waivermode_len * XA_WAIVER_LEN);
+		if((tpStationWaiverMode.waivermode_val == NULL) && (tpStationWaiverMode.waivermode_len != 0))
+		{
+			chret = CE_UNKNOWN;
+			*out_len = 0;
+		}else
+		{
+			if(tpStationWaiverMode.waivermode_len != 0)
+				memcpy(tpStationWaiverMode.waivermode_val, &cmd_buf[8], (long)tpStationWaiverMode.waivermode_len * XA_WAIVER_LEN);
+			chret = CE_OK;
+			*out_len = 1;
+			out_buf[0] = reader_status;
+		}
+		break;
+	case 0x5341:
+		//set station 24H operation
+		*out_len = 0;
+		chret = CE_OK;
+		break;
+	case 0x5323://get the EOD version
+		get_cur_para_ver("\x11\x01", tpSystem1101.paratitle.version, tpSystem1101.paratitle.start_time, &out_buf[2]);
+		get_cur_para_ver("\x11\x02", tpBusiness1102.paratitle.version, tpBusiness1102.paratitle.start_time, &out_buf[13]);
+		get_cur_para_ver("\x11\x04", tpBlacklist1104.paratitle.version, tpBlacklist1104.paratitle.start_time, &out_buf[24]);
+		get_cur_para_ver("\x11\x05", tpProduct1105.paratitle.version, tpProduct1105.paratitle.start_time, &out_buf[35]);
+		get_cur_para_ver("\x11\x06", tpLocation1106.paratitle.version, tpLocation1106.paratitle.start_time, &out_buf[46]);
+		get_cur_para_ver("\x11\x07", tpCalendar1107.paratitle.version, tpCalendar1107.paratitle.start_time, &out_buf[57]);
+		get_cur_para_ver("\x11\x08", tpFareTable1108.paratitle.version, tpFareTable1108.paratitle.start_time, &out_buf[68]);
+		get_cur_para_ver("\x11\x09", tpSaleTable1109.paratitle.version, tpSaleTable1109.paratitle.start_time, &out_buf[79]);
+		
+		get_cur_para_ver("\x19\x01", tpBlacklist1901.paratitle.version, tpBlacklist1901.paratitle.start_time, &out_buf[90]);
+		get_cur_para_ver("\x19\x12", tpCard1912.paratitle.version, tpCard1912.paratitle.start_time, &out_buf[101]);
+		get_cur_para_ver("\x19\x13", tpProperty1913.paratitle.version, tpProperty1913.paratitle.start_time, &out_buf[112]);
+		get_cur_para_ver("\x19\x14", tpLoad1914.paratitle.version, tpLoad1914.paratitle.start_time, &out_buf[123]);
+		get_cur_para_ver("\x19\x19", tpTerminal1919.paratitle.version, tpTerminal1919.paratitle.start_time, &out_buf[134]);
+		get_cur_para_ver("\x19\x20", tpContinue1920.paratitle.version, tpContinue1920.paratitle.start_time, &out_buf[145]);
+		
+		get_cur_para_ver("\x30\x21", tpSensitive3021.paratitle.version, tpSensitive3021.paratitle.start_time, &out_buf[156]);
+		//
+//		get_cur_para_ver("\x11\x03", 0x1d, "\x20\x4\x01\x17\x00", &out_buf[167]);
+//		get_cur_para_ver("\x19\x02", 0x1e, "\x20\x4\x01\x17\x00", &out_buf[178]);
+//		get_cur_para_ver("\x19\x15", 0x23, "\x20\x4\x01\x17\x00", &out_buf[189]);
+//		get_cur_para_ver("\x19\x16", 0x24, "\x20\x4\x01\x17\x00", &out_buf[200]);
+//		get_cur_para_ver("\x19\x17", 0x25, "\x20\x4\x01\x17\x00", &out_buf[211]);
+//		get_cur_para_ver("\x19\x21", 0x29, "\x20\x4\x01\x17\x00", &out_buf[222]);
+//		get_cur_para_ver("\x10\x01", 0x52, "\x20\x4\x01\x17\x00", &out_buf[233]);
+//		get_cur_para_ver("\x10\x02", tpLCC1002.paratitle.version, "\x20\x4\x01\x17\x00", &out_buf[244]);
+//		get_cur_para_ver("\x10\x97", 0x01, "\x20\x4\x01\x17\x00", &out_buf[255]);
+		
+		get_cur_para_ver("\x19\x31", tpBlacklist1931.paratitle.version, tpBlacklist1931.paratitle.start_time, &out_buf[167]);
+		get_cur_para_ver("\x19\x32", tpWhite1932.paratitle.version, tpWhite1932.paratitle.start_time, &out_buf[178]);
+		get_cur_para_ver("\x19\x33", tpProperty1933.paratitle.version, tpProperty1933.paratitle.start_time, &out_buf[189]);
+		get_cur_para_ver("\x19\x34", tpTerminal1934.paratitle.version, tpTerminal1934.paratitle.start_time, &out_buf[200]);
+		get_cur_para_ver("\x19\x35", tpPreferential1935.paratitle.version, tpPreferential1935.paratitle.start_time, &out_buf[211]);
+		get_cur_para_ver("\x19\x38", tpLoad1938.paratitle.version, tpLoad1938.paratitle.start_time, &out_buf[222]);
+		get_cur_para_ver("\x19\x39", tpServer1939.paratitle.version, tpServer1939.paratitle.start_time, &out_buf[233]);
+		out_buf[0] = 15 + 7; out_buf[1] = 0;
+		chret = CE_OK;
+		*out_len = 167 + 77;
+		break;
+	case 0x5307:		//download  TP program.
+		memcpy(&shbyte2, &cmd_buf[6], 2);	//frame number
+		memcpy(&shFramelen, &cmd_buf[1], 2);
+		shFramelen -= 6;		//only data
+		if(shbyte2 == 0)		//first frame
+		{
+			eod_download.curFrame = 0;
+			sprintf(eod_download.filename, "xian");
+			sprintf(eod_download.filepath, "./prognew/%s", eod_download.filename);
+			fl = fopen(eod_download.filepath, "w+");
+				fseek(fl, 0, SEEK_SET);
+				fwrite(&cmd_buf[8], 1, shFramelen, fl);
+			fclose(fl);
+			chret = CE_OK;
+			out_buf[0] = reader_status;
+			memcpy(&out_buf[1], &shbyte2, 2);
+			*out_len = 3;
+#ifdef DEBUG_PRINT			
+			PRINTK("first frame filelen:%d totalframe:%d curframe:%d filename:%s\n", eod_download.filelen, eod_download.totalFrame, shbyte2, eod_download.filename);
+#endif
+		}else if (shbyte2 != 0xffff)
+		{
+			//first check the frame continuous
+			if(shbyte2 != eod_download.curFrame + 1)
+			{
+				chret = CE_CONTINUE_MULTIFRAME;	//not continuous frame
+				memcpy(&out_buf[0], &cmd_buf[3], 2);
+				memcpy(&out_buf[2], &cmd_buf[1], 2);
+				*out_len = 4;
+				break;
+			}
+			eod_download.curFrame = shbyte2;
+			//record the file and it's length, 
+			//eod_download.curFilelen += (chFramelen - 1);
+			//sprintf(filepath, "./prognew/%s", eod_download.filename);
+			fl = fopen(eod_download.filepath, "a+");
+				fseek(fl, 0, SEEK_END);
+				fwrite(&cmd_buf[8], 1, shFramelen , fl);
+			fclose(fl);
+			chret = CE_OK;
+			out_buf[0] = reader_status;
+			memcpy(&out_buf[1], &shbyte2, 2);
+			*out_len = 3;
+		}else
+		{
+			fl = fopen(eod_download.filepath, "a+");
+				fseek(fl, 0, SEEK_END);
+				fwrite(&cmd_buf[8], 1, shFramelen , fl);
+			//calculate the md5
+				lngbyte4 = ftell(fl);
+				fseek(fl, 0, SEEK_SET);
+				filebuf = (char *)malloc(lngbyte4);
+				fread(filebuf, 1, lngbyte4, fl);
+			md5_str((unsigned char *)filebuf, lngbyte4, out_buf);
+			free(filebuf);
+			fseek(fl, 0, SEEK_END);
+			fwrite(out_buf, 1, 16, fl);
+			fclose(fl);
+
+			chret = CE_OK;
+			out_buf[0] = reader_status;
+			memcpy(&out_buf[1], &shbyte2, 2);
+			*out_len = 3;
+		}
+		break;
+	case 0x5308:		//active tp
+		chret = CE_MD5;
+		*out_len = 0;
+		if (0 != FileisExist("./prognew/", NULL, filename))
+			break;
+		sprintf(filepath, "./prognew/%s", filename);
+		fl = fopen(filepath, "r+");
+			fseek(fl, 0, SEEK_END);
+			lngbyte4 = ftell(fl);
+			if((lngbyte4 - 16) <= 0)
+			{
+				fclose(fl);
+				return chret;
+			}
+			fseek(fl, 0, SEEK_SET);
+			filebuf = (char *)malloc(lngbyte4);
+			fread(filebuf, 1, lngbyte4, fl);
+		fclose(fl);
+		md5_str((unsigned char *)filebuf, lngbyte4 - 16, out_buf);
+		if(memcmp(out_buf, &filebuf[lngbyte4 - 16], 16) == 0)
+		{
+			chret = CE_OK;
+			*out_len = 0;
+			active_tp_file(filename, NULL);
+		}
+		free(filebuf);
+		break;
+	case 0x5306:		//download the EOD file and active
+		if( g_blnHHJTorFounder )
+		{
+			memcpy((short *)&shbyte2, &cmd_buf[9], 2);	//package serial number
+			memcpy(&shFramelen, &cmd_buf[11], 2);
+			if(shbyte2 == 0)		//first frame
+			{
+				ByteToShort(&eod_download.filetype, &cmd_buf[7]);
+				memset(eod_download.filename, 0x00, 41);
+				sprintf(eod_download.filename, "PARA.%02x%02x.dat", cmd_buf[7], cmd_buf[8]);
+				sprintf(eod_download.filepath, "./cache/%s", eod_download.filename);
+				eod_download.curFrame = 0;
+				//first check whether the file name in the cache direcotry or not or delete it
+				memset(cache_file, 0x00, 150);
+				memset(filename, 0x00, 100);
+				memcpy(cache_file, eod_download.filename, 13);
+				if(0 == FileisExist("./cache/", cache_file, filename))
+				{
+					sprintf(cache_file, "./cache/%s", filename);
+					remove(cache_file);
+				}
+				fl = fopen(eod_download.filepath, "w+");
+					fwrite(&cmd_buf[13], 1, shFramelen, fl);
+				fclose(fl);
+				chret = CE_OK;
+				memcpy(&out_buf[0], &cmd_buf[9], 2);
+				memcpy(&out_buf[2], &cmd_buf[1], 2);
+				*out_len = 4;
+			}else if (shbyte2 == 0xFFFF)
+			{
+				if(eod_download.filetype != 0)
+				{
+					fl = fopen(eod_download.filepath, "a+");
+				}else 
+				{
+					ByteToShort(&eod_download.filetype, &cmd_buf[7]);
+					memset(eod_download.filename, 0x00, 41);
+					sprintf(eod_download.filename, "PARA.%02x%02x.dat", cmd_buf[7], cmd_buf[8]);
+					sprintf(eod_download.filepath, "./cache/%s", eod_download.filename);
+					fl = fopen(eod_download.filepath, "w+");
+				}
+					fseek(fl, 0, SEEK_END);
+					fwrite(&cmd_buf[13], 1, shFramelen, fl);
+				fclose(fl);
+				memset(chprefix, 0x00, 20);
+				memcpy(chprefix, eod_download.filename, 13);
+				if(0 == FileisExist("./paranew/", chprefix, chfile))
+				{
+					sprintf(filepath, "./paranew/%s", chfile);
+					remove(filepath);
+				}
+				sprintf(filepath, "./paranew/%s", eod_download.filename);
+				rename(eod_download.filepath, filepath); 
+				//
+				memcpy(&out_buf[0], &cmd_buf[9], 2);
+				memcpy(&out_buf[2], &cmd_buf[1], 2);
+				*out_len = 4;
+				if(0 != active_eod_file(eod_download.filename, (long *)&lngbyte4, 9) )
+				{
+					chret = CE_HARDERROR;
+					break;
+				}
+				chret = CE_OK;
+#ifdef DEBUG_PRINT			
+				PRINTK("first frame filelen:%d totalframe:%d curframe:%d filename:%s\n", eod_download.filelen, eod_download.totalFrame, shbyte2, eod_download.filename);
+#endif
+				//
+				switch(eod_download.filetype)
+				{
+				case 0x1101:
+					PACC_1101_SystemParameter();
+					break;
+				case 0x1102:
+					PACC_1102_Business();
+					break;
+				case 0x1103:
+					break;
+				case 0x1104:
+					PACC_1104_Blacklist();
+					break;
+				case 0x1105:
+					PACC_1105_Product();
+					break;
+				case 0x1106:
+					PACC_1106_Location();
+					break;
+				case 0x1107:
+					PACC_1107_Calendar();
+					break;
+				case 0x1108:
+					PACC_1108_FareTable();
+					break;
+				case 0x1109:
+					PACC_1109_SaleTable();
+					break;
+				case 0x1901:
+					YKT_1901_Blacklist();
+					break;
+				case 0x1912:
+					YKT_1912_Card();
+					break;
+				case 0x1913:
+					YKT_1913_Property();
+					break;
+				case 0x1914:
+					YKT_1914_Load();
+					break;
+				case 0x1919:
+					YKT_1919_Terminal();
+					break;
+				case 0x1920:
+					YKT_1920_Continue();
+					break;
+				case 0x3021:
+					LCC_3021_Sensitive();
+					break;
+				case 0x1931:
+					JTB_1931_Blacklist();
+					break;
+				case 0x1932:
+					JTB_1932_White();
+					break;
+				case 0x1933:
+					JTB_1933_Property();
+					break;
+				case 0x1934:
+					JTB_1934_Terminal();
+					break;
+				case 0x1935:
+					JTB_1935_Preferential();
+					break;
+				case 0x1938:
+					JTB_1938_Load();
+					break;
+				case 0x1939:
+					JTB_1939_Server();
+					break;
+				}
+				eod_download.filetype = 0;
+			}else
+			{
+				//first check the frame continuous
+				if(shbyte2 != eod_download.curFrame + 1)
+				{
+					chret = CE_CONTINUE_MULTIFRAME;	//not continuous frame
+					memcpy(&out_buf[0], &cmd_buf[9], 2);
+					memcpy(&out_buf[2], &cmd_buf[1], 2);
+					*out_len = 4;
+					break;
+				}
+				eod_download.curFrame = shbyte2;
+				fl = fopen(eod_download.filepath, "a+");
+					fseek(fl, 0, SEEK_END);
+					fwrite(&cmd_buf[13], 1, shFramelen, fl);
+				fclose(fl);
+				chret = CE_OK;
+				memcpy(&out_buf[0], &cmd_buf[9], 2);
+				memcpy(&out_buf[2], &cmd_buf[1], 2);
+				*out_len = 4;
+			}
+		}else
+		{//FOUNDER protocol
+			memcpy((short *)&shbyte2, &cmd_buf[9], 2);	//package serial number
+			memcpy(&shFramelen, &cmd_buf[11], 2);
+				memset(eod_download.filename, 0x00, 41);
+				sprintf(eod_download.filename, "PARA.%02x%02x.dat", cmd_buf[7], cmd_buf[8]);
+				sprintf(eod_download.filepath, "./cache/%s", eod_download.filename);
+				memset(cache_file, 0x00, 150);
+				memset(filename, 0x00, 100);
+				memcpy(cache_file, eod_download.filename, 13);
+				if(0 != FileisExist("./cache/", cache_file, filename))
+				{
+					fl = fopen(eod_download.filepath, "w+");
+					fclose(fl);
+				}
+			if(cmd_buf[6] == 0)		//last frame
+			{
+				ByteToShort(&eod_download.filetype, &cmd_buf[7]);
+				eod_download.curFrame = 0;
+	
+				fl = fopen(eod_download.filepath, "a+");
+					fseek(fl, 0, SEEK_END);
+					fwrite(&cmd_buf[13], 1, shFramelen, fl);
+				fclose(fl);
+				memset(chprefix, 0x00, 20);
+				memcpy(chprefix, eod_download.filename, 13);
+				if(0 == FileisExist("./paranew/", chprefix, chfile))
+				{
+					sprintf(filepath, "./paranew/%s", chfile);
+					remove(filepath);
+				}
+				sprintf(filepath, "./paranew/%s", eod_download.filename);
+				rename(eod_download.filepath, filepath); 
+				//
+				active_eod_file(eod_download.filename, (long *)&lngbyte4, 9);
+				chret = CE_OK;
+				memcpy(&out_buf[0], &cmd_buf[9], 2);
+				memcpy(&out_buf[2], &cmd_buf[1], 2);
+				*out_len = 4;
+#ifdef DEBUG_PRINT			
+				PRINTK("first frame filelen:%d totalframe:%d curframe:%d filename:%s\n", eod_download.filelen, eod_download.totalFrame, shbyte2, eod_download.filename);
+#endif
+				//
+				switch(eod_download.filetype)
+				{
+				case 0x1101:
+					PACC_1101_SystemParameter();
+					break;
+				case 0x1102:
+					PACC_1102_Business();
+					break;
+				case 0x1103:
+					break;
+				case 0x1104:
+					PACC_1104_Blacklist();
+					break;
+				case 0x1105:
+					PACC_1105_Product();
+					break;
+				case 0x1106:
+					PACC_1106_Location();
+					break;
+				case 0x1107:
+					PACC_1107_Calendar();
+					break;
+				case 0x1108:
+					PACC_1108_FareTable();
+					break;
+				case 0x1109:
+					PACC_1109_SaleTable();
+					break;
+				case 0x1901:
+					YKT_1901_Blacklist();
+					break;
+				case 0x1912:
+					YKT_1912_Card();
+					break;
+				case 0x1913:
+					YKT_1913_Property();
+					break;
+				case 0x1914:
+					YKT_1914_Load();
+					break;
+				case 0x1919:
+					YKT_1919_Terminal();
+					break;
+				case 0x1920:
+					YKT_1920_Continue();
+					break;
+				case 0x3021:
+					LCC_3021_Sensitive();
+					break;
+				case 0x1931:
+					JTB_1931_Blacklist();
+					break;
+				case 0x1932:
+					JTB_1932_White();
+					break;
+				case 0x1933:
+					JTB_1933_Property();
+					break;
+				case 0x1934:
+					JTB_1934_Terminal();
+					break;
+				case 0x1935:
+					JTB_1935_Preferential();
+					break;
+				case 0x1938:
+					JTB_1938_Load();
+					break;
+				case 0x1939:
+					JTB_1939_Server();
+					break;
+				}
+				eod_download.filetype = 0;
+			}else
+			{
+				//first check the frame continuous
+				if(shbyte2 != eod_download.curFrame)
+				{
+					chret = CE_CONTINUE_MULTIFRAME;	//not continuous frame
+					memcpy(&out_buf[0], &cmd_buf[9], 2);
+					memcpy(&out_buf[2], &cmd_buf[1], 2);
+					*out_len = 4;
+					break;
+				}
+				eod_download.curFrame += 1;
+				fl = fopen(eod_download.filepath, "a+");
+					fseek(fl, 0, SEEK_END);
+					fwrite(&cmd_buf[13], 1, shFramelen, fl);
+				fclose(fl);
+				
+				chret = CE_OK;
+				memcpy(&out_buf[0], &cmd_buf[9], 2);
+				memcpy(&out_buf[2], &cmd_buf[1], 2);
+				*out_len = 4;
+			}
+		}
+		break;
+	case 0x530A:
+		chret = CE_MD5;
+		*out_len = 0;
+		if (0 != FileisExist("./prognew/", NULL, filename))
+			break;
+		sprintf(filepath, "./prognew/%s", filename);
+		fl = fopen(filepath, "r+");
+			fseek(fl, 0, SEEK_END);
+			lngbyte4 = ftell(fl);
+			if((lngbyte4 - 16) <= 0)
+			{
+				fclose(fl);
+				return chret;
+			}
+			fseek(fl, 0, SEEK_SET);
+			filebuf = (char *)malloc(lngbyte4);
+			fread(filebuf, 1, lngbyte4, fl);
+		fclose(fl);
+		md5_str((unsigned char *)filebuf, lngbyte4 - 16, out_buf);
+		if(memcmp(out_buf, &filebuf[lngbyte4 - 16], 16) == 0)
+		{
+			chret = CE_OK;
+			*out_len = 0;
+			active_tp_file(filename, NULL);
+		}
+		free(filebuf);
+		break;
+	}
+	return chret;
+}
+
+/*
+function:active the new eod file
+parameter:
+return:
+	0:succesfully active the defined eod file
+	255:the defined eod file have wrong MD5
+	nonzero:the file not exist
+*/
+int active_eod_file(char * filename, long *lngver, char ver_len)
+{
+char chnewfile[50], chfile[50], newfilepath[200], filepath[200];
+int ret;
+char *filebuf;
+long file_len, eod_ver;
+FILE	*fl;
+ParaTitle	tempParaTitle;
+
+	*lngver = 0;
+	ret = FileisExist("./paranew/", filename, chnewfile);
+	if(ret != 0)
+		return ret;
+	//first check new eod file according to the md5
+	sprintf(newfilepath, "./paranew/%s", chnewfile);
+	//*lngver = atol(&chnewfile[ver_len]);
+	fl = fopen(newfilepath, "rb");
+		fseek(fl, 0, SEEK_END);
+		file_len = ftell(fl);
+		fseek(fl, 0, 0);
+		fread(&tempParaTitle, sizeof(ParaTitle), 1, fl);
+	fclose(fl);
+	LongToByte(eod_ver, lngver);
+#ifdef DEBUG_PRINT			
+	PRINTK("real file length %d ParaTitle length is %d\n", file_len, tempParaTitle.length);
+#endif
+	if(tempParaTitle.length != file_len)
+	{
+		remove(newfilepath);
+		return 1;
+	}
+	
+	//find the current eod file and delete
+	//maybe find all the same eod file and delete it.??
+	ret = FileisExist("./para/", filename, chfile);
+	if(ret == 0)
+	{
+		sprintf(filepath, "./para/%s", chfile);
+		remove(filepath);
+	}
+	//copy the new eod file
+	sprintf(filepath, "./para/%s", chnewfile);
+
+	rename(newfilepath, filepath);
+	
+	return 0;
+}
+/*
+function:active the new TP file
+parameter:
+return:
+	0:succesfully active the defined eod file
+	255:the defined eod file have wrong MD5
+	nonzero:the file not exist
+*/
+int active_tp_file(char * filename, long *lngver)
+{
+FILE	*fl;
+char 	temp[200], chresponse;
+unsigned long 	ret;
+	
+	/*PRINTK("generate the update sz.sh file\n");
+	if(0 ==  FileisExist("./", "sz.sh", temp))
+	{
+		fl = fopen("./sz.sh", "w+");
+		sprintf(temp, "if [ -f ./progbak/%s ]\n", filename);
+		fwrite(temp, 1, strlen(temp), fl);
+		sprintf(temp, "then\n");
+		fwrite(temp, 1, strlen(temp), fl);
+		sprintf(temp, "	echo \"\nprogram error! now back to the old version....\"\n");
+		fwrite(temp, 1, strlen(temp), fl);
+		sprintf(temp, "	mv ./progbak/%s .\n", filename);
+		fwrite(temp, 1, strlen(temp), fl);
+		sprintf(temp, "else\n");
+		fwrite(temp, 1, strlen(temp), fl);
+		sprintf(temp, "	if [ -f ./prognew/update ]\n");
+		fwrite(temp, 1, strlen(temp), fl);
+		sprintf(temp, "	then\n");
+		fwrite(temp, 1, strlen(temp), fl);
+		sprintf(temp, "		echo \"now update the reader application...\"\n");
+		fwrite(temp, 1, strlen(temp), fl);
+		sprintf(temp, "		rm ./prognew/update\n");
+		fwrite(temp, 1, strlen(temp), fl);
+		sprintf(temp, "		cp %s ./progbak/.\n", filename);
+		fwrite(temp, 1, strlen(temp), fl);
+		sprintf(temp, "		mv ./prognew/%s .\n", filename);
+		fwrite(temp, 1, strlen(temp), fl);
+		sprintf(temp, "	fi\n");
+		fwrite(temp, 1, strlen(temp), fl);
+		sprintf(temp, "fi\n");
+		fwrite(temp, 1, strlen(temp), fl);
+		sprintf(temp, "echo \"run the reader application\"\n");
+		fwrite(temp, 1, strlen(temp), fl);
+		sprintf(temp, "chmod 700 %s -R\n", filename);
+		fwrite(temp, 1, strlen(temp), fl);
+		sprintf(temp, "./%s /dev/ttySAC0\n", filename);
+		fwrite(temp, 1, strlen(temp), fl);
+		fclose(fl);
+		system("chmod 700 sz.sh");
+	}*/
+	//execl("chmod", "chmod",  "-R", "700",  "*", NULL);
+	if(0 == FileisExist("./", "sz.sh", temp))
+		system("chmod 700 sz.sh");
+	if(0 == FileisExist("./", "auto.sh", temp))
+		system("chmod 700 auto.sh");
+	//sleep(1);
+	//watchdog_init(0, 65535);
+	fl = fopen("./prognew/update", "w+");
+	fclose(fl);
+	//write ee
+	chresponse = 1;
+	ret = ee_write(EE_RESTART, 1, &chresponse);
+#ifdef	DEBUG_PRINT	
+	if(0 != ret)
+		PRINTK("ee write failure %08X\n", ret);
+#endif
+	ret = ee_read(EE_RESTART, 1, &chresponse);
+#ifdef	DEBUG_PRINT	
+	if(0 != ret)
+		PRINTK("ee read failure %08X\n", ret);
+	PRINTK("active tp status %d\n", chresponse);
+#endif
+	//set_timeout(100);
+	exit(0);
+}
+
+/*
+function:check the station ID valid
+parameter:
+return:
+	0:succesfully find the station id in eod 01 file.
+	208:the eod 01 file is not exist.
+	205:the station id can't find in the eod 01 file.
+*/
+char check_station_id(unsigned char *station_id)
+{
+
+	//if(memcmp(station_id, tpStationFare4004.bytSCID, 2) == 0)
+		return 0;
+	
+	return CE_NOPARAM;
+}
+
+/*
+function: calculate the overtime according to the fare
+return:
+	0:successfully get the over time(second)
+	208:the eod 02 file is not exist
+	205:the faretier can't be found in the eod 02 file
+*/
+int cal_fare_time(unsigned short durationval, unsigned long *lngovertime)
+{
+	return 0;
+}
+
+/**
+ * @brief 票种发售时长校验（对齐cal_overtime豁免模式，支持多票种切换）
+ * @param issue_bcd  发卡BCD时间
+ * @param curr_bcd   当前交易BCD时间
+ * @param ticketType 票种类型 0=免费出站票(30min)  1=福利票(3h)
+ * @return 0=正常  CE_OVERTIME=超时
+ */
+char CheckTicketOvertime(unsigned char *issue_bcd, unsigned char *curr_bcd, unsigned char ticketType)
+{
+    unsigned long lngIssue, lngCurr;
+    unsigned long limitSec;
+
+    // 复刻 cal_overtime 全部豁免模式
+    if(tpwaivermode.cur_sta_failure)
+        return 0;
+    if(tpwaivermode.cur_sta_time)
+        return 0;
+    if(tpwaivermode.oth_sta_time)
+        return 0;
+
+    // 根据票种设置超时阈值
+    if(ticketType == 0)
+    {
+        limitSec = 1800;  // 免费出站票 30分钟
+    }
+    else if(ticketType == 1)
+    {
+        limitSec = 10800; // 福利票 3小时
+    }
+    else
+    {
+        return 0; // 未知类型直接放行
+    }
+
+    // 统一时间解析偏移
+    lngIssue = timestr2long(&issue_bcd[1]);
+    lngCurr  = timestr2long(&curr_bcd[1]);
+
+    // 时间倒流直接放行
+    if(lngCurr < lngIssue)
+        return 0;
+
+    // 超时判断
+    if((lngCurr - lngIssue) > limitSec)
+    {
+        return CE_OVERTIME;
+    }
+
+    return 0;
+}
+/*
+function:overtime
+parameter:
+	*entrytime:time bcd YYYYMMDDHHMISS
+	*curtime:time bcd YYYYMMDDHHMISS
+	farezone: NULL
+	stationmode :NULL
+*/
+char cal_overtime(unsigned char *entrytime, unsigned char *curtime, unsigned char farezone, unsigned char station_mode)
+{
+unsigned long lngovertime;
+unsigned long lngHisecond1, lngHisecond2, lngLosecond1, lngLosecond2;
+char chCode;
+unsigned short i, durationval;
+
+	//current station is set to the failure mode
+	if(tpwaivermode.cur_sta_failure)
+		return 0;
+	//current station is set to the time mode
+	if(tpwaivermode.cur_sta_time)
+		return 0;
+	//other station is set TIME mode
+	if(tpwaivermode.oth_sta_time)
+		return 0;
+	//other station is set date or sensitive duration and DATE mode in the ticket
+	//if((tpwaivermode.oth_sta_date || tpwaivermode.sen_sta_date) && (station_mode == SZ_WAIVER_DATE))
+	//	return 0;
+	//
+	//
+	lngHisecond2 = timestr2long(&entrytime[1]);
+	lngHisecond1 = timestr2long(&curtime[1]);
+	//
+	lngovertime = 0;
+	durationval = tpSystem1101.service_provider.maxJourneyTime;
+	switch((durationval & 0xF000) >> 12)
+	{
+	case 0x01:		//second
+		lngovertime = durationval & 0xFFF;
+		break;
+	case 0x02:		//minute
+		lngovertime = (durationval & 0xFFF) * 60;
+		break;
+	case 0x03:		//hour
+		lngovertime = (durationval & 0xFFF) * 3600;
+		break;
+	case 0x04:		//day
+		lngovertime = (durationval & 0xFFF) * 24 * 3600;
+		break;
+	case 0x05:		//week
+		lngovertime = (durationval & 0xFFF) * 7 * 24 * 3600;
+		break;
+	case 0x06:		//month
+		if((durationval & 0xFFF) > 1603)
+		{
+			lngovertime = 0xFFFFFFFF;
+		}else
+		{
+			lngovertime = (durationval & 0xFFF) * 31 * 24 * 3600;
+		}
+		break;
+	case 0x07:		//year
+		if((durationval & 0xFFF) > 133)
+		{
+			lngovertime = 0xFFFFFFFF;
+		}else
+		{
+			lngovertime = (durationval & 0xFFF) * 365 * 24 * 3600;
+		}
+		break;
+	default:
+		return 0;
+	}
+#ifdef DEBUG_OVERTIME
+	PRINTK("duration(x) %04x overtime is %d\n", durationval, lngovertime);
+	PRINTK("entry time %02x%02x-%02x-%02x %02x:%02x:%02x %d  cur time %02x%02x-%02x-%02x %02x:%02x:%02x %d \n", 
+		entrytime[0], entrytime[1], entrytime[2], entrytime[3], entrytime[4], entrytime[5], entrytime[6], lngHisecond2, 
+		curtime[0], curtime[1], curtime[2], curtime[3], curtime[4], curtime[5], curtime[6], lngHisecond1);
+#endif
+	
+	//whether overtime or not. when time hang upside down
+	if(lngHisecond1 < lngHisecond2)
+		return 0;
+	if((lngHisecond1 - lngHisecond2) > lngovertime)
+		return CE_OVERTIME;
+		
+	return 0;
+}
+
+/*
+function:calculate the fare according to the souce station/destitation station
+parameter:
+	source station
+	destination station
+	*chFare:fare or mile
+return:
+	0:succesfully find the fare
+	208:the eod 04 file is not exist.
+	205:the station id can't be found in the eod 04 file.
+*/
+int cal_station_multi_fare(unsigned short FareCodeTableId, unsigned long srcstation_id)
+{
+unsigned long 	srcindex, desindex, i, j;
+unsigned long	srcstation, desstation;
+unsigned short 	shFare;
+
+#ifdef DEBUG_PRINT
+	PRINTK("source station %08x FareCodeTableId %08x\n", srcstation_id, FareCodeTableId);
+#endif
+	if(tpFareTable1108.FareCodeMatrix_val.FareCode_val == NULL)
+		return CE_EOD_FILE;
+	if(tpLocation1106.Locations_val.Location_val == NULL)
+		return CE_EOD_FILE;
+	srcstation = srcstation_id;
+	for(i = 0; i < tpLocation1106.Locations_val.Locationnumber; i++)
+	{//find the current station real STATION_ID in the fare tables
+		if((srcstation_id & 0xFF00FFFF) == (tpLocation1106.Locations_val.Location_val[i].Location_Number & 0xFF00FFFF))
+		{
+			//transfer station MUST use fareLocationNumber to calculate the price
+			if(tpLocation1106.Locations_val.Location_val[i].IsTransferStation)
+				srcstation = tpLocation1106.Locations_val.Location_val[i].fareLocationNumber;
+			break;
+		}
+	}
+	for(i = 0; i < tpFareTable1108.FareCodeMatrix_val.FareCodeMatrixnumber; i++)
+	{//Find the fare code table to get the ALL STATION fare code
+		if(FareCodeTableId == tpFareTable1108.FareCodeMatrix_val.FareCode_val[i].FareCodeMatrixId)
+		{
+			for(srcindex = 0; srcindex < tpFareTable1108.FareCodeMatrix_val.FareCode_val[i].stationnumber; srcindex++)
+			{
+				//
+				if((srcstation & 0xFF00FFFF) == (tpFareTable1108.FareCodeMatrix_val.FareCode_val[i].locationcode[srcindex] & 0xFF00FFFF))
+				{
+#ifdef DEBUG_PRINT
+					PRINTK("from src-station(x) %04x get index %04x\n", srcstation, srcindex);
+#endif
+					break;
+				}
+			}
+			if(srcindex >= tpFareTable1108.FareCodeMatrix_val.FareCode_val[i].stationnumber)
+				break;
+			for(desindex = 0; desindex < tpFareTable1108.FareCodeMatrix_val.FareCode_val[i].stationnumber; desindex++)
+			{
+				desstation = tpFareTable1108.FareCodeMatrix_val.FareCode_val[i].locationcode[desindex];
+				if((desstation & 0xFF00FF00) == 0x09000000)
+				{//unclude the 0x090000**
+#ifdef DEBUG_PRINT
+					PRINTK("des-station(x) %04x get index %04x UNINCLUDE\n", desstation, desindex);
+#endif
+					continue;
+				}
+				if((desstation & 0xFF000000) == 0x13000000)
+				{//unclude the 0x1300****
+#ifdef DEBUG_PRINT
+					PRINTK("des-station(x) %04x get index %04x UNINCLUDE\n", desstation, desindex);
+#endif
+					continue;
+				}
+				if((desstation & 0xFF000000) == 0x11000000)
+				{//uninclude the 0x110000**
+#ifdef DEBUG_PRINT
+					PRINTK("des-station(x) %04x get index %04x UNINCLUDE\n", desstation, desindex);
+#endif
+					continue;
+				}
+				shFare = tpFareTable1108.FareCodeMatrix_val.FareCode_val[i].FareCode[srcindex * tpFareTable1108.FareCodeMatrix_val.FareCode_val[i].stationnumber + desindex];
+				for(j = 0; j < tpStationPrice.SJTNum; j++)
+				{
+					if(tpStationPrice.SJTFareCode[j] == shFare)
+						break;
+				}
+				if(j >= tpStationPrice.SJTNum)
+				{
+					tpStationPrice.SJTNum += 1;
+					tpStationPrice.SJTFareCode = (unsigned long *)realloc(tpStationPrice.SJTFareCode, tpStationPrice.SJTNum * sizeof(long));
+					tpStationPrice.SJTFareCode[j] = shFare;
+				}
+			}
+			return 0;
+		}
+	}
+#ifdef	DEBUG_PRINT
+	PRINTK("find the farecodetable failure\n");
+#endif	
+	return CE_EOD_FILE;
+}
+
+/*
+function:calculate the fare according to the souce station/destitation station
+parameter:
+	source station
+	destination station
+	*chFare:fare or mile
+return:
+	0:succesfully find the fare
+	208:the eod 04 file is not exist.
+	205:the station id can't be found in the eod 04 file.
+*/
+int cal_station_fare(unsigned short FareCodeTableId, unsigned long srcstation_id, unsigned long desstation_id, unsigned short *shFare)
+{
+unsigned long 	srcindex, desindex, i;
+unsigned long	srcstation, desstation;
+
+#ifdef DEBUG_PRINT
+	PRINTK("source %08x  desstation %08x\n", srcstation_id, desstation_id);
+#endif
+	if(tpFareTable1108.FareCodeMatrix_val.FareCode_val == NULL)
+		return CE_EOD_FILE;
+	if(tpLocation1106.Locations_val.Location_val == NULL)
+		return CE_EOD_FILE;
+	srcstation = srcstation_id;
+	for(i = 0; i < tpLocation1106.Locations_val.Locationnumber; i++)
+	{
+		if((srcstation_id & 0xFF00FFFF) == (tpLocation1106.Locations_val.Location_val[i].Location_Number & 0xFF00FFFF))
+		{
+			//transfer station MUST use fareLocationNumber to calculate the price
+			if(tpLocation1106.Locations_val.Location_val[i].IsTransferStation)
+				srcstation = tpLocation1106.Locations_val.Location_val[i].fareLocationNumber;
+			break;
+		}
+	}
+	desstation = desstation_id;
+	for(i = 0; i < tpLocation1106.Locations_val.Locationnumber; i++)
+	{
+			//transfer station MUST use fareLocationNumber to calculate the price
+		if((desstation_id & 0xFF00FFFF) == (tpLocation1106.Locations_val.Location_val[i].Location_Number & 0xFF00FFFF))
+		{
+			if(tpLocation1106.Locations_val.Location_val[i].IsTransferStation)
+				desstation = tpLocation1106.Locations_val.Location_val[i].fareLocationNumber;
+			break;
+		}
+	}
+	for(i = 0; i < tpFareTable1108.FareCodeMatrix_val.FareCodeMatrixnumber; i++)
+	{
+		if(FareCodeTableId == tpFareTable1108.FareCodeMatrix_val.FareCode_val[i].FareCodeMatrixId)
+		{
+			for(srcindex = 0; srcindex < tpFareTable1108.FareCodeMatrix_val.FareCode_val[i].stationnumber; srcindex++)
+			{
+				if((srcstation & 0xFF00FFFF) == (tpFareTable1108.FareCodeMatrix_val.FareCode_val[i].locationcode[srcindex] & 0xFF00FFFF))
+				{
+#ifdef DEBUG_PRINT
+					PRINTK("from src-station(x) %04x get index %04x\n", srcstation, srcindex);
+#endif
+					break;
+				}
+			}
+			if(srcindex >= tpFareTable1108.FareCodeMatrix_val.FareCode_val[i].stationnumber)
+				break;
+			for(desindex = 0; desindex < tpFareTable1108.FareCodeMatrix_val.FareCode_val[i].stationnumber; desindex++)
+			{
+				if((desstation & 0xFF00FFFF) == (tpFareTable1108.FareCodeMatrix_val.FareCode_val[i].locationcode[desindex] & 0xFF00FFFF))
+				{
+#ifdef DEBUG_PRINT
+					PRINTK("from des-station(x) %04x get index %04x\n", desstation, desindex);
+#endif
+					break;
+				}
+			}
+			if(desindex >= tpFareTable1108.FareCodeMatrix_val.FareCode_val[i].stationnumber)
+				break;
+			*shFare	= tpFareTable1108.FareCodeMatrix_val.FareCode_val[i].FareCode[srcindex * tpFareTable1108.FareCodeMatrix_val.FareCode_val[i].stationnumber + desindex];
+#ifdef	DEBUG_PRINT
+			PRINTK("\nfare code is %04x\n", *shFare);
+#endif
+			return 0;
+		}
+	}
+	return CE_EOD_FILE;
+}
+
+
+int check_same_station(unsigned long curstation_id, unsigned short cardstation_code)
+{
+unsigned long 	srcindex, desindex, i;
+unsigned long	srcstation, desstation;
+unsigned char 	chCode;
+
+#ifdef DEBUG_PRINT
+	PRINTK("source %08x  desstation %04x\n", curstation_id, cardstation_code);
+#endif
+	if(tpLocation1106.Locations_val.Location_val == NULL)
+		return CE_EOD_FILE;
+	//
+	if(0 != (chCode = card_to_location(cardstation_code, &desstation)))
+		return chCode;
+	
+	srcstation = curstation_id;
+	if( srcstation == desstation )
+		return 0;
+		
+	for(i = 0; i < tpLocation1106.Locations_val.Locationnumber; i++)
+	{
+		if((curstation_id & 0xFF00FFFF) == (tpLocation1106.Locations_val.Location_val[i].Location_Number & 0xFF00FFFF))
+		{
+			//transfer station MUST use fareLocationNumber to calculate the price
+			if(tpLocation1106.Locations_val.Location_val[i].IsTransferStation)
+				srcstation = tpLocation1106.Locations_val.Location_val[i].fareLocationNumber;
+			else 
+				return CE_EOD_FILE;
+			break;
+		}
+	}
+	if(i >= tpLocation1106.Locations_val.Locationnumber)
+		return CE_EOD_FILE;
+		
+	for(i = 0; i < tpLocation1106.Locations_val.Locationnumber; i++)
+	{
+			//transfer station MUST use fareLocationNumber to calculate the price
+		if((desstation & 0xFF00FFFF) == (tpLocation1106.Locations_val.Location_val[i].Location_Number & 0xFF00FFFF))
+		{
+			if(tpLocation1106.Locations_val.Location_val[i].IsTransferStation)
+				desstation = tpLocation1106.Locations_val.Location_val[i].fareLocationNumber;
+			else 
+			{
+				return CE_EOD_FILE;
+			}
+			break;
+		}
+	}
+	if(i >= tpLocation1106.Locations_val.Locationnumber)
+		return CE_EOD_FILE;
+	
+	if(srcstation == desstation)
+		return 0;
+	else
+		return CE_EOD_FILE;
+}
+/*
+function:according to the Current time to GET the datetype and timecode
+parameter:
+	curtime:BCD
+*/
+int check_peak_time(unsigned char *curtime, unsigned char *timecodeid, unsigned short *datetypeid)
+{
+unsigned char chCode;
+unsigned long i, j, k;
+
+	//datetype id
+	if(tpCalendar1107.Calendars_val.Calendar_val == NULL)
+		return CE_EOD_FILE;
+	for(i = 0; i < tpCalendar1107.Calendars_val.calendarnumber; i++)
+	{
+		for(j = 0; j < tpCalendar1107.Calendars_val.Calendar_val[i].calendardatenumber; j++)
+		{
+			if((memcmp(curtime, tpCalendar1107.Calendars_val.Calendar_val[i].DateTypeId_val[j].calendardate, 4)) == 0)
+				break;
+		}
+		if(j < tpCalendar1107.Calendars_val.Calendar_val[i].calendardatenumber)
+			break;
+	}
+	if(i >= tpCalendar1107.Calendars_val.calendarnumber)
+		return CE_EOD_FILE;
+	*datetypeid = tpCalendar1107.Calendars_val.Calendar_val[i].DateTypeId_val[j].datetypeId;
+#ifdef	DEBUG_PRINT
+	PRINTK("datetype id %04x\n", *datetypeid);
+#endif
+	//timecode id
+	for(i = 0; i < tpCalendar1107.DateTimes_val.calendartypenumber; i++)
+	{
+		if((*datetypeid) == tpCalendar1107.DateTimes_val.DateTime_val[i].datetypeId)
+		{
+			for(j = 0; j < tpCalendar1107.DateTimes_val.DateTime_val[i].timecodenumber; j++)
+			{
+				if(memcmp(&curtime[4], tpCalendar1107.DateTimes_val.DateTime_val[i].Time_val[j].endtime, 2 ) <= 0)
+				{
+					break;
+				}
+			}
+			if(j < tpCalendar1107.DateTimes_val.DateTime_val[i].timecodenumber)
+				break;
+		}
+	}
+	if(i >= tpCalendar1107.DateTimes_val.calendartypenumber)
+		return CE_EOD_FILE;
+	*timecodeid = tpCalendar1107.DateTimes_val.DateTime_val[i].Time_val[j].timeCodeId;
+#ifdef	DEBUG_PRINT
+	PRINTK("timecodeid is %04x\n", *timecodeid);
+#endif
+	return 0;
+}
+/*
+function:calculate the 
+parameter:
+	source station :Location_Number
+	date time and ticket type
+	faretier
+	price
+return:
+	0:successfully get the fare value
+	0x53:the eod 4004 file is not exist.
+	0x44:the station id can't be found in the eod 4004 file and no correctly entry .
+*/
+int cal_fare_value(unsigned char *curtime, Product_t *ticket, unsigned short farecode, unsigned char passenger, SYS_PRICE_t *pPrice)
+{
+unsigned short shDays, shExtendTime;
+unsigned long lngMidnightSecond, i, j, k, lngcursecond;
+char chweekday;
+unsigned char timecodeid, faresetid, chCode;
+unsigned short datetypeid;
+
+	//get the datetype and timecode
+	if(0 != (chCode = check_peak_time(curtime, &timecodeid, &datetypeid)))
+		return chCode;
+	//fare set id from fare pattern id and timecode id 
+	if(tpFareTable1108.FarePatternMatrix_val.Farepattern_val == NULL)
+		return CE_EOD_FILE;
+	for(i = 0; i < tpFareTable1108.FarePatternMatrix_val.FarePatternMatrixnumber; i++)
+	{
+		if(tpFareTable1108.FarePatternMatrix_val.Farepattern_val[i].FarepatternID == ticket->FarePatternId)
+		{
+			for(j = 0; j < tpFareTable1108.FarePatternMatrix_val.Farepattern_val[i].Timecodenumbers; j++)
+			{
+				if(timecodeid == tpFareTable1108.FarePatternMatrix_val.Farepattern_val[i].TimeCode[j])
+					break;
+			}
+			if(j < tpFareTable1108.FarePatternMatrix_val.Farepattern_val[i].Timecodenumbers)
+				break;
+		}
+	}
+	if( i >= tpFareTable1108.FarePatternMatrix_val.FarePatternMatrixnumber)
+		return CE_EOD_FILE;
+	//need check whether compare the ticket passenger type or not?
+	switch(passenger)
+	{
+	case 0x01:		//adult
+		faresetid = tpFareTable1108.FarePatternMatrix_val.Farepattern_val[i].FarePassengerTimecode_val[j].AdultFareSetID;
+		break;
+	case 0x02:		//child
+		faresetid = tpFareTable1108.FarePatternMatrix_val.Farepattern_val[i].FarePassengerTimecode_val[j].ChildrenFareSetID;
+		break;
+	case 0x03:		//elder
+		faresetid = tpFareTable1108.FarePatternMatrix_val.Farepattern_val[i].FarePassengerTimecode_val[j].OldFareSetID;
+		break;
+	case 0x04:		//student
+		faresetid = tpFareTable1108.FarePatternMatrix_val.Farepattern_val[i].FarePassengerTimecode_val[j].StudentFareSetID;
+		break;
+	case 0x05:		//soldier
+		faresetid = tpFareTable1108.FarePatternMatrix_val.Farepattern_val[i].FarePassengerTimecode_val[j].SoldierFareSetID;
+		break;
+	case 0x06:		//disabled
+		faresetid = tpFareTable1108.FarePatternMatrix_val.Farepattern_val[i].FarePassengerTimecode_val[j].DisabledFareSetID;
+		break;
+	case 0x07:		//employee
+		faresetid = tpFareTable1108.FarePatternMatrix_val.Farepattern_val[i].FarePassengerTimecode_val[j].EmployeeFareSetID;
+		break;
+	default:
+		return CE_EOD_FILE;
+	}
+#ifdef	DEBUG_PRINT
+	PRINTK("faresetid %04x\n", faresetid);
+#endif
+	//price
+	
+	for(i = 0; i < tpFareTable1108.FareTableMatrix_val.FareTableMatrixnumber; i++)
+	{
+		if(ticket->FareTableId == tpFareTable1108.FareTableMatrix_val.FareTable_val[i].FaretableID)
+		{
+			pPrice->minPrice = tpFareTable1108.FareTableMatrix_val.FareTable_val[i].minFare;
+			pPrice->maxPrice = tpFareTable1108.FareTableMatrix_val.FareTable_val[i].maxFare;
+#ifdef	DEBUG_PRINT
+			PRINTK("faretableid index %04x ", i);
+#endif			
+			for(j = 0; j < tpFareTable1108.FareTableMatrix_val.FareTable_val[i].NumberofFareSet; j++)
+			{
+				if(faresetid == tpFareTable1108.FareTableMatrix_val.FareTable_val[i].FareSetID[j])
+				{
+#ifdef	DEBUG_PRINT
+					PRINTK("fareset index %04x ", j);
+#endif				
+					break;
+				}
+			}
+			if(j >= tpFareTable1108.FareTableMatrix_val.FareTable_val[i].NumberofFareSet)
+				return CE_EOD_FILE;
+			for(k = 0; k < tpFareTable1108.FareTableMatrix_val.FareTable_val[i].NumberofFareCode; k++)
+			{
+				if(farecode == tpFareTable1108.FareTableMatrix_val.FareTable_val[i].FareCode[k])
+				{
+#ifdef	DEBUG_PRINT
+					PRINTK("farecode index %04x ", k);
+#endif					
+					break;
+				}
+			}
+			if(k >= tpFareTable1108.FareTableMatrix_val.FareTable_val[i].NumberofFareCode)
+				return CE_EOD_FILE;
+			break;
+		}
+	}
+	if(i > tpFareTable1108.FareTableMatrix_val.FareTableMatrixnumber)
+		return CE_EOD_FILE;
+	pPrice->price = tpFareTable1108.FareTableMatrix_val.FareTable_val[i].FarePrice[k * tpFareTable1108.FareTableMatrix_val.FareTable_val[i].NumberofFareSet + j];
+#ifdef	DEBUG_PRINT
+	PRINTK("\nminprice %04x maxprice %04x price %04x fareprice index %08x\n", pPrice->minPrice, pPrice->maxPrice, pPrice->price, (k * tpFareTable1108.FareTableMatrix_val.FareTable_val[i].NumberofFareSet + j));
+#endif
+	return 0;
+}
+
+/*
+function:calculate the fare tier according to the price
+parameter:
+	farevalue
+	fare
+return:
+	0:successfully get the fare value
+	208:no eod 07 file
+	205:parameter error
+	
+*/
+int fast_cal_fare(unsigned short shValue, unsigned char *faretier)
+{
+unsigned long i;
+
+/*	if(Eod04 == NULL)
+		return 208;
+	
+	for(i=0; i < Eod04->ExpressIssueFare.ExpressIssueFare_len; i++) 
+	{
+		if(Eod04->ExpressIssueFare.ExpressIssueFare_val[i].FareAmount == (long)shValue) 
+		{
+			*faretier = Eod04->ExpressIssueFare.ExpressIssueFare_val[i].FareTier;
+#ifdef DEBUG_PRINT
+			PRINTK("from price %d to mileclass(x) %02x\n", shValue, *faretier);
+#endif
+			return 0;
+		}
+	}
+*/	return 205;
+}
+
+/*
+function: change the card station code to the system staiton code
+*/
+int card_to_location(short cardstation, unsigned long *sysstation)
+{
+unsigned long i;
+
+	if( tpLocation1106.LocationCodeMap_val.CardLocation_val == NULL)
+		return CE_EOD_FILE;
+		
+	for(i = 0; i < tpLocation1106.LocationCodeMap_val.LocationCodeMapnumber; i++)
+	{
+		if(cardstation == tpLocation1106.LocationCodeMap_val.CardLocation_val[i].CardLocationCode)
+		{
+			*sysstation = tpLocation1106.LocationCodeMap_val.CardLocation_val[i].LocationNumber;
+#ifdef	DEBUG_PRINT
+			PRINTK("cardlocation %04x location is %08x\n", cardstation, *sysstation);
+#endif
+			break;
+		}
+	}
+	if(i >= tpLocation1106.LocationCodeMap_val.LocationCodeMapnumber)
+		return CE_EOD_FILE;
+	
+	return 0;
+}
+
+/*
+function: change the card station code to the system staiton code
+*/
+int location_to_card(unsigned long sysstation, short *cardstation)
+{
+unsigned long i;
+
+	for(i = 0; i < tpLocation1106.LocationNumberCodeMap_val.LocationNumberCodeMapnumber; i++)
+	{
+#ifdef	DEBUG_PRINT
+		PRINTK("init station %08x, 1106 %08x\n", sysstation, tpLocation1106.LocationNumberCodeMap_val.LocationCard_val[i].LocationNumber);
+#endif
+		if((sysstation & 0xFF00FFFF) == (tpLocation1106.LocationNumberCodeMap_val.LocationCard_val[i].LocationNumber & 0xFF00FFFF))
+		{
+			*cardstation = tpLocation1106.LocationNumberCodeMap_val.LocationCard_val[i].CardLocationCode;
+#ifdef	DEBUG_PRINT
+			PRINTK("location is %08x cardlocation %04x\n", sysstation, *cardstation);
+#endif
+			break;
+		}
+	}
+	if(i >= tpLocation1106.LocationNumberCodeMap_val.LocationNumberCodeMapnumber)
+		return CE_EOD_FILE;
+	
+	return 0;
+}
+
+/*
+function:get parameter the special ticket type 
+parameter:
+	
+return:
+	0:successfully get the fare value
+	208:no eod 03 file
+	205:parameter error
+	
+*/
+int get_ticket_para(unsigned short shTickettype, Product_t *td)
+{
+unsigned long	i;
+	
+	//set the truct to zero
+	memset(td, 0x00, sizeof(Product_t));
+	if(tpProduct1105.TicketParameter_val.Product_val == NULL)
+		return CE_EOD_FILE;
+	
+	for(i = 0; i < tpProduct1105.TicketParameter_val.Ticketnumber; i++)
+	{
+		if(shTickettype == tpProduct1105.TicketParameter_val.Product_val[i].ProductType)
+		{
+			memcpy(td, &tpProduct1105.TicketParameter_val.Product_val[i].ProductIssuer, sizeof(Product_t));
+#ifdef	DEBUG_PRINT
+		PRINTK("productissuer %08x type %04x free %02x discount %02x CalendarId %04x personalised %02x recycled %02x refund %02x lost %02x added %02x deposit %02x charge %02x checkout %02x damaged %08x FareCode %04x FarePattern %04x FareTable %04x issuedstation %02x freeride %02x ignoreentry %02x ignorefund %02x ignoretime %02x ignorepassback %02x autolaodable %02x issuedactive %02x maxpurse %08x maxtransfer %02x minpurse %08x minremaining %08x penalty %08x override %02x productCategory %02x refundfee %02x singleuse %02x trainfault %02x\n", 
+			tpProduct1105.TicketParameter_val.Product_val[i].ProductIssuer, tpProduct1105.TicketParameter_val.Product_val[i].ProductType, tpProduct1105.TicketParameter_val.Product_val[i].CanAllowFreeRide,
+			tpProduct1105.TicketParameter_val.Product_val[i].CanApplySalesVolumeDiscount, tpProduct1105.TicketParameter_val.Product_val[i].CalendarId, tpProduct1105.TicketParameter_val.Product_val[i].CanBePersonalised,
+			tpProduct1105.TicketParameter_val.Product_val[i].CanBeRecycled, tpProduct1105.TicketParameter_val.Product_val[i].CanBeRefunded, tpProduct1105.TicketParameter_val.Product_val[i].CanBeReportedLost, 
+			tpProduct1105.TicketParameter_val.Product_val[i].CanHaveValueAdded, tpProduct1105.TicketParameter_val.Product_val[i].ChargeCardDeposit,
+			tpProduct1105.TicketParameter_val.Product_val[i].ChargeCardFee, tpProduct1105.TicketParameter_val.Product_val[i].ChargeFareOnCheckout, 
+			tpProduct1105.TicketParameter_val.Product_val[i].DamagedCardInvalidTicketFine, tpProduct1105.TicketParameter_val.Product_val[i].FareCodeTableId,
+			tpProduct1105.TicketParameter_val.Product_val[i].FarePatternId, tpProduct1105.TicketParameter_val.Product_val[i].FareTableId,
+			tpProduct1105.TicketParameter_val.Product_val[i].FirstUseAtStationOfIssue, tpProduct1105.TicketParameter_val.Product_val[i].FreeRideAtStationOfIssue, tpProduct1105.TicketParameter_val.Product_val[i].IgnoreEntryExitSequence,
+			tpProduct1105.TicketParameter_val.Product_val[i].IgnoreInsufficientFunds, tpProduct1105.TicketParameter_val.Product_val[i].IgnoreMaxJourneyTime, tpProduct1105.TicketParameter_val.Product_val[i].IgnorePassback,
+			tpProduct1105.TicketParameter_val.Product_val[i].IsProductAutoloadable, tpProduct1105.TicketParameter_val.Product_val[i].IsIssuedActivated, tpProduct1105.TicketParameter_val.Product_val[i].MaxPurseReload, 
+			tpProduct1105.TicketParameter_val.Product_val[i].MaxTransfersAllowed, tpProduct1105.TicketParameter_val.Product_val[i].MinPurseReload, tpProduct1105.TicketParameter_val.Product_val[i].MinRemainingValue,
+			tpProduct1105.TicketParameter_val.Product_val[i].MultipleMinimumFareFine, tpProduct1105.TicketParameter_val.Product_val[i].OverrideFirstUseAtStationOfIssue, tpProduct1105.TicketParameter_val.Product_val[i].ProductCategory,
+			tpProduct1105.TicketParameter_val.Product_val[i].RefundHandlingFee, tpProduct1105.TicketParameter_val.Product_val[i].IsSingleUseOnly, tpProduct1105.TicketParameter_val.Product_val[i].IsTicketCapturedIfTrainFault);
+			
+		PRINTK("subproduct number %04x\n", tpProduct1105.TicketParameter_val.Product_val[i].ProductTypeVariantsCount);
+#endif
+			return 0;
+		}
+	}
+	return CE_EOD_FILE;
+}
+
+/*
+function:get used parameter vertion 
+parameter:
+	
+return:
+*/
+void get_cur_para_ver(unsigned char *eod_type, long eod_ver, unsigned char *eod_validdate, unsigned char *out_buf)
+{
+unsigned long	i;
+
+	memcpy(&out_buf[0], eod_type, 2);
+	memcpy(&out_buf[2], &eod_ver, 4);
+	memcpy(&out_buf[6], eod_validdate, 4);
+	out_buf[10] = 0x00;
+}
+
+/*
+function:get temporary parameter vertion
+parameter:
+	eod_ctrl:non zero. delete the temporary parameter;0. retain the parameter
+return:
+*/
+void get_temp_para_ver(unsigned char *eod_file, short eod_type, unsigned char *eod_num, char eod_ctrl, unsigned char *out_buf)
+{
+unsigned long	i;
+char filename[100], filepath[200];
+unsigned long lngbyte4;
+FILE	*fl;
+
+	if(0 == FileisExist("./paranew/", eod_file, filename))
+	{
+		//parameter type
+		ShortToByte(eod_type, &out_buf[(*eod_num) * 11 + 2]);
+		memset(filepath, 0x00, 200);
+		sprintf(filepath, "./paranew/%s", filename);
+		//strrchr(filename, '.');
+		//version
+		fl = fopen(filepath, "rb");
+			fseek(fl, 8, SEEK_SET);
+			fread(&out_buf[(*eod_num) * 11 + 4], 1, sizeof(lngbyte4), fl);
+		//expired date
+			fseek(fl, 19, SEEK_SET);
+			fread(&out_buf[(*eod_num) * 11 + 8], 1, 4, fl);
+		fclose(fl);
+		//version type
+		out_buf[(*eod_num) * 11 + 12] = 0x01;
+		*eod_num += 1;
+		if(eod_ctrl)
+		{
+			remove(filepath);
+		}
+	}
+
+}
+
+/*
+function:get the station and system degrade mode
+parameter:
+	eod_ctrl:
+return:
+*/
+void get_degrade_mode(unsigned char *src_station)
+{
+unsigned long	i;
+char filename[100], filepath[200], cur_station[4];
+unsigned long lngbyte4;
+unsigned short	curstation;
+
+	memset(&tpwaivermode.cur_sta_failure, 0x00, 21);
+	memcpy(cur_station, "\x09\x00", 2);
+	memcpy(&cur_station[2], src_station, 2);
+#ifdef	DEBUG_PRINT
+	PRINTK("source station is %02x%02x\n", src_station[0], src_station[1]);
+#endif
+	for(i = 0; i < tpStationWaiverMode.waivermode_len; i++)
+	{
+#ifdef	DEBUG_PRINT
+		PRINTK("degrade station is %02x%02x and mode is %02x\n", tpStationWaiverMode.waivermode_val[i * XA_WAIVER_LEN + 6], tpStationWaiverMode.waivermode_val[i * XA_WAIVER_LEN + 7], tpStationWaiverMode.waivermode_val[i * XA_WAIVER_LEN + 9]);
+#endif
+		if(memcmp(cur_station, &tpStationWaiverMode.waivermode_val[i * XA_WAIVER_LEN + 4], 4) == 0)
+		{//mode set is the current station
+			//emergency mode
+			if(tpStationWaiverMode.waivermode_val[i * XA_WAIVER_LEN + 9] & 0x01)
+				if(!tpwaivermode.cur_sta_emergency) tpwaivermode.cur_sta_emergency = 0xff;
+			//entry mode
+			if(tpStationWaiverMode.waivermode_val[i * XA_WAIVER_LEN + 9] & 0x02)
+				if(!tpwaivermode.cur_sta_entry) tpwaivermode.cur_sta_entry = 0xff;
+			//date mode
+			if(tpStationWaiverMode.waivermode_val[i * XA_WAIVER_LEN + 9] & 0x04)
+				if(!tpwaivermode.cur_sta_date) tpwaivermode.cur_sta_date = 0xff;
+			//time mode
+			if(tpStationWaiverMode.waivermode_val[i * XA_WAIVER_LEN + 9] & 0x08)
+				if(!tpwaivermode.cur_sta_time) tpwaivermode.cur_sta_time = 0xff;
+			//failure mode
+			if(tpStationWaiverMode.waivermode_val[i * XA_WAIVER_LEN + 9] & 0x10)
+				if(!tpwaivermode.cur_sta_failure) tpwaivermode.cur_sta_failure = 0xff;
+			//overfare mode
+			if(tpStationWaiverMode.waivermode_val[i * XA_WAIVER_LEN + 9] & 0x20)
+				if(!tpwaivermode.cur_sta_fare) tpwaivermode.cur_sta_fare = 0xff;
+			//exit mode
+			if(tpStationWaiverMode.waivermode_val[i * XA_WAIVER_LEN + 9] & 0x40)
+				if(!tpwaivermode.cur_sta_exit) tpwaivermode.cur_sta_exit = 0xff;
+		}else
+		{//other station
+			//emergency mode
+			if(tpStationWaiverMode.waivermode_val[i * XA_WAIVER_LEN + 9] & 0x01)
+				if(!tpwaivermode.oth_sta_emergency) tpwaivermode.oth_sta_emergency = 0xff;
+			//entry mode
+			if(tpStationWaiverMode.waivermode_val[i * XA_WAIVER_LEN + 9] & 0x02)
+			{
+				if(!tpwaivermode.oth_sta_entry) tpwaivermode.oth_sta_entry = 0xff;
+				tpwaivermode.oth_entry_num += 1;
+			}
+			//date mode
+			if(tpStationWaiverMode.waivermode_val[i * XA_WAIVER_LEN + 9] & 0x04)
+				if(!tpwaivermode.oth_sta_date) tpwaivermode.oth_sta_date = 0xff;
+			//time mode
+			if(tpStationWaiverMode.waivermode_val[i * XA_WAIVER_LEN + 9] & 0x08)
+				if(!tpwaivermode.oth_sta_time) tpwaivermode.oth_sta_time = 0xff;
+			//failure mode
+			if(tpStationWaiverMode.waivermode_val[i * XA_WAIVER_LEN + 9] & 0x10)
+				if(!tpwaivermode.oth_sta_failure) tpwaivermode.oth_sta_failure = 0xff;
+			//overfare mode
+			if(tpStationWaiverMode.waivermode_val[i * XA_WAIVER_LEN + 9] & 0x20)
+				if(!tpwaivermode.oth_sta_fare) tpwaivermode.oth_sta_fare = 0xff;
+			//exit mode
+			if(tpStationWaiverMode.waivermode_val[i * XA_WAIVER_LEN + 9] & 0x40)
+				if(!tpwaivermode.oth_sta_exit) tpwaivermode.oth_sta_exit = 0xff;
+		}
+	}
+			
+/*	//mode list
+	ByteToShort(&curstation, src_station);
+	for(i = 0; i < EodWaiverDateMasterConfig.StationModeInfo.StationModeInfo_len; i++)
+	{
+		switch(EodWaiverDateInfo[i].ModeCode)
+		{
+		case SZ_WAIVER_FAILURE:
+			if(EodWaiverDateInfo[i].StationID == curstation)
+				tpwaivermode.cur_sta_failure = 0xff;
+			break;
+		case SZ_WAIVER_FARE:
+			if(EodWaiverDateInfo[i].StationID == curstation)
+				tpwaivermode.cur_sta_fare = 0xff;
+			break;
+		}
+	}*/
+	return ;
+}
+
+/*
+function:get the station and system degrade mode
+parameter:
+	eod_ctrl:
+return:
+*/
+void get_degrade_sensitive_mode(unsigned char *src_station, unsigned char *cur_timebcd)
+{
+unsigned long	i;
+char filename[100], filepath[200], cur_station[4];
+unsigned long lngbyte4;
+unsigned short	curstation;
+
+	//memset(&tpwaivermode.sen_sta_failure, 0x00, 7);
+	tpwaivermode.sen_sta_emergency = tpwaivermode.sen_sta_failure = tpwaivermode.sen_sta_exit = 0;
+#ifdef	DEBUG_PRINT
+	PRINTK("ticket last used date %02x%02x-%02x-%02x\n", cur_timebcd[0], cur_timebcd[1], cur_timebcd[2], cur_timebcd[3]);
+#endif
+	for(i = 0; i < tpSensitive3021.offset.section_rec; i++)
+	{
+#ifdef	DEBUG_PRINT
+		PRINTK("failure %02x%02x-%02x-%02x failure code %04x\n", tpSensitive3021.Sensitive_Failure_val[i].failure_start_time[0], tpSensitive3021.Sensitive_Failure_val[i].failure_start_time[1],
+			    tpSensitive3021.Sensitive_Failure_val[i].failure_start_time[2], tpSensitive3021.Sensitive_Failure_val[i].failure_start_time[3], tpSensitive3021.Sensitive_Failure_val[i].failure_code);
+#endif
+		if(memcmp(cur_timebcd, &tpSensitive3021.Sensitive_Failure_val[i].failure_start_time[0], 4) == 0)
+		{//
+			//emergency mode
+			if(tpSensitive3021.Sensitive_Failure_val[i].failure_code & 0x01)
+				if(!tpwaivermode.sen_sta_emergency) tpwaivermode.sen_sta_emergency = 0xff;
+			//failure mode
+			if(tpSensitive3021.Sensitive_Failure_val[i].failure_code & 0x10)
+				if(!tpwaivermode.sen_sta_failure) tpwaivermode.sen_sta_failure = 0xff;
+			//exit mode
+			if(tpSensitive3021.Sensitive_Failure_val[i].failure_code & 0x40)
+				if(!tpwaivermode.sen_sta_exit) tpwaivermode.sen_sta_exit = 0xff;
+		}
+	}
+#ifdef	DEBUG_PRINT
+	PRINTK("emergency %02x failure %02x exit %02x\n", tpwaivermode.sen_sta_emergency, tpwaivermode.sen_sta_failure, tpwaivermode.sen_sta_exit);	
+#endif
+	return ;
+}
+
+/*
+*/
+unsigned short xa_get_record(unsigned char *cmd_buf, unsigned char *out_buf, unsigned short *out_len)
+{
+unsigned short record_type, addr;
+unsigned char upload_flag;
+
+#ifdef DEBUG_PRINT
+	PRINTK("\nget record command is %02x%02x and length is %02x%02x:\n", cmd_buf[3], cmd_buf[4], cmd_buf[1], cmd_buf[2]);
+	PRINTK("RFU:%02x\n", cmd_buf[6]);
+#endif	
+	
+	//
+	addr = EE_UL_TRANSACTION;
+	ee_read(addr, 1, &upload_flag);
+	if(upload_flag != 0)
+	{
+		ee_read_last_record(addr, out_buf, out_len, 0);
+		return CE_OK;
+	}
+	
+	addr = EE_MCPU_TRANSACTION;
+	ee_read(addr, 1, &upload_flag);
+	if(upload_flag != 0)
+	{
+		ee_read_last_record(addr, out_buf, out_len, 0);
+		return CE_OK;
+	}
+	
+	addr = EE_CITY_TRANSACTION;
+	ee_read(addr, 1, &upload_flag);
+	if(upload_flag != 0)
+	{
+		ee_read_last_record(addr, out_buf, out_len, 0);
+		return CE_OK;
+	}
+	//
+	*out_len = 0;
+	return CE_NORECORD;
+}
+/*
+*/
+unsigned short ee_write_last_record(char ticket_family, char flag, unsigned char *in_buf, unsigned short in_len)
+{
+unsigned short addr, i;
+unsigned char upload_flag, *ul6002, rollback;
+
+#ifdef	DEBUG_PRINT
+		for(i = 0; i < in_len; i++)
+		{
+			PRINTK("%02x", *(in_buf + i));
+		}
+		PRINTK("\n");
+#endif
+	
+	switch(ticket_family)
+	{
+	case XA_SJT_FAMILY:
+		//clear the restored flag
+		rollback = 0;
+		ee_write(EE_UL_BACKUP, 1, &rollback);
+		//write record postion
+		addr = EE_UL_TRANSACTION;
+		//upload flag
+		upload_flag = flag;
+		ee_write(addr, 1, &upload_flag);
+		addr += 1;
+		//record length
+		ee_write(addr, 2, &in_len);
+		addr += 2;
+		ee_write(addr, in_len, in_buf);
+		//reader_status = XA_RW_RECORD;
+		break;
+	case XA_MCPU_FAMILY:
+		rollback = 0;
+		ee_write(EE_MCPU_BACKUP, 1, &rollback);
+		addr = EE_MCPU_TRANSACTION;
+		upload_flag = flag;
+		ee_write(addr, 1, &upload_flag);
+		addr += 1;
+		ee_write(addr, 2, &in_len);
+		addr += 2;
+		ee_write(addr, in_len, in_buf);
+		//reader_status = XA_RW_RECORD;
+		break;
+	case XA_CITY_FAMILY:
+		rollback = 0;
+		ee_write(EE_CITY_BACKUP, 1, &rollback);
+		addr = EE_CITY_TRANSACTION;
+		upload_flag = flag;
+		ee_write(addr, 1, &upload_flag);
+		addr += 1;
+		ee_write(addr, 2, &in_len);
+		addr += 2;
+		ee_write(addr, in_len, in_buf);
+		//reader_status = XA_RW_RECORD;
+		break;
+	case XA_TRANSPORT_FAMILY:
+		rollback = 0;
+		ee_write(EE_TRANSPORT_BACKUP, 1, &rollback);
+		addr = EE_TRANSPORT_TRANSACTION;
+		upload_flag = flag;
+		ee_write(addr, 1, &upload_flag);
+		addr += 1;
+		ee_write(addr, 2, &in_len);
+		addr += 2;
+		ee_write(addr, in_len, in_buf);
+		break;
+	default:
+		break;
+	}
+	return 0;
+	
+}
+
+/*
+message_type:transaction record
+upload_control:0,read the saved record and upload then change the upload flag; or just read and check the flag
+*/
+unsigned short ee_read_last_record(unsigned short ud_addr, unsigned char *out_buf, unsigned short *out_len, char upload_control)
+{
+unsigned short addr, length;
+unsigned char upload_flag;
+int i;
+	
+	if(upload_control)
+	{//check whether the UD upload or not
+		ee_read(ud_addr, 1, &upload_flag);
+		if(upload_flag)
+			return 1;
+		else 
+			return 0;
+	}
+	//read UD
+	addr = ud_addr + 1;
+	//UD length
+	ee_read(addr, 2, out_len);
+	memcpy(&length, out_len, 2);
+	addr += 2;
+	//read UD record
+	ee_read(addr, length, out_buf);
+#ifdef	DEBUG_PRINT
+	PRINTK("UD:");
+	for(i = 0; i < (*out_len); i++)
+		PRINTK("%02x", out_buf[i]);
+	PRINTK("\n");
+#endif
+	//clear UD upload flag
+	upload_flag = 0;
+	ee_write(ud_addr, 1, &upload_flag);
+	return 0;
+	
+}
+
+long JTB_1931_Blacklist()
+{
+FILE *intFile;
+long lngPosition, lngnum, file_len;
+char	filename[100], eod_file[100];
+long i, j;
+
+	memset(eod_file, 0x00, 100);
+	memset(filename, 0x00, 100);
+	sprintf(eod_file, "PARA.1931.");
+	if(0 != FileisExist("./para/", eod_file, filename))
+	{
+		PRINTK("1931 file not exist\n");
+		return 2;
+	}
+	//check the file
+	sprintf(eod_file, "./para/%s", filename);
+    intFile = fopen(eod_file, "rb");
+    if(intFile == NULL)
+    {
+        return 1;
+    }
+    //transfer head 1 + 38
+	fseek(intFile, 0, SEEK_END);
+	file_len = ftell(intFile);
+	fseek(intFile, 0, 0);
+   	//fseek(intFile, 39, 0);	//not nead
+    fread(&tpBlacklist1931.paratitle, sizeof(ParaTitle), 1, intFile);
+#ifdef	DEBUG_1931_PRINT
+	PRINTK("------1931---------\nformat:%02x source %02x length %08x type %02x%02x ver %04x createtime %02x%02x%02x%02x %02x%02x%02x \nstart %02x%02x%02x%02x offset %04x rfu %02x%02x%02x\n",
+			tpBlacklist1931.paratitle.format, tpBlacklist1931.paratitle.source, tpBlacklist1931.paratitle.length, tpBlacklist1931.paratitle.type[0], tpBlacklist1931.paratitle.type[1], tpBlacklist1931.paratitle.version,
+			tpBlacklist1931.paratitle.create_time[0], tpBlacklist1931.paratitle.create_time[1], tpBlacklist1931.paratitle.create_time[2], tpBlacklist1931.paratitle.create_time[3], tpBlacklist1931.paratitle.create_time[4], tpBlacklist1931.paratitle.create_time[5], tpBlacklist1931.paratitle.create_time[6],
+			tpBlacklist1931.paratitle.start_time[0], tpBlacklist1931.paratitle.start_time[1], tpBlacklist1931.paratitle.start_time[2], tpBlacklist1931.paratitle.start_time[3],
+			tpBlacklist1931.paratitle.section_number, tpBlacklist1931.paratitle.rfu[0], tpBlacklist1931.paratitle.rfu[1], tpBlacklist1931.paratitle.rfu[2]);
+#endif
+    //增加判断保存的参数文件大小
+    if(tpBlacklist1931.paratitle.length != file_len)
+    {
+    	fclose(intFile);
+    	memset(&tpBlacklist1931.paratitle, 0x00, sizeof(ParaTitle));
+    	remove( eod_file );
+    	return 1;
+    }
+    if(tpBlacklist1931.paratitle.section_number == 0)
+    {
+    	fclose(intFile);
+    	return 1;
+    }
+
+    if(tpBlacklist1931.offset != NULL)
+    {
+	   	if(tpBlacklist1931.offset[0].section_rec != 0)
+	   	{
+	   		if(tpBlacklist1931.JTBBlack_val != NULL)
+	   			free(tpBlacklist1931.JTBBlack_val);
+	   		tpBlacklist1931.JTBBlack_val = NULL;
+	   	}
+    	free(tpBlacklist1931.offset);
+    	tpBlacklist1931.offset = NULL;
+    }
+    tpBlacklist1931.offset = (section_offset *)malloc(sizeof(section_offset) * tpBlacklist1931.paratitle.section_number);
+    if(tpBlacklist1931.offset == NULL)
+    {
+    	fclose(intFile);
+    	return 1;
+    }
+    fread(tpBlacklist1931.offset, sizeof(section_offset), tpBlacklist1931.paratitle.section_number, intFile);
+#ifdef DEBUG_1931_PRINT
+    for(i = 0; i < tpBlacklist1931.paratitle.section_number; i++)
+    	PRINTK("start_pos %08x  section_rec %08x\n", tpBlacklist1931.offset[i].start_pos, tpBlacklist1931.offset[i].section_rec);
+#endif
+	//
+	if(tpBlacklist1931.offset[0].section_rec != 0)
+	{
+		tpBlacklist1931.JTBBlack_val = (JTBBlack_t *)malloc(sizeof(JTBBlack_t) * tpBlacklist1931.offset[0].section_rec);
+		if(tpBlacklist1931.JTBBlack_val == NULL)
+		{
+			fclose(intFile);
+			return 1;
+		}
+		fread(tpBlacklist1931.JTBBlack_val, sizeof(JTBBlack_t), tpBlacklist1931.offset[0].section_rec, intFile);
+#ifdef	DEBUG_1931_PRINT
+		for(i = 0; i < tpBlacklist1931.offset[0].section_rec; i++)
+			PRINTK("cardisssuer %s pan %s\n",
+				tpBlacklist1931.JTBBlack_val[i].cardIssuer,
+				tpBlacklist1931.JTBBlack_val[i].PAN);
+#endif
+	}
+	fclose(intFile);
+
+	return 0;
+}
+
+
+long JTB_1932_White()
+{
+FILE *intFile;
+long lngPosition, lngnum, file_len;
+char	filename[100], eod_file[100];
+long i, j, k;
+
+	memset(eod_file, 0x00, 100);
+	memset(filename, 0x00, 100);
+	sprintf(eod_file, "PARA.1932.");
+	if(0 != FileisExist("./para/", eod_file, filename))
+	{
+		PRINTK("1932 file not exist\n");
+		return 2;
+	}
+	//check the file
+	sprintf(eod_file, "./para/%s", filename);
+    intFile = fopen(eod_file, "rb");
+    if(intFile == NULL)
+    {
+    	PRINTK("1932 file open failure\n");
+        return 1;
+    }
+    //transfer head 1 + 38
+	fseek(intFile, 0, SEEK_END);
+	file_len = ftell(intFile);
+	fseek(intFile, 0, 0);
+    //fseek(intFile, 39, 0);		//not nead read
+    fread(&tpWhite1932.paratitle, sizeof(ParaTitle), 1, intFile);
+#ifdef	DEBUG_1932_PRINT
+	PRINTK("------1932---------\nformat:%02x source %02x length %08x type %02x%02x ver %08x createtime %02x%02x%02x%02x %02x%02x%02x \nstart %02x%02x%02x%02x offset %04x rfu %02x%02x%02x\n",
+			tpWhite1932.paratitle.format, tpWhite1932.paratitle.source, tpWhite1932.paratitle.length, tpWhite1932.paratitle.type[0], tpWhite1932.paratitle.type[1], tpWhite1932.paratitle.version,
+			tpWhite1932.paratitle.create_time[0], tpWhite1932.paratitle.create_time[1], tpWhite1932.paratitle.create_time[2], tpWhite1932.paratitle.create_time[3], tpWhite1932.paratitle.create_time[4], tpWhite1932.paratitle.create_time[5], tpWhite1932.paratitle.create_time[6],
+			tpWhite1932.paratitle.start_time[0], tpWhite1932.paratitle.start_time[1], tpWhite1932.paratitle.start_time[2], tpCard1912.paratitle.start_time[3],
+			tpWhite1932.paratitle.section_number, tpWhite1932.paratitle.rfu[0], tpWhite1932.paratitle.rfu[1], tpWhite1932.paratitle.rfu[2]);
+#endif
+    
+    //增加判断保存的参数文件大小
+    if(tpWhite1932.paratitle.length != file_len)
+    {
+    	fclose(intFile);
+    	memset(&tpWhite1932.paratitle, 0x00, sizeof(ParaTitle));
+    	remove( eod_file );
+    	return 1;
+    }
+    if(tpWhite1932.paratitle.section_number == 0)
+    {
+    	fclose(intFile);
+    	return 1;
+    }
+    if(tpWhite1932.offset != NULL)
+    	free(tpWhite1932.offset);
+    tpWhite1932.offset = (section_offset *)malloc(sizeof(section_offset) * tpWhite1932.paratitle.section_number);
+    if(tpWhite1932.offset == NULL)
+    {
+    	fclose(intFile);
+    	return 1;
+    }
+    fread(tpWhite1932.offset, sizeof(section_offset), tpWhite1932.paratitle.section_number, intFile);
+#ifdef DEBUG_1932_PRINT
+    for(i = 0; i < tpWhite1932.paratitle.section_number; i++)
+    	PRINTK("start_pos %08x  section_rec %08x\n", tpWhite1932.offset[i].start_pos, tpWhite1932.offset[i].section_rec);
+#endif
+
+	if(tpWhite1932.JTBWhite_val != NULL)
+		free(tpWhite1932.JTBWhite_val);
+	tpWhite1932.JTBWhite_val = NULL;
+	if(tpWhite1932.offset[0].section_rec != 0)
+	{
+		tpWhite1932.JTBWhite_val = (JTBWhite_t *)malloc(sizeof(JTBWhite_t) * tpWhite1932.offset[0].section_rec);
+		if(tpWhite1932.JTBWhite_val == NULL)
+		{
+			fclose(intFile);
+			return 1;
+		}
+		fread(tpWhite1932.JTBWhite_val, sizeof(JTBWhite_t), tpWhite1932.offset[0].section_rec, intFile);
+#ifdef	DEBUG_1932_PRINT
+		for(i = 0; i < tpWhite1932.offset[0].section_rec; i++)
+		{
+			PRINTK("cardisssuer %s IIN %s\n",
+				tpWhite1932.JTBWhite_val[i].cardIssuer, tpWhite1932.JTBWhite_val[i].IIN);
+		}
+#endif		
+	}
+
+	fclose(intFile);
+	return 0;
+}
+
+long JTB_1933_Property()
+{
+FILE *intFile;
+long lngPosition, lngnum, file_len;
+char	filename[100], eod_file[100];
+long i, j, k;
+
+	memset(eod_file, 0x00, 100);
+	memset(filename, 0x00, 100);
+	sprintf(eod_file, "PARA.1933.");
+	if(0 != FileisExist("./para/", eod_file, filename))
+	{
+		PRINTK("1933 file not exist\n");
+		return 2;
+	}
+	//check the file
+	sprintf(eod_file, "./para/%s", filename);
+    intFile = fopen(eod_file, "rb");
+    if(intFile == NULL)
+    {
+    	PRINTK("1933 file open failure\n");
+        return 1;
+    }
+    //transfer head 1 + 38
+	fseek(intFile, 0, SEEK_END);
+	file_len = ftell(intFile);
+	fseek(intFile, 0, 0);
+    //fseek(intFile, 39, 0);		// not nead read
+    fread(&tpProperty1933.paratitle, sizeof(ParaTitle), 1, intFile);
+#ifdef	DEBUG_1933_PRINT
+	PRINTK("------1933---------\nformat:%02x source %02x length %08x type %02x%02x ver %04x createtime %02x%02x%02x%02x %02x%02x%02x \nstart %02x%02x%02x%02x offset %04x rfu %02x%02x%02x\n",
+			tpProperty1933.paratitle.format, tpProperty1933.paratitle.source, tpProperty1933.paratitle.length, tpProperty1933.paratitle.type[0], tpProperty1933.paratitle.type[1], tpProperty1933.paratitle.version,
+			tpProperty1933.paratitle.create_time[0], tpProperty1933.paratitle.create_time[1], tpProperty1933.paratitle.create_time[2], tpProperty1933.paratitle.create_time[3], tpProperty1933.paratitle.create_time[4], tpProperty1933.paratitle.create_time[5], tpProperty1933.paratitle.create_time[6],
+			tpProperty1933.paratitle.start_time[0], tpProperty1933.paratitle.start_time[1], tpProperty1933.paratitle.start_time[2], tpProperty1933.paratitle.start_time[3],
+			tpProperty1933.paratitle.section_number, tpProperty1933.paratitle.rfu[0], tpProperty1933.paratitle.rfu[1], tpProperty1933.paratitle.rfu[2]);
+#endif
+    
+    //增加判断保存的参数文件大小
+    if(tpProperty1933.paratitle.length != file_len)
+    {
+    	fclose(intFile);
+    	memset(&tpProperty1933.paratitle, 0x00, sizeof(ParaTitle));
+    	remove( eod_file );
+    	return 1;
+    }
+    if(tpProperty1933.paratitle.section_number == 0)
+    {
+    	fclose(intFile);
+    	return 1;
+    }
+    if(tpProperty1933.offset != NULL)
+    	free(tpProperty1933.offset);
+    tpProperty1933.offset = (section_offset *)malloc(sizeof(section_offset) * tpProperty1933.paratitle.section_number);
+    if(tpProperty1933.offset == NULL)
+    {
+    	fclose(intFile);
+    	return 1;
+    }
+    fread(tpProperty1933.offset, sizeof(section_offset), tpProperty1933.paratitle.section_number, intFile);
+#ifdef DEBUG_1933_PRINT
+    for(i = 0; i < tpProperty1933.paratitle.section_number; i++)
+    	PRINTK("start_pos %08x  section_rec %08x\n", tpProperty1933.offset[i].start_pos, tpProperty1933.offset[i].section_rec);
+#endif
+
+	if(tpProperty1933.JTBProperty_val != NULL)
+		free(tpProperty1933.JTBProperty_val);
+	tpProperty1933.JTBProperty_val = NULL;
+	
+	if(tpProperty1933.offset[0].section_rec != 0)
+	{
+		tpProperty1933.JTBProperty_val = (JTBProperty_t *)malloc(sizeof(JTBProperty_t) * tpProperty1933.offset[0].section_rec);
+		if(tpProperty1933.JTBProperty_val == NULL)
+		{
+			fclose(intFile);
+			return 1;
+		}
+		fread(tpProperty1933.JTBProperty_val, sizeof(JTBProperty_t), tpProperty1933.offset[0].section_rec, intFile);
+#ifdef DEBUG_1933_PRINT
+		for(i = 0; i < tpProperty1933.offset[0].section_rec; i++)
+		{
+			PRINTK("cardisssuer %02x%02x phyical %02x subtype %02x maintype %02x name %02x%02x ProductType %04x property %02x\n",
+				tpProperty1933.JTBProperty_val[i].cardIssuer[0], tpProperty1933.JTBProperty_val[i].cardIssuer[1], tpProperty1933.JTBProperty_val[i].phyical, tpProperty1933.JTBProperty_val[i].subtype,
+				tpProperty1933.JTBProperty_val[i].maintype, tpProperty1933.JTBProperty_val[i].name[0], tpProperty1933.JTBProperty_val[i].name[1],
+				tpProperty1933.JTBProperty_val[i].ProductType, tpProperty1933.JTBProperty_val[i].cardproperty);
+		}
+#endif
+	}
+	
+	fclose(intFile);
+	return 0;
+}
+
+
+long JTB_1934_Terminal()
+{
+FILE *intFile;
+long lngPosition, lngnum, file_len;
+char	filename[100], eod_file[100];
+long i, j, k;
+
+	memset(eod_file, 0x00, 100);
+	memset(filename, 0x00, 100);
+	sprintf(eod_file, "PARA.1934.");
+	if(0 != FileisExist("./para/", eod_file, filename))
+	{
+		PRINTK("1934 file not exist\n");
+		return 2;
+	}
+	//check the file
+	sprintf(eod_file, "./para/%s", filename);
+    intFile = fopen(eod_file, "rb");
+    if(intFile == NULL)
+    {
+    	PRINTK("1934 file open failure\n");
+        return 1;
+    }
+    //transfer head 1 + 38
+	fseek(intFile, 0, SEEK_END);
+	file_len = ftell(intFile);
+	fseek(intFile, 0, 0);
+    //fseek(intFile, 39, 0);		//not nead read
+    fread(&tpTerminal1934.paratitle, sizeof(ParaTitle), 1, intFile);
+#ifdef	DEBUG_1934_PRINT
+	PRINTK("------1934---------\nformat:%02x source %02x length %08x type %02x%02x ver %04x createtime %02x%02x%02x%02x %02x%02x%02x \nstart %02x%02x%02x%02x offset %04x rfu %02x%02x%02x\n",
+			tpTerminal1934.paratitle.format, tpTerminal1934.paratitle.source, tpTerminal1934.paratitle.length, tpTerminal1919.paratitle.type[0], tpTerminal1934.paratitle.type[1], tpTerminal1934.paratitle.version,
+			tpTerminal1934.paratitle.create_time[0], tpTerminal1934.paratitle.create_time[1], tpTerminal1934.paratitle.create_time[2], tpTerminal1934.paratitle.create_time[3], tpTerminal1934.paratitle.create_time[4], tpTerminal1934.paratitle.create_time[5], tpTerminal1934.paratitle.create_time[6],
+			tpTerminal1934.paratitle.start_time[0], tpTerminal1934.paratitle.start_time[1], tpTerminal1934.paratitle.start_time[2], tpTerminal1934.paratitle.start_time[3],
+			tpTerminal1934.paratitle.section_number, tpTerminal1934.paratitle.rfu[0], tpTerminal1934.paratitle.rfu[1], tpTerminal1934.paratitle.rfu[2]);
+#endif
+    
+    //增加判断保存的参数文件大小
+    if(tpTerminal1934.paratitle.length != file_len)
+    {
+    	fclose(intFile);
+    	memset(&tpTerminal1934.paratitle, 0x00, sizeof(ParaTitle));
+    	remove( eod_file );
+    	return 1;
+    }
+    if(tpTerminal1934.paratitle.section_number == 0)
+    {
+    	fclose(intFile);
+    	return 1;
+    }
+    if(tpTerminal1934.offset != NULL)
+    	free(tpTerminal1934.offset);
+    tpTerminal1934.offset = (section_offset *)malloc(sizeof(section_offset) * tpTerminal1934.paratitle.section_number);
+    if(tpTerminal1934.offset == NULL)
+    {
+    	fclose(intFile);
+    	return 1;
+    }
+    fread(tpTerminal1934.offset, sizeof(section_offset), tpTerminal1934.paratitle.section_number, intFile);
+#ifdef DEBUG_1934_PRINT
+    for(i = 0; i < tpTerminal1934.paratitle.section_number; i++)
+    	PRINTK("start_pos %08x  section_rec %08x\n", tpTerminal1934.offset[i].start_pos, tpTerminal1934.offset[i].section_rec);
+#endif
+
+	if(tpTerminal1934.JTBTerminal_val != NULL)
+		free(tpTerminal1934.JTBTerminal_val);
+	tpTerminal1934.JTBTerminal_val = NULL;
+	if(tpTerminal1934.offset[0].section_rec != 0)
+	{
+		tpTerminal1934.JTBTerminal_val = (JTBTerminal_t *)malloc(sizeof(JTBTerminal_t) * tpTerminal1934.offset[0].section_rec);
+		if(tpTerminal1934.JTBTerminal_val == NULL)
+		{
+			fclose(intFile);
+			return 1;
+		}
+		fread(tpTerminal1934.JTBTerminal_val, sizeof(JTBTerminal_t), tpTerminal1934.offset[0].section_rec, intFile);
+	}
+#ifdef	DEBUG_1934_PRINT
+	for(i = 0; i < tpTerminal1934.offset[0].section_rec; i++)
+	{
+		PRINTK("phyical %02x subtype %02x maintype %02x rfu %04x minbalance %04x overdraft %04x \n",
+			tpTerminal1934.JTBTerminal_val[i].phyical, tpTerminal1934.JTBTerminal_val[i].subtype, tpTerminal1934.JTBTerminal_val[i].maintype,
+			tpTerminal1934.JTBTerminal_val[i].rfu1, tpTerminal1934.JTBTerminal_val[i].minbalance, tpTerminal1934.JTBTerminal_val[i].max);
+	}
+#endif	
+	fclose(intFile);
+	return 0;
+}
+
+long JTB_1935_Preferential()
+{
+FILE *intFile;
+long lngPosition, lngnum, file_len;
+char	filename[100], eod_file[100];
+long i, j, k;
+
+	memset(eod_file, 0x00, 100);
+	memset(filename, 0x00, 100);
+	sprintf(eod_file, "PARA.1935.");
+	if(0 != FileisExist("./para/", eod_file, filename))
+	{
+		PRINTK("1935 file not exist\n");
+		return 2;
+	}
+	//check the file
+	sprintf(eod_file, "./para/%s", filename);
+    intFile = fopen(eod_file, "rb");
+    if(intFile == NULL)
+    {
+    	PRINTK("1935 file open failure\n");
+        return 1;
+    }
+    //transfer head 1 + 38
+	fseek(intFile, 0, SEEK_END);
+	file_len = ftell(intFile);
+	fseek(intFile, 0, 0);
+    //fseek(intFile, 39, 0);		// not nead read
+    fread(&tpPreferential1935.paratitle, sizeof(ParaTitle), 1, intFile);
+#ifdef	DEBUG_1935_PRINT
+	PRINTK("------1935---------\nformat:%02x source %02x length %08x type %02x%02x ver %04x createtime %02x%02x%02x%02x %02x%02x%02x \nstart %02x%02x%02x%02x offset %04x rfu %02x%02x%02x\n",
+			tpPreferential1935.paratitle.format, tpPreferential1935.paratitle.source, tpPreferential1935.paratitle.length, tpPreferential1935.paratitle.type[0], tpPreferential1935.paratitle.type[1], tpPreferential1935.paratitle.version,
+			tpPreferential1935.paratitle.create_time[0], tpPreferential1935.paratitle.create_time[1], tpPreferential1935.paratitle.create_time[2], tpPreferential1935.paratitle.create_time[3], tpPreferential1935.paratitle.create_time[4], tpPreferential1935.paratitle.create_time[5], tpPreferential1935.paratitle.create_time[6],
+			tpPreferential1935.paratitle.start_time[0], tpPreferential1935.paratitle.start_time[1], tpPreferential1935.paratitle.start_time[2], tpPreferential1935.paratitle.start_time[3],
+			tpPreferential1935.paratitle.section_number, tpPreferential1935.paratitle.rfu[0], tpPreferential1935.paratitle.rfu[1], tpPreferential1935.paratitle.rfu[2]);
+#endif
+    
+    //增加判断保存的参数文件大小
+    if(tpPreferential1935.paratitle.length != file_len)
+    {
+    	fclose(intFile);
+    	memset(&tpPreferential1935.paratitle, 0x00, sizeof(ParaTitle));
+    	remove( eod_file );
+    	return 1;
+    }
+    if(tpPreferential1935.paratitle.section_number == 0)
+    {
+    	fclose(intFile);
+    	return 1;
+    }
+    if(tpPreferential1935.offset != NULL)
+    	free(tpPreferential1935.offset);
+    tpPreferential1935.offset = (section_offset *)malloc(sizeof(section_offset) * tpPreferential1935.paratitle.section_number);
+    if(tpPreferential1935.offset == NULL)
+    {
+    	fclose(intFile);
+    	return 1;
+    }
+    fread(tpPreferential1935.offset, sizeof(section_offset), tpPreferential1935.paratitle.section_number, intFile);
+#ifdef DEBUG_1935_PRINT
+    for(i = 0; i < tpPreferential1935.paratitle.section_number; i++)
+    	PRINTK("start_pos %08x  section_rec %08x\n", tpPreferential1935.offset[i].start_pos, tpPreferential1935.offset[i].section_rec);
+#endif
+
+	if(tpPreferential1935.JTBPreferential_val != NULL)
+		free(tpPreferential1935.JTBPreferential_val);
+	tpPreferential1935.JTBPreferential_val = NULL;
+	if(tpPreferential1935.offset[0].section_rec != 0)
+	{
+		tpPreferential1935.JTBPreferential_val = (JTBPreferential_t *)malloc(sizeof(JTBPreferential_t) * tpPreferential1935.offset[0].section_rec);
+		if(tpPreferential1935.JTBPreferential_val == NULL)
+		{
+			fclose(intFile);
+			return 1;
+		}
+		fread(tpPreferential1935.JTBPreferential_val, sizeof(JTBPreferential_t), tpPreferential1935.offset[0].section_rec, intFile);
+	}
+#ifdef	DEBUG_1935_PRINT
+	for(i = 0; i < tpPreferential1935.offset[0].section_rec; i++)
+	{
+		PRINTK("codeIssuer %02x%02x%02x %02x%02x%02x %02x%02x%02x %02x%02x%02x phyical %02x subtype %02x maintype %02x bonusPercent %04x bonusvalue %04x\n",
+			tpPreferential1935.JTBPreferential_val[i].cardIssuer[0], tpPreferential1935.JTBPreferential_val[i].cardIssuer[1], tpPreferential1935.JTBPreferential_val[i].cardIssuer[2],
+			tpPreferential1935.JTBPreferential_val[i].cardIssuer[3], tpPreferential1935.JTBPreferential_val[i].cardIssuer[4], tpPreferential1935.JTBPreferential_val[i].cardIssuer[5],
+			tpPreferential1935.JTBPreferential_val[i].cardIssuer[6], tpPreferential1935.JTBPreferential_val[i].cardIssuer[7], tpPreferential1935.JTBPreferential_val[i].cardIssuer[8],
+			tpPreferential1935.JTBPreferential_val[i].cardIssuer[9], tpPreferential1935.JTBPreferential_val[i].cardIssuer[10], tpPreferential1935.JTBPreferential_val[i].cardIssuer[11],
+			tpPreferential1935.JTBPreferential_val[i].phyical, tpPreferential1935.JTBPreferential_val[i].subtype, tpPreferential1935.JTBPreferential_val[i].maintype, 
+			tpPreferential1935.JTBPreferential_val[i].bonusPercent, tpPreferential1935.JTBPreferential_val[i].bonusValue);
+	}
+#endif
+
+	fclose(intFile);
+	return 0;
+}
+
+long JTB_1938_Load()
+{
+FILE *intFile;
+long lngPosition, lngnum, file_len;
+char	filename[100], eod_file[100];
+long i, j, k;
+
+	memset(eod_file, 0x00, 100);
+	memset(filename, 0x00, 100);
+	sprintf(eod_file, "PARA.1938.");
+	if(0 != FileisExist("./para/", eod_file, filename))
+	{
+		PRINTK("1938 file not exist\n");
+		return 2;
+	}
+	//check the file
+	sprintf(eod_file, "./para/%s", filename);
+    intFile = fopen(eod_file, "rb");
+    if(intFile == NULL)
+    {
+    	PRINTK("1938 file open failure\n");
+        return 1;
+    }
+    //transfer head 1 + 38
+	fseek(intFile, 0, SEEK_END);
+	file_len = ftell(intFile);
+	fseek(intFile, 0, 0);
+    //fseek(intFile, 39, 0);		//not nead read
+    fread(&tpLoad1938.paratitle, sizeof(ParaTitle), 1, intFile);
+#ifdef	DEBUG_1938_PRINT
+	PRINTK("------1938---------\nformat:%02x source %02x length %08x type %02x%02x ver %04x createtime %02x%02x%02x%02x %02x%02x%02x \nstart %02x%02x%02x%02x offset %04x rfu %02x%02x%02x\n",
+			tpLoad1938.paratitle.format, tpLoad1938.paratitle.source, tpLoad1938.paratitle.length, tpLoad1938.paratitle.type[0], tpLoad1938.paratitle.type[1], tpLoad1938.paratitle.version,
+			tpLoad1938.paratitle.create_time[0], tpLoad1938.paratitle.create_time[1], tpLoad1938.paratitle.create_time[2], tpLoad1938.paratitle.create_time[3], tpLoad1938.paratitle.create_time[4], tpLoad1938.paratitle.create_time[5], tpLoad1938.paratitle.create_time[6],
+			tpLoad1938.paratitle.start_time[0], tpLoad1938.paratitle.start_time[1], tpLoad1938.paratitle.start_time[2], tpLoad1938.paratitle.start_time[3],
+			tpLoad1938.paratitle.section_number, tpLoad1938.paratitle.rfu[0], tpLoad1938.paratitle.rfu[1], tpLoad1938.paratitle.rfu[2]);
+#endif
+    
+    //增加判断保存的参数文件大小
+    if(tpLoad1938.paratitle.length != file_len)
+    {
+    	fclose(intFile);
+    	memset(&tpLoad1938.paratitle, 0x00, sizeof(ParaTitle));
+    	remove( eod_file );
+    	return 1;
+    }
+    if(tpLoad1938.paratitle.section_number == 0)
+    {
+    	fclose(intFile);
+    	return 1;
+    }
+    if(tpLoad1938.offset != NULL)
+    	free(tpLoad1938.offset);
+    tpLoad1938.offset = (section_offset *)malloc(sizeof(section_offset) * tpLoad1938.paratitle.section_number);
+    if(tpLoad1938.offset == NULL)
+    {
+    	fclose(intFile);
+    	return 1;
+    }
+    fread(tpLoad1938.offset, sizeof(section_offset), tpLoad1938.paratitle.section_number, intFile);
+#ifdef DEBUG_1938_PRINT
+    for(i = 0; i < tpLoad1938.paratitle.section_number; i++)
+    	PRINTK("start_pos %08x  section_rec %08x\n", tpLoad1938.offset[i].start_pos, tpLoad1938.offset[i].section_rec);
+#endif
+
+	if(tpLoad1938.JTBLoad_val != NULL)
+		free(tpLoad1938.JTBLoad_val);
+	tpLoad1938.JTBLoad_val = NULL;
+	if(tpLoad1938.offset[0].section_rec != 0)
+	{
+		tpLoad1938.JTBLoad_val = (JTBLoad_t *)malloc(sizeof(JTBLoad_t) * tpLoad1938.offset[0].section_rec);
+		if(tpLoad1938.JTBLoad_val == NULL)
+		{
+			fclose(intFile);
+			return 1;
+		}
+		fread(tpLoad1938.JTBLoad_val, sizeof(JTBLoad_t), tpLoad1938.offset[0].section_rec, intFile);
+	}
+#ifdef	DEBUG_1938_PRINT
+	for(i = 0; i < tpLoad1938.offset[0].section_rec; i++)
+	{
+		PRINTK("phyical %02x subtype %02x maintype %02x name %s allowissue %02x allowadd %02x minamont %04x perload %04x maxamount %08x manbalance %08x delayday %08x\n",
+			tpLoad1938.JTBLoad_val[i].phyical, tpLoad1938.JTBLoad_val[i].subtype, tpLoad1938.JTBLoad_val[i].maintype, tpLoad1938.JTBLoad_val[i].name, tpLoad1938.JTBLoad_val[i].enabledSale,
+			tpLoad1938.JTBLoad_val[i].enabledLoad, tpLoad1938.JTBLoad_val[i].firstloadvalue, tpLoad1938.JTBLoad_val[i].perloadvalue, tpLoad1938.JTBLoad_val[i].maxloadvalue,
+			tpLoad1938.JTBLoad_val[i].maxbalance, tpLoad1938.JTBLoad_val[i].extentiondays);
+	}
+#endif	
+	fclose(intFile);
+	return 0;
+}
+
+long JTB_1939_Server()
+{
+FILE *intFile;
+long lngPosition, lngnum, file_len;
+char	filename[100], eod_file[100];
+long i, j, k;
+
+	memset(eod_file, 0x00, 100);
+	memset(filename, 0x00, 100);
+	sprintf(eod_file, "PARA.1939.");
+	if(0 != FileisExist("./para/", eod_file, filename))
+	{
+		PRINTK("1939 file not exist\n");
+		return 2;
+	}
+	//check the file
+	sprintf(eod_file, "./para/%s", filename);
+    intFile = fopen(eod_file, "rb");
+    if(intFile == NULL)
+    {
+    	PRINTK("1939 file open failure\n");
+        return 1;
+    }
+    //transfer head 1 + 38
+	fseek(intFile, 0, SEEK_END);
+	file_len = ftell(intFile);
+	fseek(intFile, 0, 0);
+    //fseek(intFile, 39, 0);		//not nead read
+    fread(&tpServer1939.paratitle, sizeof(ParaTitle), 1, intFile);
+#ifdef	DEBUG_1939_PRINT
+	PRINTK("------1939---------\nformat:%02x source %02x length %08x type %02x%02x ver %04x createtime %02x%02x%02x%02x %02x%02x%02x \nstart %02x%02x%02x%02x offset %04x rfu %02x%02x%02x\n",
+			tpServer1939.paratitle.format, tpServer1939.paratitle.source, tpServer1939.paratitle.length, tpLoad1938.paratitle.type[0], tpServer1939.paratitle.type[1], tpServer1939.paratitle.version,
+			tpServer1939.paratitle.create_time[0], tpServer1939.paratitle.create_time[1], tpServer1939.paratitle.create_time[2], tpServer1939.paratitle.create_time[3], tpServer1939.paratitle.create_time[4], tpServer1939.paratitle.create_time[5], tpServer1939.paratitle.create_time[6],
+			tpServer1939.paratitle.start_time[0], tpServer1939.paratitle.start_time[1], tpServer1939.paratitle.start_time[2], tpServer1939.paratitle.start_time[3],
+			tpServer1939.paratitle.section_number, tpServer1939.paratitle.rfu[0], tpServer1939.paratitle.rfu[1], tpLoad1938.paratitle.rfu[2]);
+#endif
+    
+    //增加判断保存的参数文件大小
+    if(tpServer1939.paratitle.length != file_len)
+    {
+    	fclose(intFile);
+    	memset(&tpServer1939.paratitle, 0x00, sizeof(ParaTitle));
+    	remove( eod_file );
+    	return 1;
+    }
+    if(tpServer1939.paratitle.section_number == 0)
+    {
+    	fclose(intFile);
+    	return 1;
+    }
+    if(tpServer1939.offset != NULL)
+    	free(tpServer1939.offset);
+    tpServer1939.offset = (section_offset *)malloc(sizeof(section_offset) * tpServer1939.paratitle.section_number);
+    if(tpServer1939.offset == NULL)
+    {
+    	fclose(intFile);
+    	return 1;
+    }
+    fread(tpServer1939.offset, sizeof(section_offset), tpServer1939.paratitle.section_number, intFile);
+#ifdef DEBUG_1939_PRINT
+    for(i = 0; i < tpServer1939.paratitle.section_number; i++)
+    	PRINTK("start_pos %08x  section_rec %08x\n", tpServer1939.offset[i].start_pos, tpServer1939.offset[i].section_rec);
+#endif
+
+	if(tpServer1939.JTBServer_val != NULL)
+		free(tpServer1939.JTBServer_val);
+	tpServer1939.JTBServer_val = NULL;
+	if(tpServer1939.offset[0].section_rec != 0)
+	{
+		tpServer1939.JTBServer_val = (JTBServer_t *)malloc(sizeof(JTBServer_t) * tpServer1939.offset[0].section_rec);
+		if(tpServer1939.JTBServer_val == NULL)
+		{
+			fclose(intFile);
+			return 1;
+		}
+		fread(tpServer1939.JTBServer_val, sizeof(JTBServer_t), tpServer1939.offset[0].section_rec, intFile);
+	}
+#ifdef	DEBUG_1939_PRINT
+	for(i = 0; i < tpServer1939.offset[0].section_rec; i++)
+	{
+		PRINTK("serverIP %s port %02x %02x %02x\n",
+			tpServer1939.JTBServer_val[i].serverIP,
+			tpServer1939.JTBServer_val[i].port[0], tpServer1939.JTBServer_val[i].port[1], tpServer1939.JTBServer_val[i].port[2]);
+	}
+#endif	
+	fclose(intFile);
+	return 0;
+}
+

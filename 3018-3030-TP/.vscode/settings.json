@@ -1,0 +1,11 @@
+{
+    "files.associations": {
+        "failure.H": "cpp",
+        "hh_cpu_operation.h": "c",
+        "sz_xdr_api.h": "c",
+        "xa_func.h": "c",
+        "xa_cpu20_operation.h": "c",
+        "failure.C": "cpp",
+        "time_tools.h": "c"
+    }
+}

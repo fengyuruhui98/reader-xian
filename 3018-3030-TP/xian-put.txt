@@ -1,0 +1,13 @@
+#open 10.37.6.50
+open 10.10.10.128
+root
+111111
+binary
+prompt
+cd /home/2440/xian
+mput *.c
+mput *.h
+put liblinux2440.so
+put Makefile
+bye
+pause

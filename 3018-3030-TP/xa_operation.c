@@ -1,0 +1,1004 @@
+#include <stdlib.h>
+#include <string.h>
+#include <stdio.h>
+
+#include "xa_operation.h"
+#include "xa_func.h"
+#include "eeprom.h"
+#include "xa_error_code.h"
+#include "bin_file_manage.h"
+#include "xa_tong_operation.h"
+#include "hh_cpu_operation.h"
+#include "xa_ul_operation.h"
+#include "xa_sam.h"
+#include "time_tools.h"
+#include "xa_pboc_operation.h"
+#include "serial.h"
+#include "xa_qr_operation.h"
+
+#ifndef DEBUG_PRINT
+//#define DEBUG_PRINT
+#endif
+#define DEBUG_PRINT_INQUIRE 1
+char xa_init(unsigned char *cmd_buf, unsigned char *out_buf, unsigned short *out_len)
+{
+unsigned char chCode;
+unsigned char upload_ul, upload_mcpu, upload_city;
+unsigned short txnlen;
+unsigned long lngtemp, i, j, k;
+
+#ifdef DEBUG_PRINT
+unsigned char localtime[7];
+	PRINTK("\ninit command is %02x%02x and length is %02x%02x\n", cmd_buf[3], cmd_buf[4], cmd_buf[1], cmd_buf[2]);
+	PRINTK("abort %02x%02x%02x%02x deviceID %02x%02x%02x%02x hardware %02x%02x\n", 
+		cmd_buf[6], cmd_buf[7], cmd_buf[8], cmd_buf[9], cmd_buf[10], cmd_buf[11], cmd_buf[12], cmd_buf[13], cmd_buf[14], cmd_buf[15]);
+	PRINTK("location %02x%02x%02x%02x participant %02x%02x%02x%02x operation day %02x%02x-%02x-%02x current day %02x%02x-%02x-%02x\n", 
+		cmd_buf[16], cmd_buf[17], cmd_buf[18], cmd_buf[19], cmd_buf[20], cmd_buf[21], cmd_buf[22], cmd_buf[23], cmd_buf[24], cmd_buf[25], cmd_buf[26], cmd_buf[27], cmd_buf[28], cmd_buf[29], cmd_buf[30], cmd_buf[31]);
+	PRINTK("test %02x mode %02x%02x operator %02x%02x%02x transfer %02x reader %02x ticket-max %02x%02x waittime %02x%02x retry %02x%02x antelena %02x rfu %02x%02x%02x%02x\n",
+		cmd_buf[32], cmd_buf[33], cmd_buf[34], cmd_buf[35], cmd_buf[36], cmd_buf[37], cmd_buf[38], cmd_buf[39], cmd_buf[40], cmd_buf[41], cmd_buf[42], cmd_buf[43], cmd_buf[44], cmd_buf[45], cmd_buf[46], cmd_buf[47], cmd_buf[48], cmd_buf[49], cmd_buf[50]);
+#endif
+	chCode = CE_OK;
+	out_buf[0] = XA_RW_IDLE;
+	*out_len = 1;
+	//
+	memcpy(&tpCmdInit.timeout, &cmd_buf[6], sizeof(CMD_INIT_t));
+	tpCPU.curstation[0] = tpCmdInit.deviceID[1];
+	tpCPU.curstation[1] = tpCmdInit.deviceID[2];
+	tpCPU.curstation[2] = tpCmdInit.deviceID[0];
+	tpCPU.curstation[3] = tpCmdInit.deviceID[3];
+	memcpy(tpSJT.curstation, tpCPU.curstation, 4);
+	//
+//	if(tpCmdInit.participantid == 0x2A)
+//	{ 
+//		g_blnHHJTorFounder = 0x00;
+//		tp_ver = 0x3b040000;
+//	}else
+		g_blnHHJTorFounder = 0xff;
+	//xian one-through card purchase/load transaction record
+	memcpy(tpYKTTxnPurchase.AFCHead_val.operatorid, tpCmdInit.operationid, 3);
+	if(memcmp(tpYKTTxnPurchase.AFCHead_val.statisticday, tpCmdInit.natural_day, 4) != 0)
+	{
+		memset(tpMCPUProtect, 0x00, 10 * sizeof(MCPU_PROTECT_t));
+		memset(tpXACPUProtect, 0x00, 10 * sizeof(XACPU_PROTECT_t));
+		tpMCPUPointer = tpXACPUPointer = 0;
+	}
+	memcpy(tpYKTTxnPurchase.AFCHead_val.statisticday, tpCmdInit.natural_day, 4);
+	tpYKTTxnPurchase.AFCHead_val.rfu = 0;
+	memcpy(tpYKTTxnLoad.AFCHead_val.operatorid, tpYKTTxnPurchase.AFCHead_val.operatorid, sizeof(AFCHead_t));
+	//purchase
+	memcpy(tpYKTTxnPurchase.deviceid, tpCmdInit.deviceID, 4);
+	//according to the  FOUNDER change BIN to BCD
+	tpYKTTxnPurchase.deviceid[1] = bin2bcd(tpYKTTxnPurchase.deviceid[1]);
+	tpYKTTxnPurchase.deviceid[2] = bin2bcd(tpYKTTxnPurchase.deviceid[2]);
+	memcpy(tpYKTTxnPurchase.PosOperId, tpCmdInit.operationid, 3);
+	tpYKTTxnPurchase.participantid = tpCmdInit.participantid;
+	tpYKTTxnPurchase.Txnlocation = tpCmdInit.curstation;
+	tpYKTTxnPurchase.CrdModel = 0x01;
+	//
+	memset(tpJTBTxnPurchaseEx.rfu, 0x00, 10);
+	memset(tpJTBTxnPurchaseExII.rfu, 0x00, 10);
+	//load
+	tpYKTTxnLoad.AFCHead_val.length = sizeof(YKTTxnLoad_t);
+	memcpy(tpYKTTxnLoad.PosId, ch_cput_isam_id, 6);
+	memcpy(tpYKTTxnLoad.SamId, ch_cput_isam_sn, 8);
+	memcpy(tpYKTTxnLoad.deviceid, tpCmdInit.deviceID, 4);
+	tpYKTTxnLoad.deviceid[1] = tpYKTTxnPurchase.deviceid[1];
+	tpYKTTxnLoad.deviceid[2] = tpYKTTxnPurchase.deviceid[2];
+	memcpy(tpYKTTxnLoad.PosOperId, tpCmdInit.operationid, 3);
+	//20130927--change to the char
+	//tpYKTTxnLoad.partipantid = tpCmdInit.participantid;
+	//tpYKTTxnLoad.TxnLocation = tpCmdInit.curstation;
+	memcpy(tpYKTTxnLoad.partipantid, &tpCmdInit.participantid, 4);
+	memcpy(tpYKTTxnLoad.TxnLocation, &tpCmdInit.curstation, 4);
+	//metro one-throught ticket issue
+	memset(tpTxnProductPurseIssue.AFCHead_val.operatorid, 0x00, sizeof(TxnProductPurseIssue_t));
+	memcpy(tpTxnProductPurseIssue.AFCHead_val.operatorid, tpCmdInit.operationid, 3);
+	memcpy(tpTxnProductPurseIssue.AFCHead_val.statisticday, tpCmdInit.natural_day, 4);
+	tpTxnProductPurseIssue.AFCHead_val.length = sizeof(TxnProductPurseIssue_t);
+	tpTxnProductPurseIssue.AFCHead_val.rfu = 0xff;
+	tpTxnProductPurseIssue.SysComHdr_val.sourceParticipantId = toMoto(tpCmdInit.participantid);
+	memcpy(&tpTxnProductPurseIssue.SysComHdr_val.deviceId, tpCmdInit.deviceID, 4);
+	memcpy(&tpTxnProductPurseIssue.SysComHdr_val.samId, &ch_cpu20_psam_id[2], 4);
+	tpTxnProductPurseIssue.SysComHdr_val.serviceParticipantId = toMoto(tpCmdInit.participantid);
+	tpTxnProductPurseIssue.SysComHdr_val.deviceLocation = toMoto(tpCmdInit.curstation);
+	tpTxnProductPurseIssue.SysComHdr_val.transactionStatus = toMoto(tpCmdInit.test);
+	tpTxnProductPurseIssue.SysComHdr_val.cdVersion = 0x00;
+	tpTxnProductPurseIssue.SysComHdr_val.reconciliationDate = toMoto(DAY1970 + datestr2days(tpCmdInit.operation_day));
+	tpTxnProductPurseIssue.SysComHdr_val.reservedField = 0xffffffff;
+	tpTxnProductPurseIssue.SysAppCom_val.applicationProviderId = toMoto(1);
+	tpTxnProductPurseIssue.SysAppCom_val.applicationSerialNumber = toMoto(1);
+	tpTxnProductPurseIssue.SysAppCom_val.applicationPersonalliseCat = toMoto(1);
+	tpTxnProductPurseIssue.SysAppCom_val.applicationType = toMoto(1);
+	//
+	txnlen = sizeof(AFCHead_t) + sizeof(SysComHdr_t) + sizeof(SysCardCom_t) + sizeof(SysAppCom_t) + sizeof(SysProductCom_t);
+	//multiride/pass issue
+	memcpy(tpTxnProductMultirideIssue.AFCHead_val.operatorid, tpTxnProductPurseIssue.AFCHead_val.operatorid, txnlen);
+	memcpy(tpTxnProductPassIssue.AFCHead_val.operatorid, tpTxnProductPurseIssue.AFCHead_val.operatorid, txnlen);
+	memcpy(tpTxnProductExitIssue.AFCHead_val.operatorid, tpTxnProductPurseIssue.AFCHead_val.operatorid, txnlen);
+	tpTxnProductMultirideIssue.AFCHead_val.length = sizeof(TxnProductMultirideIssue_t);
+	tpTxnProductPassIssue.AFCHead_val.length = sizeof(TxnProductPassIssue_t);
+	tpTxnProductExitIssue.AFCHead_val.length = sizeof(TxnProductMultirideExitTicketIssue_t);
+	//metro one-through ticket purse entry
+	memcpy(tpTxnProductPurseEntry.AFCHead_val.operatorid, tpTxnProductPurseIssue.AFCHead_val.operatorid, txnlen);
+	memcpy(tpTxnProductMultirideEntry.AFCHead_val.operatorid, tpTxnProductPurseIssue.AFCHead_val.operatorid, txnlen);
+	memcpy(tpTxnProductPassEntry.AFCHead_val.operatorid, tpTxnProductPurseIssue.AFCHead_val.operatorid, txnlen);
+	tpTxnProductPurseEntry.AFCHead_val.length = sizeof(TxnProductPurseUseOnEntry_t);
+	tpTxnProductMultirideEntry.AFCHead_val.length = sizeof(TxnProductMultirideUseOnEntry_t);
+	tpTxnProductPassEntry.AFCHead_val.length = sizeof(TxnProductPassUseOnEntry_t);
+	//metro one-throught ticket purse exit
+	memcpy(tpTxnProductPurseExit.AFCHead_val.operatorid, tpTxnProductPurseIssue.AFCHead_val.operatorid, txnlen);
+	memcpy(tpTxnProductMultirideExit.AFCHead_val.operatorid, tpTxnProductPurseIssue.AFCHead_val.operatorid, txnlen);
+	memcpy(tpTxnProductPassExit.AFCHead_val.operatorid, tpTxnProductPurseIssue.AFCHead_val.operatorid, txnlen);
+	tpTxnProductPurseExit.AFCHead_val.length = sizeof(TxnProductPurseUseOnExit_t);
+	tpTxnProductMultirideExit.AFCHead_val.length = sizeof(TxnProductMultirideUseOnExit_t);
+	tpTxnProductPassExit.AFCHead_val.length = sizeof(TxnProductPassUseOnExit_t);
+	//metro one-throught ticket compensation
+	memcpy(tpTxnProductPurseCompensate.AFCHead_val.operatorid, tpTxnProductPurseIssue.AFCHead_val.operatorid, txnlen);
+	memcpy(tpTxnProductMultirideCompensate.AFCHead_val.operatorid, tpTxnProductPurseIssue.AFCHead_val.operatorid, txnlen);
+	memcpy(tpTxnProductPassCompensate.AFCHead_val.operatorid, tpTxnProductPurseIssue.AFCHead_val.operatorid, txnlen);
+	tpTxnProductPurseCompensate.AFCHead_val.length = sizeof(TxnProductPurseCompensationFare_t);
+	tpTxnProductMultirideCompensate.AFCHead_val.length = sizeof(TxnProductMultirideCompensationFare_t);
+	tpTxnProductPassCompensate.AFCHead_val.length = sizeof(TxnProductPassCompensationFare_t);
+	//metro one-through ticket reverse
+	memcpy(tpTxnproductPurseReverse.AFCHead_val.operatorid, tpTxnProductPurseIssue.AFCHead_val.operatorid, txnlen);
+	tpTxnproductPurseReverse.AFCHead_val.length = sizeof(TxnProductPurseIssueReverse_t);
+	//metro one-through ticket blacklist request
+	txnlen = sizeof(AFCHead_t) + sizeof(SysComHdr_t) + sizeof(SysCardCom_t);
+	memcpy(tpTxnEventBlacklistRequest.AFCHead_val.operatorid, tpTxnProductPurseIssue.AFCHead_val.operatorid, txnlen);
+	memcpy(tpTxnCardBlock.AFCHead_val.operatorid, tpTxnProductPurseIssue.AFCHead_val.operatorid, txnlen);
+	tpTxnEventBlacklistRequest.AFCHead_val.length = sizeof(TxnEventBlacklistCardRequest_t);
+	tpTxnCardBlock.AFCHead_val.length = sizeof(TxnCardBlock_t);
+	
+	//check the UD record uploaded-status
+	ee_read(EE_UL_TRANSACTION, 1, &upload_ul);
+	ee_read(EE_MCPU_TRANSACTION, 1, &upload_mcpu);
+	ee_read(EE_CITY_TRANSACTION, 1, &upload_city);
+	if((upload_ul == 1) || (upload_mcpu == 1) || (upload_city == 1))
+	{
+		reader_status = XA_RW_RECORD;
+		sem_post(&g_samreturn);
+	}
+	//
+	xa_station_all_price();
+#ifdef	DEBUG_STATION_PRICE
+	//
+	memset(tpCPU.time_bcd, 0x00, 7);
+	memcpy(tpCPU.time_bcd, tpCmdInit.operation_day, 4);
+	chCode = xa_station_to_station_price();
+	PRINTK("station to station return %d\n", chCode);
+#endif
+
+	return CE_OK;
+}
+
+char xa_inquire(unsigned char *cmd_buf, unsigned char *out_buf, unsigned short *out_len)
+{
+unsigned char chCode, chRejectCode, chSJTRejectCode;
+unsigned char buf[20], chByte, chProduct;
+unsigned char chExitMac[4];
+long lngHisecond1, lngLosecond1, lngLong;
+unsigned short shShort;
+
+#ifdef DEBUG_PRINT_INQUIRE
+unsigned char localtime[7];
+	PRINTK("\ninquire command is %02x%02x and length is %02x%02x\n", cmd_buf[3], cmd_buf[4], cmd_buf[1], cmd_buf[2]);
+	PRINTK("check %02x function %02x area %02x\n", cmd_buf[6], cmd_buf[7], cmd_buf[8]);
+	PRINTK("time %02x%02x-%02x-%02x %02x:%02x:%02x antelena %02x flag %02x\n", 
+		cmd_buf[9], cmd_buf[10], cmd_buf[11], cmd_buf[12], cmd_buf[13], cmd_buf[14], cmd_buf[15], cmd_buf[16], cmd_buf[17]);
+	
+	PRINTK("station:%02x%02x%02x%02x history %02x\n", cmd_buf[18], cmd_buf[19], cmd_buf[20], cmd_buf[21], cmd_buf[22]);
+#endif
+
+	*out_len = 4;
+	switch(xa_ticket_family)
+	{
+	case XA_SJT_FAMILY:
+		memcpy(tpSJT.time_bcd, &cmd_buf[9], 7);
+		chCode = xa_ul_inquire(cmd_buf, out_buf, out_len);
+		break;
+	case XA_CITY_FAMILY:
+		memcpy(tpCPU.time_bcd, &cmd_buf[9], 7);
+		chCode = xa_tong_inquire(cmd_buf, out_buf, out_len);
+		break;
+	case XA_MCPU_FAMILY:
+		memcpy(tpCPU.time_bcd, &cmd_buf[9], 7);
+		chCode = xa_CPU_inquire(cmd_buf, out_buf, out_len);
+		break;
+	case XA_TRANSPORT_FAMILY:
+		memcpy(tpCPU.time_bcd, &cmd_buf[9], 7);
+		chCode = xa_transport_inquire(cmd_buf, out_buf, out_len);
+		break;
+#ifdef DEBUG_PBOC
+	case XA_PBOC_FAMILY:
+		memcpy(tpCPU.time_bcd, &cmd_buf[9], 7);
+		chCode = xa_pboc_inquire(cmd_buf, out_buf, out_len);
+		break;
+#endif
+	default:
+		memcpy(out_buf, "\x53\x35\x00\x01", 4);
+		chCode = CE_COMMAND;
+	}
+	return chCode;
+}
+
+char xa_sale(unsigned char *cmd_buf, unsigned char *out_buf, unsigned short *out_len)
+{
+unsigned short cnt,cnt2;
+unsigned char chCode, chFaretier, mac_buf[4][4];
+long lngHisecond, lngLosecond;
+unsigned short shDays, shFareValue;
+unsigned long lngMidnightsecond, lngstation, lngFareValue;
+unsigned char tac[4], ret;
+
+#ifdef DEBUG_PRINT
+unsigned char localtime[7];
+	PRINTK("\nsale command is %02x%02x and length is %02x%02x:\n", cmd_buf[3], cmd_buf[4], cmd_buf[1], cmd_buf[2]);
+	PRINTK("SN %02x%02x%02x%02x time %02x%02x-%02x-%02x %02x:%02x:%02x\n", cmd_buf[6], cmd_buf[7], cmd_buf[8], cmd_buf[9], cmd_buf[10], cmd_buf[11], cmd_buf[12], cmd_buf[13], cmd_buf[14], cmd_buf[15], cmd_buf[16]);
+	PRINTK("chip type %02x ticket %02x type %02x%02x subtype %02x%02x saletype %02x passenger %02x ", cmd_buf[17], cmd_buf[18], cmd_buf[19], cmd_buf[20], cmd_buf[21], cmd_buf[22], cmd_buf[23], cmd_buf[24]);
+	PRINTK("amount %02x%02x%02x%02x\n", cmd_buf[25], cmd_buf[26], cmd_buf[27], cmd_buf[28]);
+	PRINTK("start %02x%02x%02x%02x end %02x%02x%02x%02x \n", cmd_buf[29], cmd_buf[30], cmd_buf[31], cmd_buf[32], cmd_buf[33], cmd_buf[34], cmd_buf[35], cmd_buf[36]);
+	PRINTK("times:%02x%02x validduration %02x%02x%02x%02x payType %02x\n", cmd_buf[37], cmd_buf[38], cmd_buf[39], cmd_buf[40], cmd_buf[41], cmd_buf[42], cmd_buf[43]);
+#endif
+	*out_len = 1;
+	out_buf[0] = reader_status;
+	if(reader_status != XA_RW_READ)
+		return CE_TPUSTATUS;
+	
+	switch(xa_ticket_family)
+	{
+	case XA_SJT_FAMILY:
+		memcpy(&shDays, &cmd_buf[1], 2);
+		//如果是不支持支付方式则强制为现金（0x01）
+		if( shDays == (sizeof(CMD_SALE_t) + 3))
+			cmd_buf[43] = 0x01;
+		chCode = xa_ul_sale(cmd_buf, out_buf, out_len);
+		break;
+	case XA_MCPU_FAMILY:
+		chCode = CE_COMMAND;
+		break;
+	case XA_CITY_FAMILY:
+		chCode = xa_CPU_sale(cmd_buf, out_buf, out_len);
+		break;
+	default:
+		chCode = CE_COMMAND;
+		break;
+	}
+	return chCode;
+}
+
+
+char xa_entry(unsigned char *cmd_buf, unsigned char *out_buf, unsigned short *out_len)
+{
+unsigned char IDbuf[6];
+unsigned char buf[20];
+unsigned char TimeTemp[6];
+unsigned short i, shBalance, cnt;
+long lngHisecond1, lngLosecond1, lngHisecond2, lngLosecond2;
+unsigned char chExitMac[4], tac[4];
+char chCode;
+unsigned short shDays, shFareValue, cur_station;
+unsigned long lngMidnightSecond, lngstation;
+
+#ifdef DEBUG_PRINT
+unsigned char localtime[7];
+	PRINTK("\nentry command is %02x%02x and length is %02x%02x\n", cmd_buf[3], cmd_buf[4], cmd_buf[1], cmd_buf[2]);
+	PRINTK("time %02x%02x-%02x-%02x %02x:%02x:%02x\n", cmd_buf[6], cmd_buf[7], cmd_buf[8], cmd_buf[9], cmd_buf[10], cmd_buf[11], cmd_buf[12]);
+	PRINTK("SN:%02x%02x%02x%02x UD %02x\n", cmd_buf[13], cmd_buf[14], cmd_buf[15], cmd_buf[16], cmd_buf[17]);
+#endif
+	*out_len = 1;
+	out_buf[0] = reader_status;
+	if(reader_status != XA_RW_READ)
+		return CE_TPUSTATUS;
+	//
+	if(xa_ticket_family == XA_SJT_FAMILY)
+		chCode = xa_ul_entry(cmd_buf, out_buf, out_len);
+	else if(xa_ticket_family == XA_CITY_FAMILY)
+		chCode = xa_tong_entry(cmd_buf, out_buf, out_len);
+	else if(xa_ticket_family == XA_MCPU_FAMILY)
+		chCode = xa_CPU_entry(cmd_buf, out_buf, out_len);
+	else if(xa_ticket_family == XA_TRANSPORT_FAMILY)
+		chCode = xa_transport_entry(cmd_buf, out_buf, out_len);
+#ifdef DEBUG_PBOC
+	else if(xa_ticket_family == XA_PBOC_FAMILY)
+		chCode = xa_pboc_entry(cmd_buf, out_buf, out_len);
+#endif
+	else
+		chCode = CE_COMMAND;
+	return chCode;
+}
+
+
+char xa_exit(unsigned char *cmd_buf, unsigned char *out_buf, unsigned short *out_len)
+{
+unsigned char TimeTemp[6];
+unsigned char chCode;
+unsigned char buf[20];
+unsigned char chExitMac[4], tac[4];
+long lngHisecond1, lngLosecond1;
+unsigned short	shBalance, cnt;
+unsigned long lngsrcstation, lngdesstation;
+
+#ifdef DEBUG_PRINT
+	PRINTK("\nexit command is %02x%02x and length is %02x%02x\n", cmd_buf[3], cmd_buf[4], cmd_buf[1], cmd_buf[2]);
+	PRINTK("time %02x%02x-%02x-%02x %02x:%02x:%02x\n", cmd_buf[6], cmd_buf[7], cmd_buf[8], cmd_buf[9], cmd_buf[10], cmd_buf[11], cmd_buf[12]);
+	PRINTK("SN:%02x%02x%02x%02x UD %02x\n", cmd_buf[13], cmd_buf[14], cmd_buf[15], cmd_buf[16], cmd_buf[17]);
+#endif
+	
+	*out_len = 2;
+	out_buf[0] = reader_status;
+	if(reader_status != XA_RW_READ)
+		return CE_COMMAND;
+		
+	if(xa_ticket_family == XA_SJT_FAMILY)
+		chCode = xa_ul_exit(cmd_buf, out_buf, out_len);
+	else if(xa_ticket_family == XA_CITY_FAMILY)
+		chCode = xa_tong_exit(cmd_buf, out_buf, out_len);
+	else if(xa_ticket_family == XA_MCPU_FAMILY)
+		chCode = xa_CPU_exit(cmd_buf, out_buf, out_len);
+	else if(xa_ticket_family == XA_TRANSPORT_FAMILY)
+		chCode = xa_transport_exit(cmd_buf, out_buf, out_len);
+#ifdef	DEBUG_PBOC
+	else if(xa_ticket_family == XA_PBOC_FAMILY)
+		chCode = xa_pboc_exit(cmd_buf, out_buf, out_len);
+#endif
+	else
+		chCode = CE_COMMAND;
+	return chCode;
+}
+
+
+char xa_update(unsigned char *cmd_buf, unsigned char *out_buf, unsigned short *out_len)
+{
+unsigned char IDbuf[6];
+unsigned char buf[20];
+unsigned char TimeTemp[6];
+unsigned short i, shBalance, cnt;
+long lngHisecond1, lngLosecond1, lngHisecond2, lngLosecond2;
+unsigned char chExitMac[4], tac[4];
+char chCode;
+unsigned short shDays, shFareValue, cur_station;
+unsigned long lngMidnightSecond, lngstation;
+
+#ifdef DEBUG_PRINT
+unsigned char localtime[7];
+	PRINTK("\nupdate command is %02x%02x and length is %02x%02x:\n", cmd_buf[3], cmd_buf[4], cmd_buf[1], cmd_buf[2]);
+	PRINTK("SN %02x%02x%02x%02x time %02x%02x-%02x-%02x %02x:%02x:%02x\n", cmd_buf[6], cmd_buf[7], cmd_buf[8], cmd_buf[9], cmd_buf[10], cmd_buf[11], cmd_buf[12], cmd_buf[13], cmd_buf[14], cmd_buf[15], cmd_buf[16]);
+	PRINTK("chiptype %02x type %02x%02x paytype %02x payamount %02x%02x%02x%02x\n", 
+		cmd_buf[17], cmd_buf[18], cmd_buf[19], cmd_buf[20], cmd_buf[21], cmd_buf[22], cmd_buf[23], cmd_buf[24]);
+	PRINTK("bom/efo %02x updatetype %02x entrystation %02x%02x%02x%02x exit station %02x%02x%02x%02x \n", 
+		cmd_buf[25], cmd_buf[26], cmd_buf[27], cmd_buf[28], cmd_buf[29], cmd_buf[30], cmd_buf[31], cmd_buf[32], cmd_buf[33], cmd_buf[34]);
+#endif
+	*out_len = 1;
+	out_buf[0] = reader_status;
+	if(reader_status != XA_RW_READ)
+		return CE_TPUSTATUS;
+	//
+	if(xa_ticket_family == XA_SJT_FAMILY)
+		chCode = xa_ul_update(cmd_buf, out_buf, out_len);
+	else if(xa_ticket_family == XA_CITY_FAMILY)
+		chCode = xa_tong_update(cmd_buf, out_buf, out_len);
+	else if(xa_ticket_family == XA_MCPU_FAMILY)
+		chCode = xa_CPU_update(cmd_buf, out_buf, out_len);
+	else if(xa_ticket_family == XA_TRANSPORT_FAMILY)
+		chCode = xa_transport_update(cmd_buf, out_buf, out_len);
+	else
+		chCode = CE_COMMAND;
+	return chCode;
+}
+
+
+char xa_add(unsigned char *cmd_buf, unsigned char *out_buf, unsigned short *out_len)
+{
+unsigned char IDbuf[6];
+unsigned char buf[20];
+unsigned char TimeTemp[6];
+unsigned short i, shBalance, cnt;
+long lngHisecond1, lngLosecond1, lngHisecond2, lngLosecond2;
+unsigned char chExitMac[4], tac[4];
+char chCode;
+unsigned short shDays, shFareValue, cur_station;
+unsigned long lngMidnightSecond, lngstation;
+
+#ifdef DEBUG_PRINT
+unsigned char localtime[7];
+	PRINTK("\nadd command is %02x%02x and length is %02x%02x\n", cmd_buf[3], cmd_buf[4], cmd_buf[1], cmd_buf[2]);
+	PRINTK("UDSN :%02x%02x%02x%02x date %02x%02x-%02x-%02x %02x:%02x:%02x\n", cmd_buf[6], cmd_buf[7], cmd_buf[8], cmd_buf[9], cmd_buf[10], cmd_buf[11], cmd_buf[12], cmd_buf[13], cmd_buf[14], cmd_buf[15], cmd_buf[16]);
+	PRINTK("payment %02x addtype %02x rfu %02x amount %02x%02x%02x%02x times %02x%02x%02x%02x days %02x%02x%02x%02x\n", 
+				cmd_buf[17], cmd_buf[18], cmd_buf[19], cmd_buf[20], cmd_buf[21], cmd_buf[22], cmd_buf[23],
+				cmd_buf[24], cmd_buf[25], cmd_buf[26], cmd_buf[27], cmd_buf[28], cmd_buf[29], cmd_buf[30], cmd_buf[31]);
+#endif
+	*out_len = 1;
+	out_buf[0] = reader_status;
+	if(reader_status != XA_RW_READ)
+		return CE_TPUSTATUS;
+	//
+	if(xa_ticket_family == XA_SJT_FAMILY)
+		return CE_COMMAND;
+	else if(xa_ticket_family == XA_CITY_FAMILY)
+		chCode = xa_tong_add(cmd_buf, out_buf, out_len);
+	else if(xa_ticket_family == XA_MCPU_FAMILY)
+		chCode = xa_CPU_add(cmd_buf, out_buf, out_len);
+	else
+		chCode = CE_COMMAND;
+	return chCode;
+}
+
+char xa_active(unsigned char *cmd_buf, unsigned char *out_buf, unsigned short *out_len)
+{
+unsigned char IDbuf[6];
+unsigned char buf[20];
+unsigned char TimeTemp[6];
+unsigned short i, shBalance, cnt;
+long lngHisecond1, lngLosecond1, lngHisecond2, lngLosecond2;
+unsigned char chExitMac[4], tac[4];
+char chCode;
+unsigned short shDays, shFareValue, cur_station;
+unsigned long lngMidnightSecond, lngstation;
+
+#ifdef DEBUG_PRINT
+unsigned char localtime[7];
+	PRINTK("\nactive command is %02x%02x and length is %02x%02x\n", cmd_buf[3], cmd_buf[4], cmd_buf[1], cmd_buf[2]);
+	PRINTK("date %02x%02x-%02x-%02x %02x:%02x:%02x\n", cmd_buf[6], cmd_buf[7], cmd_buf[8], cmd_buf[9], cmd_buf[10], cmd_buf[11]);
+	PRINTK("family %02x ticket type %02x%02x\n", cmd_buf[12], cmd_buf[13], cmd_buf[14]);
+#endif
+	*out_len = 1;
+	out_buf[0] = reader_status;
+	if(reader_status != XA_RW_READ)
+		return CE_TPUSTATUS;
+	//
+	if(xa_ticket_family == XA_SJT_FAMILY)
+		chCode = xa_ul_active(cmd_buf, out_buf, out_len);
+	else if(xa_ticket_family == XA_CITY_FAMILY)
+		chCode = CE_COMMAND;
+	else if(xa_ticket_family == XA_MCPU_FAMILY)
+		chCode = xa_CPU_active(cmd_buf, out_buf, out_len);
+	else
+		chCode = CE_COMMAND;
+	return chCode;
+}
+
+
+char xa_defer(unsigned char *cmd_buf, unsigned char *out_buf, unsigned short *out_len)
+{
+unsigned char IDbuf[6];
+unsigned char buf[20];
+unsigned char TimeTemp[6];
+unsigned short i, shBalance, cnt;
+long lngHisecond1, lngLosecond1, lngHisecond2, lngLosecond2;
+unsigned char chExitMac[4], tac[4];
+char chCode;
+unsigned short shDays, shFareValue, cur_station;
+unsigned long lngMidnightSecond, lngstation;
+
+#ifdef DEBUG_PRINT
+unsigned char localtime[7];
+	PRINTK("\ndefer command is %02x%02x and length is %02x%02x\n", cmd_buf[3], cmd_buf[4], cmd_buf[1], cmd_buf[2]);
+	PRINTK("date %02x%02x-%02x-%02x %02x:%02x:%02x\n", cmd_buf[6], cmd_buf[7], cmd_buf[8], cmd_buf[9], cmd_buf[10], cmd_buf[11], cmd_buf[12]);
+	PRINTK("family %02x ticket type %02x%02x\n", cmd_buf[13], cmd_buf[14]);
+#endif
+	*out_len = 1;
+	out_buf[0] = reader_status;
+	if(reader_status != XA_RW_READ)
+		return CE_TPUSTATUS;
+	//
+	if(xa_ticket_family == XA_SJT_FAMILY)
+		chCode = CE_COMMAND;
+	else if(xa_ticket_family == XA_CITY_FAMILY)
+		chCode = CE_COMMAND;
+	else if(xa_ticket_family == XA_MCPU_FAMILY)
+		chCode = xa_CPU_defer(cmd_buf, out_buf, out_len);
+	else
+		chCode = CE_COMMAND;
+	return chCode;
+}
+
+
+char xa_blacklist_request(unsigned char *cmd_buf, unsigned char *out_buf, unsigned short *out_len)
+{
+unsigned char buf[20];
+unsigned short i, shBalance, cnt, cnt2;
+long lngHisecond1, lngLosecond1, lngHisecond2, lngLosecond2;
+unsigned char chExitMac[4], tac[4];
+char chCode;
+
+#ifdef DEBUG_PRINT
+unsigned char localtime[7];
+	PRINTK("\nblacklist-request command is %02x%02x and length is %02x%02x\n", cmd_buf[3], cmd_buf[4], cmd_buf[1], cmd_buf[2]);
+	PRINTK("UDSN :%02x%02x%02x%02x date %02x%02x-%02x-%02x %02x:%02x:%02x\n", cmd_buf[6], cmd_buf[7], cmd_buf[8], cmd_buf[9], cmd_buf[10], cmd_buf[11], cmd_buf[12], cmd_buf[13], cmd_buf[14], cmd_buf[15], cmd_buf[16]);
+	PRINTK("family %02x tickettye %02x%02x sn %02x%02x%02x%02x %02x%02x%02x%02x %02x%02x%02x%02x %02x%02x%02x%02x RFU\n", 
+				cmd_buf[17], cmd_buf[18], cmd_buf[19], cmd_buf[20], cmd_buf[21], cmd_buf[22], cmd_buf[23],
+				cmd_buf[24], cmd_buf[25], cmd_buf[26], cmd_buf[27], cmd_buf[28], cmd_buf[29], cmd_buf[30], cmd_buf[31], cmd_buf[32], cmd_buf[33], cmd_buf[34], cmd_buf[35]);
+#endif
+	*out_len = 1;
+	lngHisecond1 = timestr2long(&cmd_buf[11]);
+	//
+	tpTxnEventBlacklistRequest.SysComHdr_val.formatVersion = toMoto(1);
+	tpTxnEventBlacklistRequest.SysComHdr_val.txnDateTime = toMoto(lngHisecond1 + TIME2000 - ZONE8);
+	tpTxnEventBlacklistRequest.SysComHdr_val.udsn = ByteToLong(NULL, &cmd_buf[6]);
+	tpTxnEventBlacklistRequest.SysComHdr_val.udType = toMoto(6);
+	tpTxnEventBlacklistRequest.SysComHdr_val.udSubtype = toMoto(12);
+	//
+	tpTxnEventBlacklistRequest.SysCardCom_val.cardissuerId = toMoto(1);
+	tpTxnEventBlacklistRequest.startCardRange = tpTxnEventBlacklistRequest.endCardRange = tpTxnEventBlacklistRequest.SysCardCom_val.cardSerialNumber = ByteToLong(NULL, &cmd_buf[20]);
+	tpTxnEventBlacklistRequest.SysCardCom_val.cardType = toMoto(XA_CARD_PHYSICAL_CPU);
+	tpTxnEventBlacklistRequest.SysCardCom_val.cardLifeCycleCount = 0xffff0000;
+	tpTxnEventBlacklistRequest.SysCardCom_val.cardActionSequenceNumber = 0;
+	//
+	tpTxnEventBlacklistRequest.reasonCode = toMoto(11);
+	memset(tpTxnEventBlacklistRequest.staffEntry, 0x00, 12);
+	sprintf(tpTxnEventBlacklistRequest.staffEntry, "%02x%02x%02x", tpCmdInit.operationid[0], tpCmdInit.operationid[1], tpCmdInit.operationid[2]);
+	tpTxnEventBlacklistRequest.highSecurity = 0;
+	tpTxnEventBlacklistRequest.batchWithdraw = 0;
+	
+	//
+	cnt2 = cnt = sizeof(TxnEventBlacklistCardRequest_t);
+	g_sha1txnsn = tpTxnEventBlacklistRequest.SysComHdr_val.udsn;
+	tpYPT_txn_val.YPT_type = XA_MCPU_FAMILY;
+	tpYPT_txn_val.pYPT_txn = &out_buf[33];
+	tpYPT_txn_val.pYPT_tac = &tpTxnEventBlacklistRequest.SysSecurityHdr_val.txnMac[0];
+	tpYPT_txn_val.YPT_txnlen = cnt + 6;
+	tpYPT_txn_val.YPT_flag = 0;
+	sh_mac_len = cnt - 12 - 10;
+	memcpy(ch_mac_data, &tpTxnEventBlacklistRequest.SysComHdr_val.formatVersion, 40);
+	sh_mac_len -= 4;
+	memcpy(&ch_mac_data[40], &tpTxnEventBlacklistRequest.SysComHdr_val.reservedField, sh_mac_len - 40);
+	//
+	chCode = xasjt_cal_tac(ch_mac_data, sh_mac_len, g_sha1txnsn, tpYPT_txn_val.pYPT_tac);
+	if(chCode != 0)
+		return chCode;
+	//
+	ee_write_last_record(tpYPT_txn_val.YPT_type, tpYPT_txn_val.YPT_flag, tpYPT_txn_val.pYPT_txn, tpYPT_txn_val.YPT_txnlen);
+	
+	//udsn-1
+	out_buf[0] = 1;
+	//recycle-1
+	out_buf[1] = 0x00;
+	//blacklist-1
+	out_buf[2] = 0x00;
+	//family-1
+	out_buf[3] = XA_MCPU_FAMILY;
+	//ticket type-2
+	memcpy(&out_buf[4], &cmd_buf[18], 2);
+	//lock status -1
+	out_buf[18] = 0x00;
+	//rfu-14
+	memset(&out_buf[19], 0x00, 14);
+	
+	*out_len = 33;
+	//UD record number 
+	out_buf[35] = 1;
+	//UD record type
+	out_buf[36] = 0x02;
+	//UD record length
+	memcpy(&out_buf[37], &cnt, 2);
+	//UD
+	memcpy(&out_buf[39], tpTxnEventBlacklistRequest.AFCHead_val.operatorid, cnt);
+	//UD length including the UD record length(sizeof) + record number(1) + record type(1) + ud length(2)
+	cnt += 4;
+	memcpy(&out_buf[33], &cnt, 2);
+	cnt += 2;
+	//AR
+	out_buf[39 + cnt2] = 0x00;
+	out_buf[39 + cnt2 + 1] = 0x00;
+	cnt += 2;
+	reader_status = XA_RW_IDLE;
+	(*out_len) += cnt;
+#ifdef	DEBUG_PRINT
+	PRINTK("UL ISSUE:");
+	for(i = 0; i < (*out_len); i++)
+		PRINTK("%02x", out_buf[i]);
+	PRINTK("\n");
+#endif
+	return CE_OK;
+}
+
+
+char xa_getud(unsigned char *cmd_buf, unsigned char *out_buf, unsigned short *out_len)
+{
+unsigned char chCode;
+unsigned short record_type, addr, i;
+unsigned char upload_flag;
+
+#ifdef DEBUG_PRINT
+	PRINTK("\ngetUD command is %02x%02x and length is %02x%02x\n", cmd_buf[3], cmd_buf[4], cmd_buf[1], cmd_buf[2]);
+	PRINTK("retry %02x rfu %02x\n", cmd_buf[5], cmd_buf[6]);
+#endif
+
+	*out_len = 2;
+	out_buf[0] = reader_status;
+	if(reader_status != XA_RW_RECORD)
+		return CE_TPUSTATUS;
+	//for YKT not need wait so must initial the g_samreturn is NOT zero.
+	sem_wait(&g_samreturn);
+	//
+	addr = EE_UL_TRANSACTION;
+	ee_read(addr, 1, &upload_flag);
+	if(upload_flag == 1)
+	{
+		ee_read_last_record(addr, out_buf, out_len, 0);
+		reader_status = XA_RW_IDLE;
+#ifdef	DEBUG_PRINT
+		for(i = 0; i < *out_len; i++)
+			PRINTK("%02x", out_buf[i]);
+		PRINTK("\n");
+#endif
+		return CE_OK;
+	}
+	
+	addr = EE_MCPU_TRANSACTION;
+	ee_read(addr, 1, &upload_flag);
+	if(upload_flag == 1)
+	{
+		ee_read_last_record(addr, out_buf, out_len, 0);
+		reader_status = XA_RW_IDLE;
+#ifdef	DEBUG_PRINT
+		for(i = 0; i < *out_len; i++)
+			PRINTK("%02x", out_buf[i]);
+		PRINTK("\n");
+#endif
+		return CE_OK;
+	}
+	
+	addr = EE_CITY_TRANSACTION;
+	ee_read(addr, 1, &upload_flag);
+	if(upload_flag == 1)
+	{
+		ee_read_last_record(addr, out_buf, out_len, 0);
+		reader_status = XA_RW_IDLE;
+#ifdef	DEBUG_PRINT
+		for(i = 0; i < *out_len; i++)
+			PRINTK("%02x", out_buf[i]);
+		PRINTK("\n");
+#endif
+		return CE_OK;
+	}
+
+	addr = EE_TRANSPORT_TRANSACTION;
+	ee_read(addr, 1, &upload_flag);
+	if(upload_flag == 1)
+	{
+		ee_read_last_record(addr, out_buf, out_len, 0);
+		reader_status = XA_RW_IDLE;
+#ifdef	DEBUG_PRINT
+		for(i = 0; i < *out_len; i++)
+			PRINTK("%02x", out_buf[i]);
+		PRINTK("\n");
+#endif
+		return CE_OK;
+	}
+	//
+	*out_len = 0;
+	return CE_NORECORD;
+}
+
+
+char xa_price(unsigned char *cmd_buf, unsigned char *out_buf, unsigned short *out_len)
+{
+unsigned char chCode;
+unsigned short TicketType, shFare;
+unsigned char upload_flag;
+unsigned long 	lngsrcstation, lngdesstation;
+
+#ifdef DEBUG_PRINT
+	PRINTK("\nprice command is %02x%02x and length is %02x%02x\n", cmd_buf[3], cmd_buf[4], cmd_buf[1], cmd_buf[2]);
+	PRINTK("chip %02x family %02x ticketype %02x%02x subtype %02x%02x sale/consume %02x passenger %02x \n", cmd_buf[6], cmd_buf[7], cmd_buf[8], cmd_buf[9], cmd_buf[10], cmd_buf[11], cmd_buf[12], cmd_buf[13]);
+	PRINTK("time %02x%02x-%02x-%02x %02x:%02x:%02x startstation %02x%02x%02x%02x endstation %02x%02x%02x%02x\n", 
+			cmd_buf[14], cmd_buf[15], cmd_buf[16], cmd_buf[17], cmd_buf[18], cmd_buf[19], cmd_buf[20], cmd_buf[21], cmd_buf[22], cmd_buf[23], cmd_buf[24], cmd_buf[25], cmd_buf[26], cmd_buf[27], cmd_buf[28]);
+#endif
+
+	*out_len = 4;
+	
+	//ticket type
+	memcpy(out_buf, "\x53\x43\x00\x01", 4);
+	memcpy(&TicketType, &cmd_buf[8], 2);
+	if((chCode = UL_TellSysCard(TicketType, NULL)) != 0)
+	{
+		return chCode;
+	}
+
+	//
+	memcpy(out_buf, "\x53\x43\x00\x02", 4);
+	memcpy(&lngsrcstation, &cmd_buf[21], 4);
+	memcpy(&lngdesstation, &cmd_buf[25], 4);
+	if(0 != (chCode = cal_station_fare(tpTicketDef.FareCodeTableId, lngsrcstation, lngdesstation, &shFare)))
+		return chCode;
+	//
+	memcpy(out_buf, "\x53\x43\x00\x03", 4);
+	if(0 != (chCode = cal_fare_value(&cmd_buf[14], &tpTicketDef, shFare, cmd_buf[13], &tpSysPrice)))
+		return chCode;
+
+	//price
+	*out_len = 4;
+	memcpy(&out_buf[0], &tpSysPrice.price, 4);
+	
+	return CE_OK;
+}
+
+
+/*
+function:get the CURRENT station price to the every station
+return:
+*/
+char xa_station_all_price()
+{
+unsigned char chCode;
+unsigned long i, j, srcstation;
+unsigned char curtime[7];
+unsigned long lngTemp;
+	
+	tpStationPrice.SJTNum = 0;
+	//get the SJT price
+	if(tpStationPrice.SJTFareCode != NULL)
+		free(tpStationPrice.SJTFareCode);
+	if(tpStationPrice.SJTPrice != NULL)
+		free(tpStationPrice.SJTPrice);
+	tpStationPrice.SJTFareCode = (unsigned long *) malloc( sizeof(long) * 1);
+	tpStationPrice.SJTPrice = (unsigned long *) malloc(sizeof(long) * 1);
+	tpStationPrice.SJTPrice[0] = 0;
+	tpStationPrice.SJTFareCode[0] = 0;
+	if((chCode = get_ticket_para(0x03, &tpSJTTicketDef)) != 0)
+	{
+		return chCode;
+	}
+	//get the station fare code 
+	if(0 != (chCode = cal_station_multi_fare(tpSJTTicketDef.FareCodeTableId, tpCmdInit.curstation)))
+		return chCode;
+#ifdef	DEBUG_PRINT
+	for(i = 0; i < tpStationPrice.SJTNum; i++)
+		PRINTK("fare code %d\n", tpStationPrice.SJTFareCode[i]);
+	
+#endif
+	//get the price
+	tpStationPrice.SJTPrice = (unsigned long *) realloc(tpStationPrice.SJTPrice, sizeof(long) * tpStationPrice.SJTNum);
+	memset(curtime, 0x00, 7);
+	memcpy(curtime, tpCmdInit.operation_day, 4);
+	for(i = 0; i < tpStationPrice.SJTNum; i++)
+	{
+		if(0 != (chCode = cal_fare_value(curtime, &tpSJTTicketDef, tpStationPrice.SJTFareCode[i], XA_PASSENGER_ADULT, &tpSysPrice)))
+		{
+			tpStationPrice.SJTNum = 0;
+			return chCode;
+		}
+		tpStationPrice.SJTPrice[i] = tpSysPrice.price;
+	}
+	//
+    for(i = 0; i < tpStationPrice.SJTNum; i++)
+    {
+        for(j = tpStationPrice.SJTNum - 1; j >= i + 1; j--)
+        {
+            if(tpStationPrice.SJTPrice[j] < tpStationPrice.SJTPrice[j - 1])
+            {
+                lngTemp = tpStationPrice.SJTPrice[j];
+                tpStationPrice.SJTPrice[j] = tpStationPrice.SJTPrice[j - 1];
+                tpStationPrice.SJTPrice[j - 1] = lngTemp;
+                lngTemp = tpStationPrice.SJTFareCode[j];
+                tpStationPrice.SJTFareCode[j] = tpStationPrice.SJTFareCode[j - 1];
+                tpStationPrice.SJTFareCode[j - 1] = lngTemp;
+            }
+        }
+    }
+#ifdef	DEBUG_PRINT
+	for(i = 0; i < tpStationPrice.SJTNum; i++)
+		PRINTK("i= %d fare code %d price %d\n", i, tpStationPrice.SJTFareCode[i], tpStationPrice.SJTPrice[i]);
+#endif
+	return 0;
+}
+
+
+char xa_station_to_station_price()
+{
+unsigned char chCode;
+unsigned short chFaretier;
+unsigned long i, j, srcstation;
+unsigned char curtime[7];
+unsigned long lngTemp;
+unsigned char srcstationName[21], desstationname[21];
+
+	//get the SJT price
+	if((chCode = get_ticket_para(0x03, &tpSJTTicketDef)) != 0)
+	{
+		PRINTK("find ticket SJT failure\n");
+		return chCode;
+	}
+
+	if(tpLocation1106.Locations_val.Location_val == NULL)
+		return CE_EOD_FILE;
+	
+	printf("all line&station:\n");
+	for(i = 0; i < tpLocation1106.Locations_val.Locationnumber; i++)
+		PRINTK("locationcode %08x name %s name %s istransfer %02x IsGate %02x farelocation %08x over %02x numberofsec %02x\n", 
+			tpLocation1106.Locations_val.Location_val[i].Location_Number, tpLocation1106.Locations_val.Location_val[i].LocationNamech, tpLocation1106.Locations_val.Location_val[i].LocationNameen,
+			tpLocation1106.Locations_val.Location_val[i].IsTransferStation, tpLocation1106.Locations_val.Location_val[i].IsGatedTransfer, tpLocation1106.Locations_val.Location_val[i].fareLocationNumber,
+			tpLocation1106.Locations_val.Location_val[i].OverrideFirstUseAtStationOfIssue, tpLocation1106.Locations_val.Location_val[i].Numberofsection);
+	
+	printf("station to station price:\n");
+	for(i = 0; i < tpLocation1106.Locations_val.Locationnumber; i++)
+	{//find the current station real STATION_ID in the fare tables
+		if(0x09000000 == (tpLocation1106.Locations_val.Location_val[i].Location_Number & 0xFF000000))
+		{//车站
+			if( (tpLocation1106.Locations_val.Location_val[i].Location_Number & 0xFF00FF00) == 0x09000000)
+				continue;
+			for(j = 0; j < tpLocation1106.Locations_val.Locationnumber; j++)
+			{
+				if(0x09000000 == (tpLocation1106.Locations_val.Location_val[j].Location_Number & 0xFF000000))
+				{
+					if( (tpLocation1106.Locations_val.Location_val[j].Location_Number & 0xFF00FF00) == 0x09000000)
+						continue;
+					if(0 != (chCode =cal_station_fare(tpSJTTicketDef.FareCodeTableId, tpLocation1106.Locations_val.Location_val[i].Location_Number, 
+																	tpLocation1106.Locations_val.Location_val[j].Location_Number,
+																	&chFaretier)))
+						return chCode;
+					if(0 != (chCode = cal_fare_value(tpCPU.time_bcd, &tpSJTTicketDef, chFaretier, XA_PASSENGER_ADULT, &tpSysPrice)))
+						return chCode;
+					//
+					memset(srcstationName, 0x00, 21);
+					memset(desstationname, 0x00, 21);
+					memcpy(srcstationName, tpLocation1106.Locations_val.Location_val[i].LocationNamech, 20);
+					memcpy(desstationname, tpLocation1106.Locations_val.Location_val[j].LocationNamech, 20);
+					PRINTK("%08X %s	%08X %s %d\n", tpLocation1106.Locations_val.Location_val[i].Location_Number, srcstationName,
+													tpLocation1106.Locations_val.Location_val[j].Location_Number, desstationname, 
+													tpSysPrice.price);
+				}
+			}
+		}
+	}
+	return 0;
+}
+/*
+function:localdate-issuedate>validdays then ?
+
+return:
+*/
+char xa_TellDate(unsigned char *cur_timebcd, unsigned char *start_timebcd, unsigned char *end_timebcd, unsigned char travelstatus, unsigned char *last_timebcd, unsigned char DurationType)
+{
+unsigned short day1, day2;
+short day;
+unsigned char buf[7];
+long lngHisecond, lngLosecond;
+unsigned long lngMidnightsecond;
+
+	//if current station is set to the date mode then can't check the valid date
+	if(tpwaivermode.cur_sta_date)
+	{
+		return 0;
+	}
+	//any station is set to DATE mode
+	if(tpwaivermode.oth_sta_date)
+		return 0;
+	//according to the zhushirong entry/exit station can't check the sensitive mode only in the inquire and return function
+	
+	//emegency mode sensitive
+	if(tpwaivermode.sen_sta_emergency)
+	{
+		return 0;
+	}
+	//failure mode sensitive duration and FAILURE flag in the ticket
+	if(tpwaivermode.sen_sta_failure && (travelstatus == 3))
+	{
+		return 0;
+	}
+	if( (DurationType == 0) || (DurationType == 1) )
+	{//minute or hour
+		//check the DATE
+		if(memcmp(cur_timebcd, start_timebcd, 4) < 0)
+			return CE_EXPIREDDATE;
+		if(memcmp(cur_timebcd, end_timebcd, 6) > 0)
+			return CE_EXPIREDDATE;
+	}else
+	{
+		//if the travel status is ENTRY and the date is CURRENT DATE
+		//if(((travelstatus == 1) || (travelstatus == 4)) && (memcmp(cur_timebcd, last_timebcd, 4) == 0))
+		if(memcmp(cur_timebcd, last_timebcd, 4) == 0)
+			return 0;
+		//check the DATE
+		if(memcmp(cur_timebcd, start_timebcd, 4) < 0)
+			return CE_EXPIREDDATE;
+		if(memcmp(cur_timebcd, end_timebcd, 4) > 0)
+		{
+			day1 = datestr2days(cur_timebcd);
+			day2 = datestr2days(end_timebcd);
+			//expired to the next day TWO hours
+			if(((day1 - day2) == 1) && (memcmp(&cur_timebcd[4], "\x02", 1) < 0))
+			{
+				return 0;
+			}
+			//if entry status only one day can use 
+			//if(((day1 - day2) == 1) && (travelstatus == 1))
+			//	return 0;
+			return CE_EXPIREDDATE;
+		}
+	}
+	return 0;
+}
+
+
+/*
+function:
+	
+parameter:
+	1、
+	2、
+	3、
+return :
+%// 车票使用区域
+*/
+char xa_ValidateArea(unsigned long curstation, unsigned long zonestation)
+{
+char chCode;
+unsigned long	i, j,m,n;
+
+	//NO assigned station
+	if(zonestation == 0xFFFFFFFF)
+		return 0;
+	//only the assigned the station
+	if((zonestation & 0xFF000000) == 0x09000000)
+	{
+		if(curstation == zonestation)
+			return 0;
+		else
+			return CE_ZONE;
+	}
+	//in the assigned zone
+	if((zonestation & 0xFF000000) == 0x13000000)
+	{
+		if(tpLocation1106.Locations_val.SectionLocation_val == NULL)
+			return CE_EOD_FILE;
+		for(i = 0; i < tpLocation1106.Locations_val.sectionnumber; i++)
+		{
+			if(zonestation == tpLocation1106.Locations_val.SectionLocation_val[i].Location_Number_Group)
+			{
+				for(j = 0; j < tpLocation1106.Locations_val.SectionLocation_val[i].NumberofLocation; j++)
+				{
+					if(curstation == tpLocation1106.Locations_val.SectionLocation_val[i].LocationNumber_Station[j])
+					{
+						return 0;
+					}
+					if((tpLocation1106.Locations_val.SectionLocation_val[i].LocationNumber_Station[j] & 0xFF000000) == 0x13000000)
+					{
+						for(m = 0; m < tpLocation1106.Locations_val.sectionnumber; m++)
+						{
+							if(tpLocation1106.Locations_val.SectionLocation_val[i].LocationNumber_Station[j] == tpLocation1106.Locations_val.SectionLocation_val[m].Location_Number_Group)
+							{
+								for(n = 0; n < tpLocation1106.Locations_val.SectionLocation_val[m].NumberofLocation; n++)
+								{
+									if(curstation == tpLocation1106.Locations_val.SectionLocation_val[m].LocationNumber_Station[n])
+									{
+										return 0;
+									}
+								}
+							}
+						}
+
+					}
+				}
+			}
+		}
+	}
+	return CE_ZONE;
+}
+
+
+unsigned char xa_polling(unsigned char *cmd_buf, unsigned char *out_buf, unsigned short *out_len)
+{
+unsigned short shCode;
+
+	xa_ticket_family = 0;
+	//首先寻13.56
+	shCode = xa_polling_card(cmd_buf, out_buf, out_len);
+	//
+
+	if( CE_NOCARD != shCode )
+		return shCode;
+	//查询QR
+	if((qr_len = qr_send_recv(qr_comm, NULL)) != 0)
+	{
+		shCode = xa_polling_qr(cmd_buf, out_buf, out_len);
+		return shCode;
+	}
+	if((qr_len = qr_send_recv(qr_comm_II, NULL)) != 0)
+	{
+		shCode = xa_polling_qr(cmd_buf, out_buf, out_len);
+		return shCode;
+	}
+	return shCode;
+}

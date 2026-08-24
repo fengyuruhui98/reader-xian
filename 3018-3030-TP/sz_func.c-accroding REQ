@@ -1,0 +1,438 @@
+#include "sz_func.h"
+#include "linux2440lib.h"
+
+#include "sz_ul_operation.h"
+#include "sz_cpu20_operation.h"
+#include "sz_tong_operation.h"
+#include "hh_cpu_operation.h"
+#include "sz_m1_operation.h"
+#include "sz_error_code.h"
+#include "sz_sam.h"
+#include "time_tools.h"
+
+extern unsigned char cpu_05_data[29];
+extern unsigned char cpu_06_data[30];
+
+/*===============================================================================================
+函数：szmt_rm_polling_card
+功能：苏州地铁寻卡指令
+=================================================================================================*/
+unsigned char sz_polling_card(unsigned char *out_buf, unsigned char *out_len)
+{
+char 	i, chCode;
+unsigned char buf[400], cpubuf[400], atslen, pollingbuf[100];
+int ret;
+unsigned char 	ee_buf[20], ul_page;
+
+	//mifpro_deselect(0, buf, &atslen);
+	mcml_pwr_off();
+	//usleep(5000);
+	set_timeout(4000);
+	*out_len = 4;
+	for(i = 0; i < 6; i++)
+	{
+		if(mcml_request2(PICC_REQALL, buf) == 0)
+		{
+			break;
+		}
+		//usleep(15000);
+		set_timeout(3000);
+	}
+	memcpy(out_buf, "\x10\x01", 2);
+	if(i >= 6)
+	{
+#ifdef DEBUG_PRINT
+		printf("request card return %02x %02x i %02x\n", buf[0], buf[1], i);
+#endif
+		//gResponseStatus = ERR_POLLING_NO_CARD;
+		return ERR_NO_TICKET;
+	}
+#ifdef DEBUG_PRINT
+	printf("request card return %02x %02x i %02x\n", buf[0], buf[1], i);
+#endif
+/*	memcpy(out_buf, "\x10\x02", 2);
+	ret = mcml_anticoll(cpubuf);
+	if(ret != 0)
+	{
+		//gResponseStatus = ERR_READ_TICKET;
+		return ERR_NO_TICKET;
+	}
+		
+	memcpy(out_buf, "\x10\x03", 2);
+	ret = mcml_select(cpubuf, &i);
+	if(ret != 0)
+	{
+		//gResponseStatus = ERR_READ_TICKET;
+		return ERR_NO_TICKET;
+	}
+	memcpy(out_buf, "\x10\x04", 2);
+	if((ret = mcml_halt()) != 0)
+		return ERR_NO_TICKET;
+	//close the antenar
+	usleep(2000);
+	for(i = 0; i < 3; i++)
+	{
+		if(mcml_request2(PICC_REQSTD, buf) == 0)
+			break;
+	}
+#ifdef DEBUG_PRINT
+	printf("request2 card return %02x %02x i %02x\n", buf[0], buf[1], i);
+#endif
+	//search the another card
+	memcpy(out_buf, "\x10\x05", 2);
+	if(i < 3)
+		return ERR_MULTI_TICKET;
+	for(i = 0; i < 3; i++)
+	{
+		if(mcml_request2(PICC_REQALL, buf) == 0)
+			break;
+	}
+	//
+	memcpy(out_buf, "\x10\x06", 2);
+	if(i >= 3)
+		ret = ERR_NO_TICKET;
+*/	memcpy(out_buf, "\x10\x07", 2);
+	memcpy(&out_buf[2], buf, 2);
+	//recycle flag
+	out_buf[16] = 0;
+	if((buf[0] == 0x44) && (buf[1] == 0x00))	//单程票
+	{
+		set_card_type(ISO14443A_M1_TYPE);
+#ifdef DEBUG_PRINT
+		printf("request card return sjt %02x %02x i %02x\n", buf[0], buf[1], i);
+#endif
+		ret = UL_Anticoll_Select(cpubuf);
+		if(ret != 0)
+		{
+			return ERR_NO_TICKET;
+		}
+		/*if(0 != (ret = mcml_anticoll(cpubuf)))
+		{
+			return ERR_NO_TICKET;
+		}
+		ret = mcml_select(cpubuf, &i);
+		if(ret != 0)
+		{
+			//gResponseStatus = ERR_READ_TICKET;
+			return ERR_NO_TICKET;
+		}
+		//anticollision check
+		memcpy(out_buf, "\x10\x08", 2);
+		if((ret = mcml_halt()) != 0)
+			return ERR_NO_TICKET;
+		memcpy(out_buf, "\x10\x09", 2);
+		for(i = 0; i < 3; i++)
+		{
+			if(mcml_request2(PICC_REQSTD, buf) == 0)
+				break;
+		}
+		if(i < 3)
+			return ERR_MULTI_TICKET;
+		//read sjt again
+		memcpy(out_buf, "\x10\x0A", 2);
+		for(i = 0; i < 3; i++)
+		{
+			if(mcml_request2(PICC_REQALL, buf) == 0)
+				break;
+		}
+		memcpy(out_buf, "\x10\x0B", 2);
+		ret = UL_Anticoll_Select(cpubuf);
+		if(ret != 0)
+		{
+			//gResponseStatus = ERR_READ_TICKET;
+			return ERR_NO_TICKET;
+		}*/
+#ifdef DEBUG_PRINT
+		printf("sjt select %02x %02x %02x %02x %02x %02x %02x\n", cpubuf[0], cpubuf[1], cpubuf[2], cpubuf[3], 
+					cpubuf[4], cpubuf[5], cpubuf[6], cpubuf[7]);
+#endif
+		ch_ul_phyical_id[0] = SZ_SJT_FAMILY;//单程票
+		memcpy(&ch_ul_phyical_id[1], cpubuf, 7);
+		
+		//if(memcmp(sz_ul_cpu_file, "\x10\x02", 2) != 0)
+		//{
+			//ch_mac_sel = 5;
+			//sem_post(&g_samcalwait);
+			/*
+			memcpy(buf, "\x00\xa4\x00\x00\x02\x10\x02", 7);
+			if(sam_apdu(sz_metro_psam_index, buf, 7, cpubuf, &atslen, 0, 2) != 0)
+				return ERR_METRO_PSAM;
+	
+			if(cpubuf[0] != 0x61)
+				return ERR_METRO_PSAM;
+			memcpy(sz_ul_cpu_file, "\x10\x02", 2);
+		}/*else
+			sem_post(&g_samreturn);*/
+		memcpy(out_buf, "\x10\x0C", 2);
+		if((chCode = read_tocken_otp_info(&ul_page)) != 0)
+			return chCode;
+		memcpy(&out_buf[0], ch_ul_phyical_id, 8);
+		memcpy(&out_buf[8], ch_ul_logic_id, 8);
+		//recyclesjtflag
+		out_buf[16] = FLAG_RECYCLE;
+		if(ul_page & 0x80)
+			out_buf[16] = FLAG_NONRECYCLE;
+
+		if(0 == ee_read(6 * 1024, 9, ee_buf))
+		{
+			if((ee_buf[0] != 0) && (memcmp(ch_ul_phyical_id, &ee_buf[1], 8) == 0))
+				sz_ul_ee_read();
+		}
+		blnsjtRollback = 0;
+		*out_len = 17;
+		return ERR_OK;
+	}
+//#ifdef DEBUG_MI
+	else if((buf[0] == 0x04) && (buf[1] == 0x00))
+	{
+#ifdef DEBUG_PRINT
+	printf("\nrequest m1 return %02x %02x i %02x\n", buf[0], buf[1], i);
+#endif
+		memcpy(out_buf, "\x10\x10", 2);
+		ret = mcml_anticoll(cpubuf);
+		if(ret != 0)
+		{
+			return ERR_NO_TICKET;
+		}
+#ifdef DEBUG_PRINT
+	printf("\nanticoll m1 %02x %02x %02x %02x %02x\n", cpubuf[0], cpubuf[1], cpubuf[2], cpubuf[3], cpubuf[4]);
+#endif
+		memset(ch_m1_phyical_id, 0x00, 8);
+		ch_m1_phyical_id[0] = SZ_CPU_FAMILY;
+		memcpy(&ch_m1_phyical_id[4], cpubuf, 5);
+		//
+		memcpy(out_buf, "\x10\x11", 2);
+		memcpy(pollingbuf, cpubuf, 4);
+		ret = mcml_select(cpubuf, &i);
+		if(ret != 0)
+		{
+			return ERR_NO_TICKET;
+		}
+		memcpy(out_buf, "\x10\x08", 2);
+		if((ret = mcml_halt()) != 0)
+			return ERR_NO_TICKET;
+		memcpy(out_buf, "\x10\x09", 2);
+		for(i = 0; i < 3; i++)
+		{
+			if(mcml_request2(PICC_REQSTD, buf) == 0)
+				break;
+		}
+		if(i < 3)
+			return ERR_MULTI_TICKET;
+		//read sjt again
+		memcpy(out_buf, "\x10\x0A", 2);
+		for(i = 0; i < 3; i++)
+		{
+			if(mcml_request2(PICC_REQALL, buf) == 0)
+				break;
+		}
+		memcpy(out_buf, "\x10\x0B", 2);
+		ret = mcml_anticoll(cpubuf);
+		if(ret != 0)
+		{
+			return ERR_NO_TICKET;
+		}
+		memcpy(out_buf, "\x10\x11", 2);
+		memcpy(pollingbuf, cpubuf, 4);
+		ret = mcml_select(cpubuf, &i);
+		if(ret != 0)
+		{
+			return ERR_NO_TICKET;
+		}
+		//
+		memcpy(out_buf, "\x10\x12", 2);
+		set_card_type(ISO14443A_SH_TYPE);
+		//苏州教育E卡通，初始化密钥
+		//memcpy(m1_key[0], "\xfc\x61\xcb\xb5\x37\x51", 6);SHANGHAI
+		memcpy(m1_key[9], "\xFF\x00\x01\x02\x03\x04", 6);
+		//sector_read(m1_key[9], 0, 0, 9, 0x13, out_buf);
+
+		memcpy(m1_key[SZ_E_EDU_SECTOR], "\xB0\xB1\xB2\xB3\xB4\xB5", 6);
+		//set_card_type(ISO14443A_M1_TYPE);
+		//memcpy(m1_key[9], "\xB0\xB1\xB2\xB3\xB4\xB5", 6);
+		//ret = sector_read(m1_key[16], 1, 1, 16, 0x13, out_buf);
+		//ret = block_write(0, m1_key[16], 1, 64, out_buf);
+		//ret = sector_read(m1_key[16], 1, 0, 16, 0x13, out_buf);
+		//if(ret != 0)
+		//{
+		//	memcpy(out_buf, "\x10\x13", 2);
+			//set_card_type(ISO14443A_M1_TYPE);
+			//memcpy(m1_key[0], "\xff\xff\xff\xff\xff\xff", 6);
+			//ret = sector_read(m1_key[0], 1, 0, out_buf);
+			//if(ret != 0)
+		//		return ERR_NO_TICKET;
+		//}
+		//cal_sh_m1_key();
+		//memcpy(m1_key[9], "\xFF\x00\x01\x02\x03\x04", 6);
+		//sector_read(m1_key[9], 0, 0, 9, 0x13, out_buf);
+		//sector_read(m1_key[1], 0, 1, out_buf);
+		/*sector_read(m1_key[2], 0, 2, out_buf);
+		sector_read(m1_key[3], 0, 3, out_buf);
+		sector_read(m1_key[4], 0, 4, out_buf);
+		sector_read(m1_key[5], 0, 5, out_buf);
+		sector_read(m1_key[6], 0, 6, out_buf);
+		sector_read(m1_key[7], 0, 7, out_buf);
+		sector_read(m1_key[8], 0, 8, out_buf);*/
+		*out_len = 17;
+		//sector_read(1, out_buf);
+		memcpy(out_buf, ch_m1_phyical_id, 8);
+		memset(&out_buf[8], 0x00, 8);
+		//block_write(1, 2, out_buf);
+		//sector_read(0, out_buf);
+		ch_metro_edu_type = SZ_EDU_M1_TYPE;
+		return ERR_OK;
+	}
+//#endif
+	else if((buf[0] == 0x00) && (buf[1] == 0x00))
+	{
+		mcml_pwr_off();
+		usleep(2000);
+		return ERR_NO_TICKET;
+	}else
+	{
+	//if((buf[0] == 0x08) && (buf[1] == 0x00))	//CPU卡
+	//{
+		set_card_type(ISO14443A_M1_TYPE);
+#ifdef DEBUG_PRINT
+	printf("\nrequest card return %02x %02x i %02x\n", buf[0], buf[1], i);
+#endif
+		memcpy(out_buf, "\x10\x10", 2);
+		memset(ch_cpu20_phyical_id, 0x00, 8);
+		memset(ch_cput_phyical_id, 0x00, 8);
+		ret = mcml_anticoll(cpubuf);
+		if(ret != 0)
+		{
+			//gResponseStatus = ERR_READ_TICKET;
+			mcml_pwr_off();
+			return ERR_NO_TICKET;
+		}
+		memcpy(out_buf, "\x10\x11", 2);
+		
+		memcpy(pollingbuf, cpubuf, 4);
+		ret = mcml_select(cpubuf, &i);
+		if(ret != 0)
+		{
+			//gResponseStatus = ERR_READ_TICKET;
+			mcml_pwr_off();
+			return ERR_NO_TICKET;
+		}
+		memcpy(out_buf, "\x10\x12", 2);
+		ret = mifpro_ats(0, cpubuf, &atslen);
+		if(ret != 0)
+		{
+			mcml_pwr_off();
+			//delay_ms(5);
+			//gResponseStatus = ERR_TICKET_OUT_OF_SYSTEM;
+			*out_len = 2;
+			return ERR_NO_TICKET;
+		}
+#ifdef DEBUG_PRINT
+		printf("ats:");
+		for(i = 0; i < atslen; i++) printf("%02x ", cpubuf[i]);
+		printf("\n");
+#endif		
+		memcpy(out_buf, "\x10\x13", 2);
+		if(atslen <= 2)
+		{
+			mcml_pwr_off();
+			return ERR_NON_SYSTEM;
+		}
+		/*
+		memcpy(buf,"\x00\xb0\x85\x00\x10",5);
+		ret = mifpro_icmd(5,buf,obuf);
+		if(ret<0)
+		{
+			//gResponseStatus = ERR_READ_TICKET;
+			return 12;
+		}
+		memcpy(gThisCardLogicNo,obuf,8);*/
+		memcpy(out_buf, "\x10\x14", 2);
+		if(CPU_GetFiles05(buf) != 0)
+		{
+			//cancel the suzhou-tong function
+			//sz_tong_family = 0;
+			/*ch_cput_phyical_id[0] = 3;		//suzhou tong
+			memcpy(&ch_cput_phyical_id[4], pollingbuf, 4);
+			memcpy(&out_buf[0], ch_cput_phyical_id, 8);*/
+			*out_len = 2;
+			mcml_pwr_off();
+			return ERR_READ;
+		}else
+		{
+			memcpy(out_buf, "\x10\x20", 2);
+			if(buf[0] == SZ_CPU_FAMILY)
+			{//suzhou metro cpu card
+				ch_metro_edu_type = SZ_CPU_METRO_TYPE;
+				ch_cpu20_phyical_id[0] = buf[0];//CPU卡
+				memcpy(&ch_cpu20_phyical_id[4], pollingbuf, 4);
+				memcpy(&out_buf[0], ch_cpu20_phyical_id, 8);
+				memcpy(&out_buf[8], cpu_05_data, 8);
+				if(0 == ee_read(1, 9, ee_buf))
+				{
+					if((ee_buf[0] != 0) && (memcmp(ch_cpu20_phyical_id, &ee_buf[1], 8) == 0))
+						sz_CPU20_ee_read();
+				}
+				blncpuRollback = 0;
+				//change the psam to 1001
+				if(memcmp(sz_ul_cpu_file, "\x10\x01", 2) != 0)
+				{
+#ifdef DEBUG_PRINT
+					printf("need to change the psam file %02x %02x\n", sz_ul_cpu_file[0], sz_ul_cpu_file[1]);
+#endif
+						/*
+						memcpy(buf, "\x00\xa4\x00\x00\x02\x10\x01", 7);
+						if(sam_apdu(sz_metro_psam_index, buf, 7, cpubuf, &atslen, 0, 2) == 0)
+						{
+							if((cpubuf[0] == 0x61) || (cpubuf[0] == 0x90))
+								memcpy(sz_ul_cpu_file, "\x10\x01", 2);
+						}
+						*/
+					ch_mac_sel = 3;
+					sem_post(&g_samcalwait);
+				}
+			}else
+			{//suzhou tong card or city card
+				ch_metro_edu_type = SZ_CPU_TONG_TYPE;
+				ch_cput_phyical_id[0] = buf[0];
+				memcpy(&ch_cput_phyical_id[4], pollingbuf, 4);
+				memcpy(ch_cput_logic_id, cpu_05_data, 8);
+				memcpy(&out_buf[0], ch_cput_phyical_id, 8);
+				memcpy(&out_buf[8], ch_cput_logic_id, 8);
+				if(0 == ee_read(2048, 9, ee_buf))
+				{
+					if((ee_buf[0] !=0) && (memcpy(ch_cput_phyical_id, &ee_buf[1], 8) == 0))
+						sz_tong_ee_read();
+				}
+				blncputRollback = 0;
+			}
+		}
+		//mcml_pwr_off();
+		*out_len = 17;
+		return ERR_OK;
+	}
+}
+
+/*===============================================================================================
+函数：szmt_rm_rf_on_off
+功能：苏州地铁指令-射频选择与开关
+=================================================================================================*/
+char sz_rf_on_off(unsigned char *in_buf, unsigned char *out_buf, unsigned char *out_len)
+{
+	*out_len = 2;
+	memcpy(out_buf, "\x02\x01", 2);
+/*
+	if(inbuf[1]&0x02)  rf_set(RF1);
+		else rf_set(RF0);
+  if(inbuf[1]&0x01)  mcml_pwr_off();
+  	else mcml_pwr_on();
+  	
+  outbuf[0] = oldcmd;
+	outbuf[1] = SZMT_OP_OK;
+	*outbytes = 2;
+	return;  
+
+label_err:
+	szmt_bom_func_err(outbuf,outbytes);		
+	return;*/
+	return 21;
+}
