@@ -1,0 +1,326 @@
+//mcmh.c
+
+#ifndef _MCMH_C_
+#define _MCMH_C_
+//start of file
+
+UBYTE gKeyA[MCMH_MAX_SECTOR][6],gKeyB[MCMH_MAX_SECTOR][6];
+
+
+/*=======================================================================================
+函数：
+功能：
+=========================================================================================*/
+UBYTE mcmh_get_cardsnr(UBYTE *cardsnr)
+{
+UBYTE buf[5],buf2[2];
+UBYTE i;
+UBYTE ret;
+
+	for(i=0;i<3;i++){
+		if(mcml_request(PICC_REQSTD,buf) != 0) continue;
+		if(mcml_anticoll(buf) != 0) continue;
+		if(mcml_select(buf,buf2) != 0) continue;
+		memcpy(cardsnr,buf,5);
+		memcpy(gThisCardSnr,buf,5);
+		ret = 0;
+		goto label_exit;
+	}
+  
+	ret = (UBYTE)-1;	
+
+label_exit:
+	return ret;	
+}	
+
+
+/*========================================================================================
+函数：mcmh_read
+功能：
+==========================================================================================*/
+UBYTE mcmh_read(UBYTE block, UBYTE *outbuf,UBYTE op_type,UBYTE key_type)
+{
+UBYTE cnt;
+UBYTE buf[2];
+//UBYTE ret;
+
+cnt = 0;
+if(op_type == 2) goto label_op;
+
+label_loop:
+cnt++;
+if(cnt > MCMH_MAX_TRY) return (UBYTE)-1;
+//request	
+if(mcml_request(PICC_REQSTD,buf) == 0) goto label_sel;
+goto label_loop;
+//select
+label_sel:
+if(mcml_select(gThisCardSnr,buf) != 0) goto label_loop;
+//load key	
+if(key_type==0){
+    if(mcml_load_key(0,KEYA,block/4,gKeyA[block/4])) goto label_loop;
+    if(mcml_authentication(0,KEYA,block/4)) goto label_loop;	
+    }
+else{
+    if(mcml_load_key(0,KEYB,block/4,gKeyB[block/4])) goto label_loop;
+    if(mcml_authentication(0,KEYB,block/4)) goto label_loop;	
+	  }    
+
+label_op:
+if(mcml_read(block,outbuf) != 0) goto label_loop;
+return 0;	
+
+}
+
+
+UBYTE mcmh_read_simple(UBYTE block, UBYTE *outbuf,UBYTE op_type,UBYTE key_type)
+{
+UBYTE cnt;
+UBYTE buf[2];
+//UBYTE ret;
+
+cnt = 0;
+if(op_type == 2) goto label_op;
+
+label_loop:
+cnt++;
+if(cnt > MCMH_MAX_TRY) return (UBYTE)-1;
+//request	
+if(mcml_request(PICC_REQSTD,buf) == 0) goto label_sel;
+goto label_loop;
+//select
+label_sel:
+if(mcml_select(gThisCardSnr,buf) != 0) goto label_loop;
+//load key	
+if(key_type==0){
+    if(mcml_load_key(0,KEYA,block/4,gKeyA[block/4])) goto label_loop;
+    if(mcml_authentication(0,KEYA,block/4)) goto label_loop;	
+    }
+else{
+    if(mcml_load_key(0,KEYB,block/4,gKeyB[block/4])) goto label_loop;
+    if(mcml_authentication(0,KEYB,block/4)) goto label_loop;	
+	  }    
+
+label_op:
+if(mcml_read(block,outbuf) != 0) return (UBYTE)-1;
+return 0;	
+
+}
+
+
+/*========================================================================================
+函数：mcmh_write
+功能：
+==========================================================================================*/
+UBYTE mcmh_write(UBYTE block, UBYTE *inbuf,UBYTE op_type,UBYTE key_type)
+{
+UBYTE cnt;
+UBYTE buf[2];
+
+cnt = 0;
+if(op_type == 2) goto label_op;
+
+label_loop:
+cnt++;
+if(cnt > MCMH_MAX_TRY) return (UBYTE)-1;
+//request	
+if(mcml_request(PICC_REQSTD,buf) == 0) goto label_sel;
+goto label_loop;
+//select
+label_sel:
+if(mcml_select(gThisCardSnr,buf) != 0) goto label_loop;
+//load key	
+if(key_type==0){
+    if(mcml_load_key(0,KEYA,block/4,gKeyA[block/4])) goto label_loop;
+    if(mcml_authentication(0,KEYA,block/4)) goto label_loop;	
+    }
+else{
+    if(mcml_load_key(0,KEYB,block/4,gKeyB[block/4])) goto label_loop;
+    if(mcml_authentication(0,KEYB,block/4)) goto label_loop;	
+	  }    
+
+label_op:
+if(mcml_write(block,inbuf) != 0) goto label_loop;
+return 0;	
+}
+
+
+/*========================================================================================
+函数：
+功能：
+==========================================================================================*/
+UBYTE mcmh_decrement(UBYTE block, UDWORD value,UBYTE op_type,UBYTE key_type)
+{
+UBYTE cnt;
+UBYTE buf[2];
+
+cnt = 0;
+if(op_type == 2) goto label_op;
+
+label_loop:
+cnt++;
+if(cnt > MCMH_MAX_TRY) return (UBYTE)-1;
+//request	
+if(mcml_request(PICC_REQSTD,buf) == 0) goto label_sel;
+goto label_loop;
+//select
+label_sel:
+if(mcml_select(gThisCardSnr,buf) != 0) goto label_loop;
+//load key	
+if(key_type==0){
+    if(mcml_load_key(0,KEYA,block/4,gKeyA[block/4])) goto label_loop;
+    if(mcml_authentication(0,KEYA,block/4)) goto label_loop;	
+    }
+else{
+    if(mcml_load_key(0,KEYB,block/4,gKeyB[block/4])) goto label_loop;
+    if(mcml_authentication(0,KEYB,block/4)) goto label_loop;	
+	  }    
+
+label_op:
+if(mcml_decrement(block,value) != 0) goto label_loop;
+return 0;	
+}
+
+
+/*========================================================================================
+函数：mcmh_increment
+功能：
+==========================================================================================*/
+UBYTE mcmh_increment(UBYTE block, UDWORD value,UBYTE op_type,UBYTE key_type)
+{
+UBYTE cnt;
+UBYTE buf[2];
+
+cnt = 0;
+if(op_type == 2) goto label_op;
+
+label_loop:
+cnt++;
+if(cnt > MCMH_MAX_TRY) return (UBYTE)-1;
+//request	
+if(mcml_request(PICC_REQSTD,buf) == 0) goto label_sel;
+goto label_loop;
+//select
+label_sel:
+if(mcml_select(gThisCardSnr,buf) != 0) goto label_loop;
+//load key	
+if(key_type==0){
+    if(mcml_load_key(0,KEYA,block/4,gKeyA[block/4])) goto label_loop;
+    if(mcml_authentication(0,KEYA,block/4)) goto label_loop;	
+    }
+else{
+    if(mcml_load_key(0,KEYB,block/4,gKeyB[block/4])) goto label_loop;
+    if(mcml_authentication(0,KEYB,block/4)) goto label_loop;	
+	  }    
+
+label_op:
+if(mcml_increment(block,value) != 0) goto label_loop;
+return 0;	
+}
+
+
+/*========================================================================================
+函数：mcmh_restore
+功能：
+==========================================================================================*/
+UBYTE mcmh_restore(UBYTE block, UBYTE op_type,UBYTE key_type)
+{
+UBYTE cnt;
+UBYTE buf[2];
+
+cnt = 0;
+if(op_type == 2) goto label_op;
+
+label_loop:
+cnt++;
+if(cnt > MCMH_MAX_TRY) return (UBYTE)-1;
+//request	
+if(mcml_request(PICC_REQSTD,buf) == 0) goto label_sel;
+goto label_loop;
+//select
+label_sel:
+if(mcml_select(gThisCardSnr,buf) != 0) goto label_loop;
+//load key	
+if(key_type==0){
+    if(mcml_load_key(0,KEYA,block/4,gKeyA[block/4])) goto label_loop;
+    if(mcml_authentication(0,KEYA,block/4)) goto label_loop;	
+    }
+else{
+    if(mcml_load_key(0,KEYB,block/4,gKeyB[block/4])) goto label_loop;
+    if(mcml_authentication(0,KEYB,block/4)) goto label_loop;	
+	  }    
+
+label_op:
+if(mcml_restore(block) != 0) goto label_loop;
+return 0;	
+}
+
+
+/*========================================================================================
+函数：mcmh_transfer
+功能：
+==========================================================================================*/
+UBYTE mcmh_transfer(UBYTE block, UBYTE op_type,UBYTE key_type)
+{
+UBYTE cnt;
+UBYTE buf[2];
+
+cnt = 0;
+if(op_type == 2) goto label_op;
+
+label_loop:
+cnt++;
+if(cnt > MCMH_MAX_TRY) return (UBYTE)-1;
+//request	
+if(mcml_request(PICC_REQSTD,buf) == 0) goto label_sel;
+goto label_loop;
+//select
+label_sel:
+if(mcml_select(gThisCardSnr,buf) != 0) goto label_loop;
+//load key	
+if(key_type==0){
+    if(mcml_load_key(0,KEYA,block/4,gKeyA[block/4])) goto label_loop;
+    if(mcml_authentication(0,KEYA,block/4)) goto label_loop;	
+    }
+else{
+    if(mcml_load_key(0,KEYB,block/4,gKeyB[block/4])) goto label_loop;
+    if(mcml_authentication(0,KEYB,block/4)) goto label_loop;	
+	  }    
+
+label_op:
+//if(mcml_transfer(block) != 0) return (UBYTE)-1;
+if(mcml_transfer(block) != 0) goto label_loop;
+return 0;	
+}
+
+/*========================================================================================
+函数：mcmh_set_key
+功能：
+==========================================================================================*/
+UBYTE mcmh_set_key(UBYTE sector,UBYTE key_type,UBYTE *inbuf)
+{
+if(sector >= MCMH_MAX_SECTOR) return (UBYTE)-1;
+if(key_type == 0) memcpy(gKeyA[sector],inbuf,6);
+else memcpy(gKeyB[sector],inbuf,6);
+return 0;				
+}	
+
+/*========================================================================================
+函数：mcmh_get_key
+功能：
+==========================================================================================*/
+UBYTE mcmh_get_key(UBYTE sector,UBYTE key_type,UBYTE *outbuf)
+{
+if(sector >= MCMH_MAX_SECTOR) return (UBYTE)-1;
+if(key_type == 0) memcpy(outbuf,gKeyA[sector],6);
+else memcpy(outbuf,gKeyB[sector],6);
+return 0;				
+}
+
+
+
+
+//end of file
+#endif
+
+

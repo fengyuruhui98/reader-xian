@@ -1,0 +1,24 @@
+root@DTD-3030:/hhjt/reader# ./samTest 4 38400
+SAM 4 initial baud 38400 max baud 38400 is testing 
+
+Err:Uart2 open
+/dev/ttymxc4
+OK:Uart2 openlibLinux4418.so For Dalian or ningbo:HHJT.May  8 2021.3M_May  8 2021 15:13:59
+sam index 4
+sam etu d2
+sam wait etu 4
+
+ sam_atr0,index=4 
+
+ Sam Send Block:
+ 01 04 D2 
+ Sam Send:
+ 02 10 03 01 04 D2 03 D5 over time return 
+4 sam atr return fe
+
+ sam_atr0,index=4 
+
+ Sam Send Block:
+ 01 04 D2 
+ Sam Send:
+^C[  377.482567] watchdog watchdog0: watchdog did not stop!

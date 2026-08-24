@@ -1,0 +1,40 @@
+//mifare.h
+
+#ifndef _MIFARE_H_
+#define _MIFARE_H_
+//start of file
+
+#include "linux2440lib.h"
+
+
+#define 	KEYA		0
+#define 	KEYB		0x40
+
+UBYTE mcml_request(UBYTE req_code,UBYTE *atq);
+UBYTE mcml_anticoll(UBYTE *snr);
+UBYTE mcml_anticoll2(UBYTE *snr);
+UBYTE mcml_select(UBYTE *snr,UBYTE *status);
+UBYTE mcml_select2(UBYTE *snr,UBYTE *status);
+UBYTE mcml_load_key(UBYTE keyset,UBYTE keyab, UBYTE sectno,UBYTE *buf);
+UBYTE mcml_authentication(UBYTE keyset,UBYTE keyab,UBYTE sectno);
+UBYTE mcml_read(UBYTE block,UBYTE *outbuf);
+UBYTE mcml_write(UBYTE block,UBYTE *outbuf);
+UBYTE mcml_increment(UBYTE addr, UDWORD value);
+UBYTE mcml_decrement(UBYTE addr,UDWORD value);
+UBYTE mcml_transfer(UBYTE addr);
+UBYTE mcml_restore(UBYTE addr);
+void mcml_pwr_off(void);
+void mcml_pwr_on(void);
+UBYTE mcml_halt(void);
+
+UBYTE mcml_authentication2(UBYTE keyset,UBYTE keyab,UBYTE sectno);
+
+UBYTE mcml_read_4bytes(UBYTE block,UBYTE *outbuf);
+UBYTE mcml_write_4bytes(UBYTE block,UBYTE *outbuf);
+
+//#define token_mcml_read(p1,p2)       mcml_read_4bytes(p1,p2)
+//#define token_mcml_write(p1,p2)      mcml_write_4bytes(p1,p2)
+
+//end of file
+#endif
+

@@ -1,0 +1,344 @@
+#include <sys/time.h>
+#include <stdio.h>
+#include <string.h>
+
+#include "linux2440lib.h"
+
+unsigned char m1_keyA[16][6], m1_keyB[16][6];
+unsigned char ch_m1_phyical_id[4];
+unsigned char m1_block[64][16];
+
+char sector_read(unsigned char *key, unsigned char keyab, unsigned char type, unsigned char sectno, unsigned char block, unsigned char *out_buf)
+{
+unsigned char chcode, i, j;
+unsigned char cnt, buf[200];
+
+	if(sectno > 15)
+		return 0xff;
+	//printf("key %0x%02x%02x %02x%02x%02x keyab %02x type %02x sectno %02x block %02x\n", key[0], key[1], key[2], key[3],key[4], key[5], keyab, type, sectno, block );
+	cnt = 0;
+	if(type)
+	{
+loop:
+		if(cnt > 3) return 0xff;
+		cnt++;
+		if(mcml_request2(PICC_REQALL, buf) != 0)
+		{
+#ifdef	DEBUG_PRINT
+			printf("requeset failure\n");
+#endif
+			goto loop;
+		}
+		if(0 != mcml_anticoll(buf))
+			goto loop;
+		if(memcmp(buf, &ch_m1_phyical_id[4], 5) != 0)
+			goto loop;
+		if(mcml_select(&ch_m1_phyical_id[4], &i) != 0)
+		{
+			goto loop;
+		}
+	}
+	//
+	if(0 != (chcode = mcml_load_key(0, keyab, sectno, key)))
+	{
+		return chcode;
+	}
+	if(0 != (chcode = mcml_authentication(0, keyab, sectno)))
+	{
+		return chcode;
+	}
+	if((block & 0xf0) == 0)
+	{
+		if(0 != (chcode = mcml_read(sectno * 4 + (block & 0xf), m1_block[sectno * 4 + (block & 0xf)])))
+		{
+#ifdef	DEBUG_PRINT
+			printf("mcml read single block failure %02x sectno %02x block %02x\n", chcode, sectno, sectno * 4 + (block & 0xf));
+#endif
+			return chcode;
+		}
+#ifdef DEBUG_PRINT
+		printf("sect %d block %d:", sectno, sectno * 4 + (block & 0xf));
+		for(j = 0; j < 16; j++)
+			printf("%02x ", m1_block[sectno * 4 + (block & 0xf)][j]);
+		printf("\n");
+#endif
+		return 0;
+	}
+	for(i = 0; i < (block & 0xf); i++)
+	{
+		if(0 != (chcode = mcml_read(sectno * 4 + i, m1_block[sectno * 4 + i])))
+		{
+#ifdef		DEBUG_PRINT
+			printf("mcml read multi-block failure %02x, block %02x \n", chcode, sectno * 4 + i);
+#endif
+			return chcode;
+		}
+#ifdef DEBUG_PRINT
+		printf("sect %d block %d:", sectno, sectno * 4 + i);
+		for(j = 0; j < 16; j++)
+			printf("%02x ", m1_block[sectno * 4 + i][j]);
+		printf("\n");
+#endif
+	}
+	
+	return 0;
+}
+
+void set_timeout(long delay_time)
+{
+struct timeval timeout;
+fd_set readfd;
+
+	FD_ZERO(&readfd);
+	FD_SET(0, &readfd);
+	timeout.tv_sec = 0;
+	timeout.tv_usec = delay_time;
+	select(0, &readfd, NULL, NULL, &timeout);
+	
+}
+
+void try_polling_1()
+{
+int 	i;
+int 	ret, intElapseTime;
+unsigned char 	cpubuf[100], atslen;
+struct timeval tv1,tv2;
+struct timezone tz1,tz2;
+
+	//polling
+	rf_select(0);
+	for(i = 0; i < 3; i++)
+	{
+		mcml_pwr_on();
+		set_timeout(4000);
+		if((ret = mcml_request2(PICC_REQALL, cpubuf)) == 0)
+		{
+#ifdef DEBUG_PRINT
+			printf("request card return %02x %02x i %02x\n", buf[0], buf[1], i);
+#endif
+			gettimeofday(&tv1,&tz1);
+			break;
+		}
+		mcml_pwr_off();
+	}
+	if(i >= 3)
+		return ;
+	//anticoll
+	ret = mcml_anticoll(cpubuf);
+	if(ret != 0)
+		return ;
+	//select
+	ret = mcml_select(cpubuf, &i);
+	if(ret != 0)
+		return ;
+	//ats
+	ret = mifpro_ats(1, cpubuf, &atslen);
+	if (ret == 0)
+	{
+		gettimeofday(&tv2, &tz2);
+		intElapseTime = (((tv2.tv_sec - tv1.tv_sec) * 1000000) + tv2.tv_usec - tv1.tv_usec)/1000;
+		printf("try_polling CPU time %d(ms)\n", intElapseTime);
+		mcml_pwr_off();
+		return ;
+	}
+	//
+	for(i = 0; i < 3; i++)
+	{
+		if((ret = mcml_request2(PICC_REQALL, cpubuf)) == 0)
+			break;
+	}
+	//anticoll
+	ret = mcml_anticoll(cpubuf);
+	if(ret != 0)
+		return ;
+	//select
+	ret = mcml_select(cpubuf, &i);
+	if(ret != 0)
+		return ;
+	//
+	memcpy(m1_keyA[0], "\xfc\x61\xcb\xb5\x37\x51", 6);
+	if(0 == sector_read(m1_keyA[0], 0, 0, 0, 0x11, cpubuf))
+	{
+		gettimeofday(&tv2, &tz2);
+		intElapseTime = (((tv2.tv_sec - tv1.tv_sec) * 1000000) + tv2.tv_usec - tv1.tv_usec)/1000;
+		printf("try_polling M1 time %d(ms)\n", intElapseTime);
+		mcml_pwr_off();
+		return ;
+	}
+	
+	//
+	for(i = 0; i < 3; i++)
+	{
+		if((ret = mcml_request2(PICC_REQALL, cpubuf)) == 0)
+			break;
+	}
+	//anticoll
+	ret = UL_Anticoll_Select(cpubuf);
+	if( ret == 0)
+	{
+		gettimeofday(&tv2, &tz2);
+		intElapseTime = (((tv2.tv_sec - tv1.tv_sec) * 1000000) + tv2.tv_usec - tv1.tv_usec)/1000;
+		printf("try_polling UL time %d(ms)\n", intElapseTime);
+		mcml_pwr_off();
+		return ;
+	}
+	return ;
+}
+
+
+void try_polling_2()
+{
+int 	i;
+int 	ret, intElapseTime;
+unsigned char 	cpubuf[100], atslen;
+struct timeval tv1,tv2;
+struct timezone tz1,tz2;
+
+	//polling
+	rf_select(0);
+	for(i = 0; i < 3; i++)
+	{
+		mcml_pwr_on();
+		set_timeout(4000);
+		if((ret = mcml_request2(PICC_REQALL, cpubuf)) == 0)
+		{
+#ifdef DEBUG_PRINT
+			printf("request card return %02x %02x i %02x\n", buf[0], buf[1], i);
+#endif
+			gettimeofday(&tv1,&tz1);
+			break;
+		}
+		mcml_pwr_off();
+	}
+	if(i >= 3)
+		return ;
+	//anticoll
+	ret = mcml_anticoll(cpubuf);
+	if(ret != 0)
+		return ;
+	//select
+	ret = mcml_select(cpubuf, &i);
+	if(ret != 0)
+		return ;
+	//ats
+	ret = mifpro_ats(1, cpubuf, &atslen);
+	if (ret == 0)
+	{
+		gettimeofday(&tv2, &tz2);
+		intElapseTime = (((tv2.tv_sec - tv1.tv_sec) * 1000000) + tv2.tv_usec - tv1.tv_usec)/1000;
+		printf("try_polling CPU time %d(ms)\n", intElapseTime);
+		mcml_pwr_off();
+		return ;
+	}
+	//
+	for(i = 0; i < 3; i++)
+	{
+		if((ret = mcml_request2(PICC_REQALL, cpubuf)) == 0)
+			break;
+	}
+	//anticoll
+	ret = mcml_anticoll(cpubuf);
+	if(ret != 0)
+		return ;
+	//select
+	ret = mcml_select(cpubuf, &i);
+	if(ret != 0)
+		return ;
+	//
+	memcpy(m1_keyA[0], "\xfc\x61\xcb\xb5\x37\x51", 6);
+	if(0 == sector_read(m1_keyA[0], 0, 0, 0, 0x11, cpubuf))
+	{
+		gettimeofday(&tv2, &tz2);
+		intElapseTime = (((tv2.tv_sec - tv1.tv_sec) * 1000000) + tv2.tv_usec - tv1.tv_usec)/1000;
+		printf("try_polling M1 time %d(ms)\n", intElapseTime);
+		mcml_pwr_off();
+		return ;
+	}
+	
+	//
+	for(i = 0; i < 3; i++)
+	{
+		if((ret = mcml_request2(PICC_REQALL, cpubuf)) == 0)
+			break;
+	}
+	//anticoll
+	ret = UL_Anticoll_Select(cpubuf);
+	if( ret == 0)
+	{
+		gettimeofday(&tv2, &tz2);
+		intElapseTime = (((tv2.tv_sec - tv1.tv_sec) * 1000000) + tv2.tv_usec - tv1.tv_usec)/1000;
+		printf("try_polling UL time %d(ms)\n", intElapseTime);
+		mcml_pwr_off();
+		return ;
+	}
+	return ;
+}
+
+void func_polling()
+{
+int 	i;
+int 	ret, intElapseTime;
+unsigned char 	cpubuf[100], atslen;
+struct timeval tv1,tv2;
+struct timezone tz1,tz2;
+
+	//polling
+	rf_select(0);
+	for(i = 0; i < 3; i++)
+	{
+		mcml_pwr_on();
+		set_timeout(4000);
+		if((ret = mcml_request2(PICC_REQALL, cpubuf)) == 0)
+		{
+			gettimeofday(&tv1,&tz1);
+			break;
+		}
+		mcml_pwr_off();
+	}
+	if(i >= 3)
+		return ;
+	if( (cpubuf[0] & 0xC0 ) == 0x40)
+	{
+		ret = UL_Anticoll_Select(cpubuf);
+		if( ret == 0)
+		{
+			gettimeofday(&tv2, &tz2);
+			intElapseTime = (((tv2.tv_sec - tv1.tv_sec) * 1000000) + tv2.tv_usec - tv1.tv_usec)/1000;
+			printf("func_polling UL time %d(ms)\n", intElapseTime);
+			return ;
+		}
+		return ;
+	}
+	//anticoll
+	ret = mcml_anticoll(cpubuf);
+	if(ret != 0)
+		return ;
+	//select
+	ret = mcml_select(cpubuf, &atslen);
+	if(ret != 0)
+		return ;
+	if( (atslen & 0x24) == 0x20)
+	{
+		//ats
+		ret = mifpro_ats(1, cpubuf, &atslen);
+		if (ret == 0)
+		{
+			gettimeofday(&tv2, &tz2);
+			intElapseTime = (((tv2.tv_sec - tv1.tv_sec) * 1000000) + tv2.tv_usec - tv1.tv_usec)/1000;
+			printf("func_polling CPU time %d(ms)\n", intElapseTime);
+			return ;
+		}
+	}else
+	{
+		//
+		memcpy(m1_keyA[0], "\xfc\x61\xcb\xb5\x37\x51", 6);
+		if(0 == sector_read(m1_keyA[0], 0, 0, 0, 0x11, cpubuf))
+		{
+			gettimeofday(&tv2, &tz2);
+			intElapseTime = (((tv2.tv_sec - tv1.tv_sec) * 1000000) + tv2.tv_usec - tv1.tv_usec)/1000;
+			printf("func_polling M1 time %d(ms)\n", intElapseTime);
+			return ;
+		}
+	}
+	return ;
+}

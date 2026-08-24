@@ -1,0 +1,73 @@
+#############################################################################
+# Makefile for building: spitest
+# Project:  spitest
+# Command: 
+#############################################################################
+
+####### Compiler, tools and options
+CROSS_COMPILE = /opt/4.9.3/bin/arm-linux-
+CC            = $(CROSS_COMPILE)gcc 
+CXX           = $(CROSS_COMPILE)g++ 
+STRIP         = $(CROSS_COMPILE)strip
+LINK          = $(CROSS_COMPILE)g++ 
+AR            = $(CROSS_COMPILE)ar cqs
+DEFINES       = 
+CFLAGS        = -O2 -Wall -W $(DEFINES)
+CXXFLAGS      = -O2 -Wall -W $(DEFINES)
+INCPATH       = -I/home/linux/linux-3.4.y-debian/arch/arm/include -I.
+LFLAGS        = -Wl,-O1 -Wl,-rpath,/opt/4.9.3/arm-cortexa9-linux-gnueabihf/lib
+LIBS          = 
+RANLIB        = 
+TAR           = tar -cf
+COMPRESS      = gzip -9f
+COPY          = cp -f
+SED           = sed
+COPY_FILE     = $(COPY)
+COPY_DIR      = $(COPY) -r
+DEL_FILE      = rm -f
+SYMLINK       = ln -f -s
+DEL_DIR       = rmdir
+MOVE          = mv -f
+CHK_DIR_EXISTS= test -d
+MKDIR         = mkdir -p
+
+####### Output directory
+
+OBJECTS_DIR   = ./
+
+####### Files
+
+SOURCES       = eeprom.c
+OBJECTS       = eeprom.o 
+DESTDIR       = 
+TARGET        = eeprom
+
+
+.SUFFIXES: .o .c .cpp .cc .cxx .C
+
+.cpp.o:
+	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o "$@" "$<"
+
+.cc.o:
+	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o "$@" "$<"
+
+.cxx.o:
+	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o "$@" "$<"
+
+.C.o:
+	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o "$@" "$<"
+
+.c.o:
+	$(CC) -c $(CFLAGS) $(INCPATH) -o "$@" "$<"
+
+####### Build rules
+all: Makefile $(TARGET)
+
+$(TARGET):  $(OBJECTS)  
+#	$(LINK) $(LFLAGS) -o $(TARGET) $(OBJECTS) $(LIBS)
+	$(CC) $(LFLAGS) -o $(TARGET) $(OBJECTS) $(LIBS)
+
+clean: 
+	-$(DEL_FILE) $(OBJECTS)
+
+

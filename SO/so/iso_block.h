@@ -1,0 +1,75 @@
+//iso_block.h
+
+#ifndef _ISO_BLOCK_H_
+#define _ISO_BLOCK_H_
+//start of file
+
+typedef void mifpro_icmd_func_type(void);    
+extern mifpro_icmd_func_type *mifpro_icmd_func_call_back;
+
+//Definitions made in this part of ISO/IEC 14443:
+//RATS (11100000)b
+//PPS (1101xxxx)b
+//I-block (00xxxxxx)b (not (00xxx101)b)
+//R-block (10xxxxxx)b (not (1001xxxx)b)
+//S-block (11xxxxxx)b (not (1110xxxx)b and not (1101xxxx)b)
+
+#define RATS_BLOCK  0xe0
+#define PPS_BLOCK   0xd0
+
+#define I_BLOCK          0x02
+#define I_BLOCK_CHAIN    0x12
+#define I_BLOCK_NO_CHAIN 0x02
+#define I_BLOCK_MASK     0xf2
+
+#define R_BLOCK      0xA2
+#define R_BLOCK_ACK  0xa2
+#define R_BLOCK_NAK  0xb2
+#define R_BLOCK_MASK 0xe6
+#define S_BLOCK      0xc2
+#define S_BLOCK_MASK 0xc7
+
+#define WTX_BLOCK_MASK 0xf7
+#define WTX_BLOCK      0xf2
+
+#define ATS_TIME_OUT         10   //10ms
+#define DESELECT_TIME_OUT    5 
+
+#define rc_is_in_receive()   ((rc_read_byte(REG_RC500_PRIMARY_STATUS)&0x70) == 0x70)
+
+extern UBYTE bgCID;
+extern UBYTE bgPCB;
+extern UBYTE bgCIDFlag;
+extern UWORD wgFWT;
+extern UBYTE bgSFGI;
+extern UBYTE bgWTX;
+extern UWORD bgFSCI;	//
+extern unsigned long lgSFGT;		//
+
+struct timeval atsTV, apduTV, rfStartTV, rfEndTV;
+
+//
+UWORD _mifpro_ats(UBYTE cid,UBYTE *obuf,UWORD *obytes);
+UWORD iso_block_get_fwt(UBYTE fwt);
+UWORD _mifpro_deselect(UBYTE *outbuf);
+UWORD mifpro_wtx(UBYTE *outbuf);
+UWORD mifpro_noack(UBYTE *outbuf);
+UWORD mifpro_ack(UBYTE *outbuf);
+void pcb_reverse(void);
+UWORD mifpro_icmd_chain(UWORD len,UBYTE *inbuf,UBYTE *outbuf);
+UWORD mifpro_icmd_nochain(UWORD len,UBYTE *inbuf,UBYTE *outbuf);
+UBYTE _mifpro_icmd(UBYTE *ibuf,UWORD ibytes,UBYTE *obuf,UWORD *obytes);
+//
+void  iso_block_set_time_out(UBYTE cnt_5ms);
+UWORD iso_block_transceve(UBYTE *inbuf,UWORD inbytes,UBYTE *outbuf,UWORD *outbytes,UWORD timeout);
+
+UBYTE mifpro_pps(UBYTE pps1,UBYTE *ppss);
+UBYTE mifpro_set_speed(UBYTE tx_speed,UBYTE rx_speed);
+
+void do_gettimeofday(struct timeval *TV);
+
+//end of file
+#endif
+
+
+

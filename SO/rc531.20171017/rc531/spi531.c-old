@@ -1,0 +1,326 @@
+/*
+ * SPI testing utility (using spidev driver)
+ *
+ * Copyright (c) 2007  MontaVista Software, Inc.
+ * Copyright (c) 2007  Anton Vorontsov <avorontsov@ru.mvista.com>
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License.
+ *
+ * Cross-compile with cross-gcc -I/path/to/cross-kernel/include
+ */
+
+#include <stdint.h>
+#include <unistd.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <getopt.h>
+#include <fcntl.h>
+#include <sys/ioctl.h>
+#include <linux/types.h>
+#include <linux/spi/spidev.h>
+
+#include<string.h>
+
+
+#define ARRAY_SIZE(a) (sizeof(a) / sizeof((a)[0]))
+#define SPI_DEBUG
+
+
+static void pabort(const char *s)
+{
+	perror(s);
+	abort();
+}
+
+static const char *device = "/dev/spidev2.0";
+static uint8_t mode = SPI_MODE_0 | SPI_CS_HIGH;//     SPI_MODE_2(SPI_CPOL|0)  ;
+static uint8_t bits = 8;
+static uint32_t speed = 4000000;
+static uint16_t delay;
+static	int fd_531;
+#define transfer_len 64
+
+/*--------------------------*/
+int spi_init()
+{
+	int ret = 0;
+
+	fd_531 = open(device, O_RDWR);
+	if (fd_531 < 0)
+		pabort("can't open device");
+
+	/*
+	 * spi mode
+	 */
+	ret = ioctl(fd_531, SPI_IOC_WR_MODE, &mode);
+	if (ret == -1)
+		pabort("can't set spi mode");
+
+	ret = ioctl(fd_531, SPI_IOC_RD_MODE, &mode);
+	if (ret == -1)
+		pabort("can't get spi mode");
+
+	/*
+	 * bits per word
+	 */
+	ret = ioctl(fd_531, SPI_IOC_WR_BITS_PER_WORD, &bits);
+	if (ret == -1)
+		pabort("can't set bits per word");
+
+	ret = ioctl(fd_531, SPI_IOC_RD_BITS_PER_WORD, &bits);
+	if (ret == -1)
+		pabort("can't get bits per word");
+
+	/*
+	 * max speed hz
+	 */
+	ret = ioctl(fd_531, SPI_IOC_WR_MAX_SPEED_HZ, &speed);
+	if (ret == -1)
+		pabort("can't set max speed hz");
+
+	ret = ioctl(fd_531, SPI_IOC_RD_MAX_SPEED_HZ, &speed);
+	if (ret == -1)
+		pabort("can't get max speed hz");
+
+	printf("spi mode: %d\n", mode);
+	printf("bits per word: %d\n", bits);
+	printf("max speed: %d Hz (%d KHz)\n", speed, speed/1000);
+	
+
+	return ret;
+}
+
+int spi_close()
+{
+	return close(fd_531);
+}
+
+static void do_msg(int fd, int len)  
+{  
+ struct spi_ioc_transfer xfer[2];  
+ unsigned char  buf[32], *bp;  
+ int   status;  
+
+ memset(xfer, 0, sizeof(xfer));  
+ memset(buf, 0, sizeof(buf));  
+ if (len > sizeof(buf))  
+  len = sizeof(buf);  
+ buf[0] = 0xaa;  
+ xfer[0].tx_buf = (__u64) buf;  
+ xfer[0].len = 1;  
+ xfer[1].rx_buf = (__u64) buf;  
+ xfer[1].len = len;  
+ status = ioctl(fd, SPI_IOC_MESSAGE(2), xfer);  
+ if (status < 0) {  
+  perror("SPI_IOC_MESSAGE");  
+  return;  
+ }  
+ printf("response(%2d, %2d): ", len, status);  
+ for (bp = buf; len; len--)  
+  printf(" %02x", *bp++);  
+ printf("/n");  
+}  
+
+
+static void transfer(int fd, int len)
+{
+	int ret;
+	uint8_t tx[transfer_len] = {};
+	uint8_t rx[ARRAY_SIZE(tx)] = {};
+  
+  memset(tx, 0, sizeof tx);  
+  memset(rx, 0, sizeof rx);  
+
+ 	struct spi_ioc_transfer tr = {
+		.tx_buf = (unsigned long)tx,
+		.rx_buf = (unsigned long)rx,
+		.len = ARRAY_SIZE(tx),
+		.delay_usecs = delay,
+		.speed_hz = speed,
+		.bits_per_word = bits,
+	};
+
+	ret = ioctl(fd, SPI_IOC_MESSAGE(1), &tr);
+	if (ret < 1)
+		pabort("can't send spi message");
+
+	for (ret = 0; ret < ARRAY_SIZE(tx); ret++) {
+		if (!(ret % 6))
+			puts("");
+		printf("%.2X ", rx[ret]);
+	}
+	puts("");
+}
+
+
+/**
+*/
+int spi_send_bytes(int fd, uint8_t *tx, int len)
+{
+	int ret;
+	ret = write(fd, tx, len);
+	if (ret < 0){
+	  perror("SPI_IOC_MESSAGE");
+	}else{
+#ifdef SPI_DEBUG
+    int i;
+		for (i = 0; i < len; i++)
+		{
+			if (!(ret % 8))	puts("");
+			printf("%.2X ", tx[i]);
+		}
+		puts("");
+#endif
+	}
+	return ret;
+}
+
+
+/**
+*/
+int spi_read_bytes(int fd, uint8_t *rx, int len)
+{
+	int ret;
+	ret = read(fd, rx, len);
+	if (ret < 0){
+	  perror("SPI_IOC_MESSAGE");
+	}else{
+#ifdef SPI_DEBUG
+    int i;
+		for (i = 0; i < len; i++)
+		{
+			if (!(ret % 8))	puts("");
+			printf("%.2X ", rx[i]);
+		}
+		puts("");
+#endif
+	}
+return ret;
+}
+
+
+
+
+void spi_send_byte(uint8_t inbyte)
+{
+	int ret;
+	ret = write(fd_531, &inbyte, 1);
+	if (ret < 0){
+	  perror("SPI_IOC_MESSAGE");
+	}else{
+#ifdef SPI_DEBUG
+		printf("send:%.2X \n", inbyte);
+		puts("");
+#endif
+	}
+	//return ret;
+}
+
+uint8_t spi_rece_byte(void)
+{
+	int ret;
+	uint8_t val;
+	ret = read(fd_531, &val, 1);
+	if (ret < 0){
+	  perror("SPI_IOC_MESSAGE");
+	}else{
+#ifdef SPI_DEBUG
+		printf("rec :%.2X \n", val);
+#endif
+	}
+ return val;
+}
+
+
+static void parse_opts(int argc, char *argv[])
+{
+	while (1) {
+		static const struct option lopts[] = {
+			{ "device",  1, 0, 'D' },
+			{ "speed",   1, 0, 's' },
+			{ "delay",   1, 0, 'd' },
+			{ "bpw",     1, 0, 'b' },
+			{ "loop",    0, 0, 'l' },
+			{ "cpha",    0, 0, 'H' },
+			{ "cpol",    0, 0, 'O' },
+			{ "lsb",     0, 0, 'L' },
+			{ "cs-high", 0, 0, 'C' },
+			{ "3wire",   0, 0, '3' },
+			{ "no-cs",   0, 0, 'N' },
+			{ "ready",   0, 0, 'R' },
+			{ NULL, 0, 0, 0 },
+		};
+		int c;
+
+		c = getopt_long(argc, argv, "D:s:d:b:lHOLC3NR", lopts, NULL);
+
+		if (c == -1)
+			break;
+
+		switch (c) {
+		case 'D':
+			device = optarg;
+			break;
+		case 's':
+			speed = atoi(optarg);
+			break;
+		case 'd':
+			delay = atoi(optarg);
+			break;
+		case 'b':
+			bits = atoi(optarg);
+			break;
+		case 'l':
+			mode |= SPI_LOOP;
+			break;
+		case 'H':
+			mode |= SPI_CPHA;
+			break;
+		case 'O':
+			mode |= SPI_CPOL;
+			break;
+		case 'L':
+			mode |= SPI_LSB_FIRST;
+			break;
+		case 'C':
+			mode |= SPI_CS_HIGH;
+			break;
+		case '3':
+			mode |= SPI_3WIRE;
+			break;
+		case 'N':
+			mode |= SPI_NO_CS;
+			break;
+		case 'R':
+			mode |= SPI_READY;
+			break;
+		default:
+			break;
+		}
+	}
+}
+
+int main(int argc, char *argv[])
+{
+	int ret = 0;
+	//int fd;
+
+	//parse_opts(argc, argv);
+
+	//fd = open(device, O_RDWR);
+	//if (fd < 0)
+	//	pabort("can't open device");
+
+  spi_init();
+  
+	//transfer(fd_531,ret);
+
+	spi_send_byte(0x5A);
+	spi_rece_byte();
+	
+	close(fd_531);
+
+	return ret;
+}

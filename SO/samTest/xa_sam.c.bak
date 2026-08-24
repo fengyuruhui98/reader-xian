@@ -1,0 +1,84 @@
+#include "xa_sam.h"
+#include "linux2440lib.h"
+
+
+int XAMetroSAM(char index, int initBaud, int maxBaud)
+{
+unsigned char chret, retry, i, j;
+unsigned char sambuf[257]; 
+unsigned char sambytes;
+unsigned char buf[257];
+unsigned char inlen;
+int  ret;
+
+	{
+		if(sam_select(index) != 0)
+		{
+			printf("select index %d sam error \n", index);
+			return 0;
+		}
+		//
+		if(initBaud == 9600)
+			sam_set(index, SAM_ETU_372, 4);
+		else
+			sam_set(index, SAM_ETU_93;
+				
+		for(retry = 0; retry < 3; retry++)
+		{
+		  	if((chret = sam_atr(index, sambuf, &sambytes)) != 0)
+		  	{
+		  		printf("%d sam atr return %02x\n", index, chret);
+		    	continue;
+		    }
+		    printf("	atr:");
+		    for(j = 0; j < sambytes; j++)
+		    	printf("%02x", sambuf[j]);
+		    printf("\n");
+		    if(maxBaud != initBaud)
+		   	{
+		   		if(maxBaud == 38400)
+		   		{
+		    		ret = sam_pts(index, 0x13);		//38400
+				    sam_set(index, SAM_ETU_93, 4);	//38400
+		    	}else if(maxBaud == 115200)
+		    	{
+		    		ret = sam_pts(index, 0x18);
+				    sam_set(index, SAM_ETU_32, 4);	//115200
+		    	}else if(maxBaud == 57600)
+		    	{
+		    		ret = sam_pts(index, 0x16);
+				    sam_set(index, SAM_ETU_57600, 4);	//57600
+		    	}else
+		    		printf("un-support baud. so using initial baud %d running\n", initBaud);
+			}
+		    printf("sam pts return %d\n", ret);
+		    //ret = sam_pps0(i, 0x13, sambuf, &sambytes);
+		    //printf("sam pts return %d bytes %d\n", ret, sambytes);
+		    //for(j = 0; j < sambytes; j++)
+		    //	printf("%02x", sambuf[j]);
+		    //printf("\n");
+		    //sam_set(i, SAM_ETU_57600, 4);
+		    set_timeout(5000);
+		    //连续取随机数
+		    for(i = 0; i < 100; i++)
+		    {
+			 	memcpy(buf,"\x00\x84\x00\x00\x08", 5);
+			  	inlen = 5;
+		  		if((chret = sam_apdu(index, buf, inlen, sambuf, &sambytes, 0, 0)) != 0)
+			  	{
+			  		printf("sam apdu get random failure .return %02x\n", chret);
+				    continue;
+		    	}	
+			  	if((sambuf[sambytes - 2] != 0x90) || (sambuf[sambytes - 1] != 0x00))
+			  	{
+			  		printf("get random status un-9000 and is  %02x %02x\n", sambytes, sambuf[0], sambuf[1]);
+				    continue;
+		  		}
+		  	}
+		  	if( i == 100)
+		  		printf("sam get apdu random successfully. 100 times\n");
+			break;
+		}
+	}
+}
+

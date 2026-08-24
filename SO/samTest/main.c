@@ -1,0 +1,101 @@
+#include <stdlib.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <signal.h>
+#include <unistd.h>
+#include <semaphore.h>
+#include <pthread.h>
+#include <time.h>
+#include <stdio.h>
+#include <string.h>
+
+#include "sam.h"
+#include "linux2440lib.h"
+
+pthread_t	g_pthtmrID;
+
+/*
+function:display the led and set watch dog
+*/
+void *pthtmr()
+{
+char	led_ctrl = 0;
+
+#ifdef DEBUG_PRINT
+	printf("timer thread start\n");
+#endif
+	for(;;)
+	{
+		sleep(1);
+		if(led_ctrl == 0)
+		{
+			//gled(LED_OFF);
+			rled(LED_ON);
+			led_ctrl += 1;
+		}else
+		{
+			rled(LED_OFF);
+			//gled(LED_ON);
+			led_ctrl = 0;
+		}
+		watchdog();
+	}
+}
+
+
+//先设置串口参数
+//使用stty -F
+//stty -F /dev/ttymxc3 raw speed 460800
+
+
+int main(int argc, char *argv[])
+{
+int 	i, j, ret;
+int 	initBaud, maxBaud;
+int		Baud[8];
+	//set signal
+	signal(SIGCHLD,SIG_IGN);
+	
+	//
+	//watchdog_init(WATCHDOG_START, 20);
+	gled(LED_ON);
+	ret = pthread_create(&g_pthtmrID, NULL, &pthtmr, NULL);
+	
+	//
+	if(argc == 9)
+	{
+		for(i = 1; i < 9; i++)
+			Baud[i - 1] = atol(argv[i]);
+		TestAllSAM(Baud);
+	}else if(argc == 1)
+	{
+		TestSAMApdu(38400);
+	}else
+	{
+		i = 0;
+		initBaud = maxBaud = 38400;
+		if(argc == 2)
+		{
+			i = atol(argv[1]);
+			initBaud = maxBaud = 9600;
+		}
+		if(argc == 3)
+		{
+			i = atol(argv[1]);
+			initBaud = maxBaud = atol(argv[2]);
+		}
+		if(argc == 4)
+		{
+			i = atol(argv[1]);
+			initBaud = atol(argv[2]);
+			maxBaud = atol(argv[3]);
+		}
+		printf("SAM %d initial baud %d max baud %d is testing \n", i, initBaud, maxBaud);
+		TestSAM(i, initBaud, maxBaud);
+	}
+	//
+	printf("	finished.\n\n\n");
+	//watchdog_init(WATCHDOG_STOP, 20);
+	return 0;
+}

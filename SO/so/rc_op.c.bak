@@ -1,0 +1,1432 @@
+//rc_op.c
+
+#ifndef _RC_OP_C_
+#define _RC_OP_C_
+//start of file
+#include<unistd.h>
+
+#include "global.h"
+
+//#define _RC_OP_LOCK_
+uint8_t bgIsoType;   //0:type a 1:type b
+uint8_t bgRequestOkFlag;
+
+//#define _DEBUG_RC_SEND_CMD_ 1//
+//#define _DEBUG_RC500_REQUEST_//
+
+uint8_t const bpgRcInitValue[64] = {            \
+	  0x80,0x1E,0x39,0x6D,0x00,0x60,0x28,0x31,  \
+	  0x81,0x00,0x40,0x00,0x00,0xFF,0x63,0x00,  \
+	  0x82,0x58,0x3F,0x3F,0x19,0x13,0x00,0x3B,  \
+	  0x83,0x73,0x08,0xAD,0xFF,0x1E,0x41,0x48,  \
+    0x84,0x06,0x03,0x63,0x63,0x00,0x00,0x84,  \
+    0x85,0x04,0x0B,0x02,0x03,0x03,0x85,0x85,  \
+    0x86,0x86,0x86,0x86,0x86,0x86,0x86,0x86,  \
+    0x87,0x87,0x87,0x87,0x87,0x87,0x87,0xAE}; 
+      
+
+/*==============================================================================================
+函数：rc_reg_restore
+功能：
+================================================================================================*/
+void rc_reg_restore(void)
+{
+uint8_t i;
+
+for(i=16;i<48;i++){
+	if(i%8 == 0) continue;
+  rc_write_byte(i,(uint8_t)bpgRcInitValue[i]);		
+	}	
+	
+return;
+}
+
+
+/*==============================================================================================
+函数：rc_init
+功能：
+================================================================================================*/
+void rc_init0(void)
+{
+	
+	//2017/9/6 21:17:28
+	//spi_init();
+	spi_init_chn();
+	
+	//硬复位
+	rc_rst_set();
+	delay_ms(20);
+	rc_rst_clr();
+	delay_ms(20);
+	////
+	rc_write_byte(REG_RC500_PAGE,0x00);
+	
+	rc_reg_restore();
+	
+	rc_write_byte(REG_RC500_CLOCK_Q_CONTROL,0x00); //计算90度相移的延时单元数
+	delay_us(100);
+	rc_write_byte(REG_RC500_CLOCK_Q_CONTROL,0x40);
+	//
+	rc_write_byte(REG_RC500_BIT_PHASE,0xAD);       //固定值，不可改变   
+	rc_write_byte(REG_RC500_RX_THRESHOLD,0xFF);    //接收阈值最低
+	rc_write_byte(REG_RC500_RX_CONTROL2,0x41);     //省电模式，解码源：内部解码器
+	//rc500_write_byte(REG_RC500_RX_CONTROL2,0x01);   //省电模式disable，解码源：内部解码器
+	//
+	rc_write_byte(REG_RC500_FIFO_LEVEL,0x20); 		//设置最多剩余字节数
+	rc_write_byte(REG_RC500_TIMER_CONTROL,0x02);   //数据传输完毕后自动运行  
+	//
+	rc_write_byte(REG_RC500_IRQ_PIN_CONFIG,0x03);  //中断低电平有效
+	//
+	rc_write_byte(REG_RC500_INTERRUPT_EN,0x7f);    //禁止所有中断
+	rc_write_byte(REG_RC500_INTERRUPT_RQ,0x7f);    //清除所有中断标记
+	//
+	bgIsoType = 0;
+	rc_power_off();
+	return;
+}
+
+void rc_init(void)
+{
+	//rf_select(1);	
+	//rc_init0();
+	//rf_select(0);	
+	rc_init0();
+	
+	return;
+}
+
+/*=============================================================================
+函数：rc_iso14443_typeb_init
+功能：初始化RC531寄存器，使其可以对MM400L卡片操作
+===============================================================================*/
+void rc_iso14443_typeb_init(void)
+{
+
+	rc_write_byte(REG_RC500_RX_CONTROL1,0x73);
+	rc_write_byte(REG_RC500_CLOCK_Q_CONTROL,0xc8);
+	rc_write_byte(REG_RC500_CODER_CONTROL,0x20);
+	rc_write_byte(REG_RC500_DECODER_CONTROL,0x39);  //不允许一次接收多个帧
+	//rc_write_byte(REG_RC500_DECODER_CONTROL,0x79);      //允许一次接收多个帧
+	rc_write_byte(REG_RC500_RX_WAIT,0x08);
+	rc_write_byte(REG_RC500_CHANNEL_REDUNDANCY,0x2C);
+	rc_write_byte(REG_RC500_CRC_PRESET_LSB,0xFF);
+	rc_write_byte(REG_RC500_CRC_PRESET_MSB,0xFF);
+	rc_write_byte(REG_RC500_TIMER_CLOCK,0x0b);
+	rc_write_byte(REG_RC500_BIT_PHASE,0xad);
+	rc_write_byte(REG_RC500_MOD_WIDTH,0x3f);
+	rc_write_byte(REG_RC500_MOD_WIDTH_SOF,0x3f);
+	rc_write_byte(REG_RC500_TX_CONTROL,0x4b);
+	rc_write_byte(REG_RC500_RX_THRESHOLD,0x9b);
+	rc_write_byte(REG_RC500_TEST_DIGI_SELECT,0x83);
+	rc_write_byte(REG_RC500_TEST_ANA_SELECT,0x05);
+	rc_write_byte(REG_RC500_CW_CONDUCTANCE,0x3f);
+	rc_write_byte(REG_RC500_MOD_CONDUCTANCE,0x03);   //14%
+	rc_write_byte(REG_RC500_TYPEB_FRAMING,0x05);
+	rc_write_byte(REG_RC500_BPSK_DEM_CONTROL,0xfe);
+	//
+	bgIsoType = 1;
+	
+	
+	return;	
+}	
+
+/*=============================================================================
+函数：rc_iso14443_typea_init
+功能：初始化RC531寄存器，使其可以对M1卡片操作
+===============================================================================*/
+void rc_iso14443_typea_init(void)
+{
+
+	bgIsoType = 0;
+	rc_write_byte(REG_RC500_TX_CONTROL,0x5b);            //0x11
+	rc_write_byte(REG_RC500_CW_CONDUCTANCE,0x3f);        //0x12
+	rc_write_byte(REG_RC500_MOD_CONDUCTANCE,0x3f);       //0x13
+	rc_write_byte(REG_RC500_CODER_CONTROL,0x19);         //0x14
+	rc_write_byte(REG_RC500_MOD_WIDTH,0x13);             //0x15   
+	rc_write_byte(REG_RC500_MOD_WIDTH_SOF,0x00);          //0x16 
+	rc_write_byte(REG_RC500_TYPEB_FRAMING,0x3b);         //0x17
+	//2018/1/15 15:56:21 修改0x73值为0x72 2019/9/11 9:50:20再次修改为73
+	rc_write_byte(REG_RC500_RX_CONTROL1,0x73);           //0x19	
+	rc_write_byte(REG_RC500_DECODER_CONTROL,0x08);       //0x1a
+	rc_write_byte(REG_RC500_BIT_PHASE,0xad);             //0x1b
+	rc_write_byte(REG_RC500_RX_THRESHOLD,0xff);          //0x1c
+	rc_write_byte(REG_RC500_BPSK_DEM_CONTROL,0x1e);       //0x1d 
+	rc_write_byte(REG_RC500_CLOCK_Q_CONTROL,0x47);        //0x1f 
+	rc_write_byte(REG_RC500_RX_WAIT,0x06);               //0x21 
+	rc_write_byte(REG_RC500_CHANNEL_REDUNDANCY,0x0f);    //0x22
+	rc_write_byte(REG_RC500_CRC_PRESET_LSB,0x63);         //0x23 
+	rc_write_byte(REG_RC500_CRC_PRESET_MSB,0x63);         //0x24 
+	rc_write_byte(REG_RC500_TIMER_CLOCK,0x07);           //0x2a
+	rc_write_byte(REG_RC500_TEST_ANA_SELECT,0x09);        //0x3a
+	rc_write_byte(REG_RC500_TEST_DIGI_SELECT,0x09);       //0x3d
+	//
+	
+	return;	
+}	
+
+/*=============================================================================
+函数：rc_iso14443_icode1_init
+功能：
+===============================================================================*/
+void rc_iso15693_icode1_init(void)
+{
+//rc_init_15693_std_mode();	
+return;	
+}	
+
+
+/*==============================================================================================
+函数：rc_wait_irq
+功能：最大等待20ms
+复位后irq引脚高有效
+================================================================================================*/
+//#define _RC_IRQ_PIN_CHECK_
+void rc_wait_irq(void)
+{
+	uint16_t i;
+	uint8_t sta;
+ struct timespec delay, rem;
+#ifdef	DEBUG_CLOCK
+	clock_t start; 
+	
+	delay.tv_sec = 0;
+	delay.tv_nsec = 10;
+	
+	start  = clock();
+#endif
+	for(i=0;i<30000;i++)
+	{
+		//if(rc_irq()) break;
+		sta = rc_read_byte(REG_RC500_PRIMARY_STATUS);
+		//DEBUGP("%s i = 0x%02x, val = 0x%02x\n", __FUNCTION__, i, sta);
+		//7		(6 		5 		4) 		(3) 		(2) 		(1) 		(0)
+		//0		ModemState  000发射器和接收器空闲
+		//								IRQ表示Interrupen寄存器使能的任何一个中断源有请求
+		// 											Err表示ErrorFlag寄存器理有错误状态
+		// 														HiAlert表示FIFO中数据满足（64-FIFOLength)《WaterLevel
+		//																	LoAlert表示FIFO中数据满足FIFOLength《WaterLevel
+		if(sta&0x08) break;
+		if(sta&0x80) break;//rfu 2017/9/19 10:27:05
+		if((sta&0x70)==0) break;//000 Idle 2017/9/19 10:27:05
+		//delay_us(10);	
+		//nanosleep(&delay, &rem);
+	}
+#ifdef	DEBUG_CLOCK
+	printf("rc_wait_irq %d clock_t %d\n\n", i, start);
+#endif
+	rc_clr_time_out();
+	  
+	return;	
+}	
+
+//由于M1卡认证失败率较高，且返回3错误，调整wait_iqr函数终止条件
+void rc_wait_m1_auth_irq(void)
+{
+	uint16_t i;
+	uint8_t sta;
+ struct timespec delay, rem;
+#ifdef	DEBUG_CLOCK
+	clock_t start; 
+	
+	delay.tv_sec = 0;
+	delay.tv_nsec = 10;
+	
+	start  = clock();
+#endif
+	for(i=0;i<30000;i++)
+	{
+		//if(rc_irq()) break;
+		sta = rc_read_byte(REG_RC500_PRIMARY_STATUS);
+		//DEBUGP("%s i = 0x%02x, val = 0x%02x\n", __FUNCTION__, i, sta);
+		//7		(6 		5 		4) 		(3) 		(2) 		(1) 		(0)
+		//0		ModemState  000发射器和接收器空闲
+		//								IRQ表示Interrupen寄存器使能的任何一个中断源有请求
+		// 											Err表示ErrorFlag寄存器理有错误状态
+		// 														HiAlert表示FIFO中数据满足（64-FIFOLength)《WaterLevel
+		//																	LoAlert表示FIFO中数据满足FIFOLength《WaterLevel
+		if(sta&0x08) break;
+		if(sta&0x80) break;//rfu 2017/9/19 10:27:05
+		//if((sta&0x70)==0) break;//000 Idle 2017/9/19 10:27:05
+		//delay_us(10);	
+		//nanosleep(&delay, &rem);
+	}
+#ifdef	DEBUG_CLOCK
+	printf("rc_wait_irq %d clock_t %d\n\n", i, start);
+#endif
+	rc_clr_time_out();
+	  
+	return;	
+}	
+/*==============================================================================================
+函数：
+功能：
+================================================================================================*/
+//uint8_t rc_rece_bits(void)
+uint16_t rc_rece_bits(void)
+{
+	uint8_t bits,bytes;
+	
+	bytes = rc_read_byte(REG_RC500_FIFO_LENGTH);
+	bits = rc_read_byte(REG_RC500_SECONDARY_STATUS)&0x07;
+	
+	if(bits==0) return (bytes*8);
+	return (bytes*8-8+bits);		
+}	
+
+/*==============================================================================================
+函数：
+功能：
+================================================================================================*/
+
+uint8_t rc_send_cmd(uint8_t *inbuf,uint8_t inbytes,uint8_t irq_mask)
+{
+uint8_t ret,rece_bits;	
+	
+#ifdef _DEBUG_RC_SEND_CMD_
+	char info_buf[50];
+#endif
+	//
+	rc_idle();
+	rc_clr_irq();
+	rc_flush_fifo();
+	//
+	rc_write_byte(REG_RC500_INTERRUPT_EN,irq_mask|0x80);
+	// 
+	rc_write_data_n(inbuf,inbytes);
+	rc_write_byte(REG_RC500_COMMAND,RC500_CMD_TRANSCEIVE);
+	//
+	rc_wait_irq();
+	//
+	ret = rc_read_byte(REG_RC500_INTERRUPT_RQ);
+	if((ret&BIT_TIMERI)&&!(ret&BIT_RXI)){
+	   #ifdef _DEBUG_RC_SEND_CMD_
+	   printf("\x0d\x0a Err:send cmd,int flag=%02X",(uint8_t)ret);
+	   #endif	
+		 return STATUS_IO_TIMEOUT;
+	}
+	
+	
+	ret = rc_read_byte(REG_RC500_ERROR_FLAG);
+	if(!(ret&NORMAL_ERR_MASK)) return 0;
+	#ifdef _DEBUG_RC_SEND_CMD_
+		printf("\x0d\x0a Err:send cmd,errflag=%02X",(uint8_t)ret);
+	#endif	
+	//	
+	if(ret & BIT_COLL_ERR) return STATUS_COLLISION_ERROR;           //Collision Error
+	if(ret & BIT_PARITY_ERR) return STATUS_PARITY_ERROR;            //Parity Error
+	if(ret & BIT_FIFO_OVERFLOW) return STATUS_BUFFER_OVERFLOW;      //BufferOverflow Error
+	if(ret & BIT_FRAMING_ERR) return STATUS_FRAMING_ERROR;     
+	if(!(ret & BIT_CRC_ERR)) return STATUS_ERROR_NY_IMPLEMENTED;
+	//	
+	if(rc_read_byte(REG_RC500_FIFO_LENGTH) == 1){
+		rece_bits = rc_read_byte(REG_RC500_SECONDARY_STATUS)&0x07;
+		if((rece_bits == 4) || (rece_bits == 0)) return STATUS_ACK_SUPPOSED;
+	}
+	return STATUS_CRC_ERROR;
+}	
+
+
+
+
+/*==============================================================================================
+函数：rc_request
+功能：
+================================================================================================*/
+//#define _DEBUG_rc_request_
+uint8_t rc_request(uint8_t req_code,uint8_t *atq)
+{
+uint8_t rece_bits,status;	
+	#ifdef _DEBUG_RC500_REQUEST_
+	char info_buf[100];
+	#endif
+		
+	//bgNhhAuthed = 0;   //去除auth标志
+	
+	#ifdef _DEBUG_rc_request_
+	printk("\nrc_request...");
+	#endif
+	
+	rc_set_speed(0,0);
+	rc_crc_disable();
+	rc_oddpari_enable();
+	rc_clr_crypt();
+	rc_not_in_anticoll();
+	rc_set_bitframe(7);
+	rc_power_on();
+	rc_idle();
+	
+	rc_set_time_out(REQ_TIME_OUT);
+	status = rc_send_cmd(&req_code,1,NORMAL_IRQ_MASK);
+	if(status != 0){
+		#ifdef _DEBUG_RC500_REQUEST_
+		//os_lock();
+		sprintf(info_buf,"\x0d\x0a Err:request 1,status=%02X return 1\n",(uint8_t)status);
+		printf(info_buf);
+		//os_unlock();
+		#endif
+		return 1;
+	}
+		
+	rece_bits = rc_rece_bits();
+	if(rece_bits != 16){
+		#ifdef _DEBUG_RC500_REQUEST_
+		//os_lock();
+		sprintf(info_buf,"\x0d\x0a Err:request 2,rece_bits=%d\n return 2",(uint8_t)rece_bits);
+		printf(info_buf);
+		//os_unlock();	
+		#endif
+		return 2;
+	}
+	
+	rc_read_data_n(atq, 2);
+	
+#ifdef _DEBUG_RC500_REQUEST_
+	printf("atq %02X%02x return 0\n", atq[0], atq[1]);
+#endif
+	return 0;	
+}	
+
+
+
+
+
+/*=======================================================================
+函数：rc_anticoll
+功能：
+=========================================================================*/
+uint8_t rc_anticoll(uint8_t select_code,uint8_t bcnt,uint8_t *snr)    
+{
+	uint8_t ch,ch2;
+	uint8_t i,nbytes;
+	uint8_t rbuf[5],snr_in[4];
+	uint8_t rbytes=0,nbits=0,rbits=0,collpos=0,byteOffset;
+	uint8_t colBit = 0;
+	 
+	
+	
+	rc_set_time_out(ANTICOLL_TIME_OUT);
+	rc_crc_disable();
+	rc_in_anticoll();
+	rc_clr_crypt();
+	rc_idle();
+	      
+	for(i=0;i<(bcnt/8);i++) snr_in[i] = snr[i];
+	
+	loop:
+		
+	
+	rc_idle();                           // terminate probably running command
+	rc_flush_fifo();                     // flush FIFO buffer
+	rc_crc_disable();                    //禁止CRC校验
+	rc_oddpari_enable();                 //允许奇校验
+	
+	nbits = bcnt % 8;                         // remaining number of bits
+	if(nbits){
+		rc_set_bitframe((nbits << 4) | nbits);  // TxLastBits/RxAlign auf nb_bi
+		nbytes = bcnt / 8 + 1;   
+		if(nbits == 7){
+			rc_set_bitframe(nbits);              // reset RxAlign to zero
+			rc_pari_disable();                //禁止CRC校验，不允许奇校验
+		}
+	}
+	else{
+		nbytes = bcnt / 8;
+	}
+	
+	rc_write_data(select_code);
+	rc_write_data(0x20 + ((bcnt/8) << 4) + nbits);    //number of bytes send
+	for(i=0;i<nbytes;i++){
+	   rc_write_data(snr_in[i]);
+	   }
+	 
+	//设置中断
+	rc_clr_irq();
+	rc_write_byte(REG_RC500_INTERRUPT_EN,(uint8_t)0xa8);  //允许超时中断和接收中断
+	rc_set_time_out(10);
+	rc_write_byte(REG_RC500_COMMAND,RC500_CMD_TRANSCEIVE);
+	   
+	//检测状态
+	rc_wait_irq();
+	
+	if((rc_read_byte(REG_RC500_INTERRUPT_RQ) & 0x08) == 0){
+		#ifdef _RC_OP_LOCK_
+		os_unlock();
+		#endif
+		return (uint8_t)-1;    //无接收数据
+	}
+	
+	if(colBit = rc_read_byte(REG_RC500_ERROR_FLAG)&0x01){
+	    collpos = rc_read_byte(REG_RC500_COLL_POS);
+	    //printf("************* have coll ,position =%d colBit =%0x\n", collpos, colBit);
+	}
+	   
+	rbytes = rc_read_byte(REG_RC500_FIFO_LENGTH);
+	rbits =  rc_rece_bits();
+	for(i=0;i<rbytes;i++) rbuf[i] = rc_read_data();
+	  
+	if(nbits == 7){
+	   ch = 0x00;
+	   for(i=0;i< rbytes;i++){
+	      ch2 = rbuf[i];
+	      rbuf[i] = (ch >> (i+1)) | (rbuf[i] << (7-i));
+	      ch = ch2;
+	      }
+	   rbits -= rbytes;                             // subtract received parity bits
+	   collpos += 7-(collpos+6)/9; 
+	   }
+	  
+	if((rc_read_byte(REG_RC500_ERROR_FLAG) & 0x0e) != 0){
+		//printf("REG_RC500_ERROR_FLAG &0xE colbit=%x\n", colBit);
+		if( colBit )
+			return 127;
+		return (uint8_t)-2;      //有错误发生
+	}
+	if(rbits != (40 - bcnt)) goto label_err;
+	  
+	byteOffset = 0;
+	if(nbits != 0){ // last byte was not complete
+	   snr_in[nbytes - 1] = snr_in[nbytes - 1] | rbuf[0];
+	   byteOffset = 1;
+	}
+	for(i=0;i<(4-nbytes);i++){     
+	   snr_in[nbytes + i] = rbuf[i + byteOffset];
+	}
+	  
+	if((rc_read_byte(REG_RC500_ERROR_FLAG) & 0x01) != 0){
+		bcnt = bcnt + collpos - nbits;
+		goto loop;	
+	}	  
+	  
+	//if((rbuf[0]^rbuf[1]^rbuf[2]^rbuf[3]^rbuf[4]) != 0) goto label_err;
+	snr[0] = snr_in[0];
+	snr[1] = snr_in[1];
+	snr[2] = snr_in[2];
+	snr[3] = snr_in[3];
+	snr[4] = rbuf[4];
+	goto label_ok;
+	
+label_err:
+	rc_not_in_anticoll();
+	
+	return (uint8_t)-1;  
+	
+label_ok:
+	rc_not_in_anticoll();
+	
+	return 0;  
+}
+
+
+
+/*==============================================================================================
+函数：rc_select
+功能：
+================================================================================================*/
+uint8_t rc_select(uint8_t sel_code,uint8_t *snr,uint8_t *sak)
+{
+	uint8_t rece_bits,status;	
+	uint8_t buf[7];
+	//	
+#ifdef _RC_OP_LOCK_
+	os_lock();
+#endif
+	rc_clr_crypt();
+	rc_crc_enable();
+	rc_oddpari_enable();
+	rc_not_in_anticoll();
+	rc_idle();
+	rc_set_bitframe(0);
+	//
+	buf[0] = sel_code;
+	buf[1] = NVB_MAX_PARAMETER;
+	memcpy(&buf[2],snr,5);
+	rc_set_time_out(SEL_TIME_OUT);
+	status = rc_send_cmd(buf,7,NORMAL_IRQ_MASK);
+	//
+	if((status) &&(status != STATUS_ACK_SUPPOSED)){
+		 #ifdef _RC_OP_LOCK_
+	   os_unlock();
+		 #endif
+		 return (status|0x80);
+	}
+	
+	rece_bits = rc_rece_bits();
+	if(rece_bits == 4){
+		status = rc_read_data();
+	  if((status&0x0a) != 0x0a) return status|0x40;
+		 #ifdef _RC_OP_LOCK_
+	   os_unlock();
+		 #endif
+	  return 0;	
+		}
+	if(rece_bits != 8){
+		 #ifdef _RC_OP_LOCK_
+	   os_unlock();
+		 #endif
+		 return 2;
+		 }
+	//
+	rc_read_data_n(sak,1);
+	//
+	#ifdef _RC_OP_LOCK_
+	os_unlock();
+	#endif
+	return 0;	
+}	
+
+
+/*==============================================================================================
+函数：rc_read
+功能：
+================================================================================================*/
+uint8_t rc_read(uint8_t block,uint8_t *outbuf)
+{
+uint8_t buf[2],status;
+uint8_t rece_bits;
+	
+	//
+#ifdef _RC_OP_LOCK_
+	os_lock();
+#endif
+	
+	rc_not_in_anticoll();
+	rc_crc_enable();
+	rc_oddpari_enable();
+	rc_idle();
+	rc_set_bitframe(0);
+	//
+	buf[0] = PICC_READ;
+	buf[1] = block;
+	rc_set_time_out(READ_TIME_OUT);
+	status = rc_send_cmd(buf,2,NORMAL_IRQ_MASK);
+	if(status!=0)
+	{
+#ifdef _RC_OP_LOCK_
+	   os_unlock();
+#endif
+		 return 1;
+	}
+	rece_bits = rc_rece_bits();
+	if(rece_bits != 128)
+	{
+#ifdef _RC_OP_LOCK_
+		os_unlock();
+#endif
+		return 2;
+	}
+	rc_read_data_n(outbuf,16);	
+	//
+#ifdef _RC_OP_LOCK_
+	os_unlock();
+#endif
+
+	return 0;	
+}	
+
+
+uint8_t rc_read_4bytes(uint8_t block,uint8_t *outbuf)
+{
+uint8_t buf[2],status;
+uint8_t rece_bits;
+	//
+	#ifdef _RC_OP_LOCK_
+	os_lock();
+	#endif
+	rc_not_in_anticoll();
+	rc_crc_enable();
+	rc_oddpari_enable();
+	rc_idle();
+	rc_set_bitframe(0);
+	//
+	buf[0] = PICC_READ;
+	buf[1] = block;
+	rc_set_time_out(READ_TIME_OUT);
+	status = rc_send_cmd(buf,2,NORMAL_IRQ_MASK);
+	if(status!=0){
+		#ifdef _RC_OP_LOCK_
+		os_unlock();
+		#endif
+		return 1;
+	 }
+	rece_bits = rc_rece_bits();
+	if(rece_bits != 32){
+		#ifdef _RC_OP_LOCK_
+		os_unlock();
+		#endif
+		return 2;
+	 }
+	rc_read_data_n(outbuf,4);	
+	//
+	#ifdef _RC_OP_LOCK_
+	os_unlock();
+	#endif
+	return 0;	
+}	
+
+/*==============================================================================================
+函数：rc_write
+功能：
+================================================================================================*/
+#ifdef _DEBUG_EN_
+#define _DEBUG_RC_WRITE_
+#endif
+uint8_t rc_write(uint8_t block,uint8_t *inbuf)
+{
+uint8_t buf[2];
+uint8_t status,rece_bits;
+//
+
+#ifdef _DEBUG_RC_WRITE_
+printf("\x0d\x0a write:start");
+#endif
+
+#ifdef _RC_OP_LOCK_
+os_lock();
+#endif
+	rc_not_in_anticoll();
+	rc_crc_enable();
+	rc_crc_rx_disable();
+	rc_oddpari_enable();
+	rc_idle();
+	rc_set_bitframe(0);
+	//
+	buf[0] = PICC_COMPATIBILITYWRITE;
+	buf[1] = block;
+	rc_set_time_out(WRITE1_TIME_OUT);
+	status = rc_send_cmd(buf,2,NORMAL_IRQ_MASK);
+	if((status!=0)&&(status != STATUS_ACK_SUPPOSED)){
+	 #ifdef _DEBUG_RC_WRITE_
+	 printf("\x0d\x0a write:err1,status=%02X",(uint8_t)status);
+	 #endif
+	 #ifdef _RC_OP_LOCK_
+   os_unlock();
+	 #endif
+	 return 1;
+	 }
+	rece_bits = rc_rece_bits();	 
+	if(rece_bits != 4){
+	 #ifdef _DEBUG_RC_WRITE_
+	 printf("\x0d\x0a write:err2,rece_bits=%d",rece_bits);	 
+	 #endif 
+	 #ifdef _RC_OP_LOCK_
+   os_unlock();
+ 	 #endif
+ 	 return 2;
+	 }
+	status = rc_read_data();
+	if((status&0x0a) != 0x0a){
+	 #ifdef _DEBUG_RC_WRITE_
+	 printf("\x0d\x0a write:err3,status=%02X",(uint8_t)status);
+	 #endif 
+	 #ifdef _RC_OP_LOCK_
+   os_unlock();
+	 #endif
+	 return 3;	
+	 }
+
+	rc_not_in_anticoll();
+	rc_crc_enable();
+	rc_crc_rx_disable();
+	rc_oddpari_enable();
+	rc_idle();
+	rc_set_bitframe(0);
+	
+	rc_set_time_out(WRITE2_TIME_OUT);
+	status = rc_send_cmd(inbuf,16,NORMAL_IRQ_MASK);
+	if((status!=0)&&(status != STATUS_ACK_SUPPOSED)){
+		 #ifdef _DEBUG_RC_WRITE_
+		 printf("\x0d\x0a write:err4,status=%02X",(uint8_t)status);
+		 #endif
+		 #ifdef _RC_OP_LOCK_
+	   os_unlock();
+		 #endif
+		 return 4;
+		 }
+	rece_bits = rc_rece_bits();	 
+	if(rece_bits != 4){
+	 #ifdef _DEBUG_RC_WRITE_
+	 printf("\x0d\x0a write:err5,rece_bits=%d",rece_bits);	 
+	 #endif 
+	 #ifdef _RC_OP_LOCK_
+   os_unlock();
+ 	 #endif
+ 	 return 5;
+	 }
+	status = rc_read_data();
+	if((status&0x0a) != 0x0a){
+	 #ifdef _DEBUG_RC_WRITE_
+	 printf("\x0d\x0a write:err6,status=%02X",status);	 
+	 #endif 
+	 #ifdef _RC_OP_LOCK_
+   os_unlock();
+	 #endif
+	 return 6;	
+	 }
+
+	#ifdef _RC_OP_LOCK_
+	os_unlock();
+	#endif
+
+	 #ifdef _DEBUG_RC_WRITE_
+	 printf("\x0d\x0a write:ok");
+	 #endif
+
+
+return 0;	
+}	
+
+uint8_t rc_write_4bytes(uint8_t block,uint8_t *inbuf)
+{
+uint8_t buf[20];
+uint8_t status,rece_bits;
+	//
+#ifdef _RC_OP_LOCK_
+	os_lock();
+#endif
+
+	rc_not_in_anticoll();
+	rc_crc_enable();
+	rc_crc_rx_disable();
+	rc_oddpari_enable();
+	rc_idle();
+	rc_set_bitframe(0);
+	//
+	buf[0] = PICC_WRITE;
+	buf[1] = block;
+	memcpy(&buf[2], inbuf, 4);
+	rc_set_time_out(WRITE2_TIME_OUT);
+	status = rc_send_cmd(buf,6,NORMAL_IRQ_MASK);
+	if((status!=0)&&(status != STATUS_ACK_SUPPOSED)){
+		 #ifdef _DEBUG_RC_WRITE_
+		 printf("\x0d\x0a write:err1");
+		 #endif
+		 #ifdef _RC_OP_LOCK_
+	   os_unlock();
+		 #endif
+		 return 1;
+		 }
+	rece_bits = rc_rece_bits();	 
+	if(rece_bits != 4){
+		 #ifdef _DEBUG_RC_WRITE_
+		 printf("\x0d\x0a write:err2");	 
+		 #endif 
+		 #ifdef _RC_OP_LOCK_
+	   os_unlock();
+	 	 #endif
+	 	 return 2;
+		 }
+	status = rc_read_data();
+	if((status&0x0a) != 0x0a){
+		 #ifdef _DEBUG_RC_WRITE_
+		 printf("\x0d\x0a write:err3,status=%02X",(uint8_t)status);
+		 #endif 
+		 #ifdef _RC_OP_LOCK_
+	   os_unlock();
+		 #endif
+		 return 3;	
+		 }
+	
+//	rc_not_in_anticoll();
+//	rc_crc_enable();
+//	rc_crc_rx_disable();
+//	rc_oddpari_enable();
+//	rc_idle();
+//	rc_set_bitframe(0);
+//	
+//	rc_set_time_out(WRITE2_TIME_OUT);
+//	status = rc_send_cmd(inbuf,4,NORMAL_IRQ_MASK);
+//	if((status!=0)&&(status != STATUS_ACK_SUPPOSED)){
+//		 #ifdef _DEBUG_RC_WRITE_
+//		 printf("\x0d\x0a write:err4,status=%02X",(uint8_t)status);
+//		 #endif
+//		 #ifdef _RC_OP_LOCK_
+//	   os_unlock();
+//		 #endif
+//		 return 4;
+//		 }
+//	rece_bits = rc_rece_bits();	 
+//	if(rece_bits != 4){
+//		 #ifdef _DEBUG_RC_WRITE_
+//		 printf("\x0d\x0a write:err5");	 
+//		 #endif 
+//		 #ifdef _RC_OP_LOCK_
+//	   os_unlock();
+//	 	 #endif
+//	 	 return 5;
+//		 }
+//	status = rc_read_data();
+//	if((status&0x0a) != 0x0a){
+//		 #ifdef _DEBUG_RC_WRITE_
+//		 printf("\x0d\x0a write:err6");	 
+//		 #endif 
+//		 #ifdef _RC_OP_LOCK_
+//	   os_unlock();
+//		 #endif
+//		 return 6;	
+//		 }
+//	
+//	#ifdef _RC_OP_LOCK_
+//	os_unlock();
+//	#endif
+	return 0;	
+}	
+
+
+
+#ifdef _DEBUG_
+//#define _DEBUG_RC_VALUE_OP0_
+#endif
+uint8_t rc_value_op0(uint8_t op_mode,uint8_t sr_block,uint8_t *value)
+{
+	uint8_t status,rece_bits;
+	uint8_t buf[2];
+	//
+	#ifdef _RC_OP_LOCK_
+	os_lock();
+	#endif
+	rc_not_in_anticoll();
+	rc_crc_enable();
+	rc_crc_rx_disable();
+	rc_oddpari_enable();
+	rc_idle();
+	rc_set_bitframe(0);
+	//
+	buf[0] = op_mode;
+	buf[1] = sr_block;
+	rc_set_time_out(VALUE1_TIME_OUT);
+	status = rc_send_cmd(buf,2,NORMAL_IRQ_MASK);
+	if((status!=0)&&(status != STATUS_ACK_SUPPOSED)){
+		  #ifdef _DEBUG_RC_VALUE_OP0_
+		  printf("\x0d\x0a value op0:err1,status=%2X",status);	 
+		  #endif 
+		  #ifdef _RC_OP_LOCK_
+	    os_unlock();
+	    #endif
+	    return 1;
+	    }
+	rece_bits = rc_rece_bits();    
+	if(rece_bits != 4){
+		  #ifdef _DEBUG_RC_VALUE_OP0_
+		  printf("\x0d\x0a value op0:err2,rece_bits=%d",rece_bits);	 
+		  #endif 
+		  #ifdef _RC_OP_LOCK_
+	    os_unlock();
+		  #endif
+		  return 2;
+		  }
+	status = rc_read_data();
+	if((status&0x0a) != 0x0a){
+		  #ifdef _DEBUG_RC_VALUE_OP0_
+		  printf("\x0d\x0a value op0:err3,status=%02X",(uint8_t)status);	 
+		  #endif 
+		  #ifdef _RC_OP_LOCK_
+		  os_unlock();
+		  #endif
+		  return 3;	
+		  }
+	//
+	rc_not_in_anticoll();
+	rc_crc_enable();
+	rc_crc_rx_disable();
+	rc_oddpari_enable();
+	rc_idle();
+	rc_set_bitframe(0);
+	
+	rc_set_time_out(VALUE2_TIME_OUT);
+	status = rc_send_cmd(value,4,NORMAL_IRQ_MASK);
+	if(status == STATUS_IO_TIMEOUT) goto label_exit;
+	if((status!=0)&&(status != STATUS_ACK_SUPPOSED)){
+		  #ifdef _DEBUG_RC_VALUE_OP0_
+		  printf("\x0d\x0a value op0:err4,status=%2X",status);	 
+		  #endif 
+		  #ifdef _RC_OP_LOCK_
+		  os_unlock();
+		  #endif
+	    return 4;
+	    }
+	rece_bits = rc_rece_bits();    
+	if(rece_bits != 5){
+		  #ifdef _DEBUG_RC_VALUE_OP0_
+		  printf("\x0d\x0a value op0:err5,rece_bits=%d",rece_bits);	 
+		  #endif 
+		  #ifdef _RC_OP_LOCK_
+	    os_unlock();
+		  #endif
+		  return 5;
+		  }
+	status = rc_read_data();
+	if((status&0x0a) != 0x0a){
+		  #ifdef _DEBUG_RC_VALUE_OP0_
+		  printf("\x0d\x0a value op0:err6,status=%02X",(uint8_t)status);	 
+		  #endif 
+		  #ifdef _RC_OP_LOCK_
+	    os_unlock();
+		  #endif
+		  return 6;	
+		  }
+	
+	label_exit:
+	#ifdef _RC_OP_LOCK_
+	os_unlock();
+	#endif
+	return 0;
+}
+
+/*==============================================================================================
+函数：
+功能：
+================================================================================================*/
+#ifdef _DEBUG_
+//#define _DEBUG_RC_TRANSFER_
+#endif
+uint8_t rc_transfer(uint8_t dest_block)
+{
+	uint8_t status,rece_bits;
+	uint8_t buf[2];
+		
+	#ifdef _RC_OP_LOCK_
+	os_lock();
+	#endif
+		
+	rc_not_in_anticoll();
+	rc_crc_enable();
+	rc_crc_rx_disable();
+	rc_oddpari_enable();
+	rc_idle();
+	rc_set_bitframe(0);
+		
+	buf[0] = PICC_TRANSFER;
+	buf[1] = dest_block;
+	rc_set_time_out(VALUE3_TIME_OUT);
+	status = rc_send_cmd(buf,2,NORMAL_IRQ_MASK);
+	if((status!=0)&&(status != STATUS_ACK_SUPPOSED)){
+		  #ifdef _DEBUG_RC_TRANSFER_
+		  printf("\x0d\x0a rc_transfer:err7,status=%2X",status);	 
+		  #endif 
+		  #ifdef _RC_OP_LOCK_
+	    os_unlock();
+	    #endif
+	    return 7;
+	    }
+	rece_bits = rc_rece_bits();    
+	if(rece_bits != 4){
+		  #ifdef _DEBUG_RC_TRANSFER_
+		  printf("\x0d\x0a rc_transfer:err8,rece_bits=%d",rece_bits);	 
+		  #endif 
+		  #ifdef _RC_OP_LOCK_
+	    os_unlock();
+		  #endif
+		  return 8;
+		  }
+	status = rc_read_data();
+	if((status&0x0a) != 0x0a){
+		  #ifdef _DEBUG_RC_TRANSFER_
+		  printf("\x0d\x0a rc_transfer:err9,status=%02X",(uint8_t)status);	 
+		  #endif 
+		  #ifdef _RC_OP_LOCK_
+		  os_unlock();
+		  #endif
+		  return 9;	
+		  }
+	//
+	#ifdef _RC_OP_LOCK_
+	os_unlock();
+	#endif
+	return 0;
+}
+
+
+/*==============================================================================================
+函数：rc_crc_a
+功能：
+================================================================================================*/
+uint16_t rc_crc_a(uint8_t *inbuf,uint8_t inbytes)
+{
+	uint16_t tword;
+	//
+	#ifdef _RC_OP_LOCK_
+	os_lock();
+	#endif
+	rc_idle();
+	rc_flush_fifo();
+	// 
+	rc_write_data_n(inbuf,inbytes);
+	rc_write_byte(REG_RC500_COMMAND,RC500_CMD_CALCCRC);
+	while(rc_read_byte(REG_RC500_SECONDARY_STATUS)&0x20){};
+	//
+	*((char *)&tword+INT_HIGH) = rc_read_byte(REG_RC500_CRC_RESULT_MSB);
+	*((char *)&tword+INT_LOW) =  rc_read_byte(REG_RC500_CRC_RESULT_LSB);
+	//
+	#ifdef _RC_OP_LOCK_
+	os_unlock();
+	#endif
+	return tword;
+}
+
+
+
+/*================================================================
+函数：rc_auth
+功能：
+==================================================================*/
+uint8_t rc_auth(uint8_t keyAB,uint8_t sector)
+{
+	uint8_t  keycoded[12];
+	uint8_t  i,ch1,ch2;
+	 
+	#ifdef _RC_OP_LOCK_
+	os_lock();   
+	#endif
+	//load key   
+	for(i=0;i<6;i++){
+	  ch1 = ((uint8_t)gRc500Key[i])&0x0f;
+	  ch2 = ch1*16;
+	  keycoded[2*i+1] = ch1 | ((uint8_t)(~ch2)&0xf0);
+	
+	  ch1 = (uint8_t)gRc500Key[i]&(uint8_t)0xf0;
+	  ch2 = (uint8_t)ch1/16;
+	  keycoded[2*i] = ((uint8_t)~ch1&0xf0) | ch2;
+	  }
+	
+	rc_idle();                    // terminate probably running command
+	rc_flush_fifo();              // flush FIFO buffer
+	rc_write_data_n(keycoded,12);
+	
+	rc_clr_irq();
+	rc_write_byte(REG_RC500_INTERRUPT_EN,(uint8_t)BIT_SETI|BIT_IDLEI|BIT_TIMERI); //允许IDLE中断,超时中断
+	rc_set_time_out(20);                               //1.5ms
+	rc_write_byte(REG_RC500_COMMAND,RC500_CMD_LOADKEY);      
+	
+	rc_wait_irq();
+	if(rc_read_byte(REG_RC500_INTERRUPT_RQ) & BIT_TIMERI){
+		 #ifdef _RC_OP_LOCK_
+	   os_unlock();
+		 #endif
+		 return (uint8_t)1; 
+		 }
+	if(rc_read_byte(REG_RC500_ERROR_FLAG)){
+		 #ifdef _RC_OP_LOCK_
+	   os_unlock();
+		 #endif
+		 return (uint8_t)2;
+		 }
+	
+	//auth1--------------------------------------------------------
+	rc_idle();
+	rc_flush_fifo();
+	//
+	rc_write_data(keyAB);
+	rc_write_data(sector*4);
+	rc_write_data(gThisCardSnr[0]);
+	rc_write_data(gThisCardSnr[1]);
+	rc_write_data(gThisCardSnr[2]);
+	rc_write_data(gThisCardSnr[3]);
+	//
+	rc_clr_irq();
+	//允许超时中断,接收中断，IDLE
+	rc_write_byte(REG_RC500_INTERRUPT_EN,(uint8_t)BIT_SETI|BIT_IDLEI|BIT_TIMERI|BIT_RXI); 
+	rc_set_time_out(20);
+	rc_write_byte(REG_RC500_COMMAND,RC500_CMD_AUTHENT1);      
+	//
+	、、rc_wait_irq();
+	rc_wait_m1_auth_irq();
+	if(!(rc_read_byte(REG_RC500_INTERRUPT_RQ)&BIT_IDLEI)){
+		 #ifdef _RC_OP_LOCK_
+	   os_unlock();
+		 #endif
+		 return (uint8_t)3;
+		 } 
+	if(rc_read_byte(REG_RC500_SECONDARY_STATUS) & 0x07){
+		 #ifdef _RC_OP_LOCK_
+	   os_unlock();
+		 #endif
+		 return (uint8_t)4;       // Check RxLastBits for error
+		 }
+	
+	//auth2-----------------------------------------------------------------
+	rc_idle();
+	rc_clr_irq();
+	//
+	rc_write_byte(REG_RC500_INTERRUPT_EN,(uint8_t)BIT_SETI|BIT_IDLEI|BIT_TIMERI|BIT_RXI); 
+	rc_set_time_out(20);
+	rc_write_byte(REG_RC500_COMMAND,RC500_CMD_AUTHENT2);      
+	//
+	rc_wait_irq();
+	if(rc_read_byte(REG_RC500_ERROR_FLAG)){
+		 #ifdef _RC_OP_LOCK_
+	   os_unlock();
+		 #endif
+		 return (uint8_t)5;
+		 }
+	if(rc_read_byte(REG_RC500_CONTROL)&BIT_CRYPTO1ON){
+		 #ifdef _RC_OP_LOCK_
+	   os_unlock();
+		 #endif
+		 return 0;   //ok
+		 }
+	//
+	#ifdef _RC_OP_LOCK_
+	os_unlock();
+	#endif
+	return (uint8_t)6;
+}
+
+
+
+uint8_t rc_auth2(uint8_t keyAB,uint8_t sector)
+{
+	uint8_t  keycoded[12];
+	uint8_t  i,ch1,ch2;
+	 
+	#ifdef _RC_OP_LOCK_
+	os_lock();   
+	#endif
+	//load key   
+	for(i=0;i<6;i++){
+	  ch1 = ((uint8_t)gRc500Key[i])&0x0f;
+	  ch2 = ch1*16;
+	  keycoded[2*i+1] = ch1 | ((uint8_t)(~ch2)&0xf0);
+	
+	  ch1 = (uint8_t)gRc500Key[i]&(uint8_t)0xf0;
+	  ch2 = (uint8_t)ch1/16;
+	  keycoded[2*i] = ((uint8_t)~ch1&0xf0) | ch2;
+	  }
+	
+	rc_idle();                    // terminate probably running command
+	rc_flush_fifo();              // flush FIFO buffer
+	rc_write_data_n(keycoded,12);
+	
+	rc_clr_irq();
+	rc_write_byte(REG_RC500_INTERRUPT_EN,(uint8_t)BIT_SETI|BIT_IDLEI|BIT_TIMERI); //允许IDLE中断,超时中断
+	rc_set_time_out(20);                               //1.5ms
+	rc_write_byte(REG_RC500_COMMAND,RC500_CMD_LOADKEY);      
+	
+	rc_wait_irq();
+	if(rc_read_byte(REG_RC500_INTERRUPT_RQ) & BIT_TIMERI){
+		 #ifdef _RC_OP_LOCK_
+	   os_unlock();
+		 #endif
+		 return (uint8_t)1; 
+		 }
+	//if(rc_read_byte(REG_RC500_ERROR_FLAG)){
+	//	 #ifdef _RC_OP_LOCK_
+	//   os_unlock();
+	//	 #endif
+	//	 return (uint8_t)2;
+	//	 }
+	
+	//auth1--------------------------------------------------------
+	rc_idle();
+	rc_flush_fifo();
+	//
+	rc_write_data(keyAB);
+	rc_write_data(sector*4);
+	rc_write_data(gThisCardSnr[0]);
+	rc_write_data(gThisCardSnr[1]);
+	rc_write_data(gThisCardSnr[2]);
+	rc_write_data(gThisCardSnr[3]);
+	//
+	rc_clr_irq();
+	//允许超时中断,接收中断，IDLE
+	rc_write_byte(REG_RC500_INTERRUPT_EN,(uint8_t)BIT_SETI|BIT_IDLEI|BIT_TIMERI|BIT_RXI); 
+	rc_set_time_out(20);
+	rc_write_byte(REG_RC500_COMMAND,RC500_CMD_AUTHENT1);      
+	//
+	rc_wait_irq();
+	if(!(rc_read_byte(REG_RC500_INTERRUPT_RQ)&BIT_IDLEI)){
+		 #ifdef _RC_OP_LOCK_
+	   os_unlock();
+		 #endif
+		 return (uint8_t)3;
+		 } 
+	if(rc_read_byte(REG_RC500_SECONDARY_STATUS) & 0x07){
+		 #ifdef _RC_OP_LOCK_
+	   os_unlock();
+		 #endif
+		 return (uint8_t)4;       // Check RxLastBits for error
+		 }
+	
+	//auth2-----------------------------------------------------------------
+	rc_idle();
+	rc_clr_irq();
+	//
+	rc_write_byte(REG_RC500_INTERRUPT_EN,(uint8_t)BIT_SETI|BIT_IDLEI|BIT_TIMERI|BIT_RXI); 
+	rc_set_time_out(20);
+	rc_write_byte(REG_RC500_COMMAND,RC500_CMD_AUTHENT2);      
+	//
+	rc_wait_irq();
+	if(rc_read_byte(REG_RC500_ERROR_FLAG)){
+		 #ifdef _RC_OP_LOCK_
+	   os_unlock();
+		 #endif
+		 return (uint8_t)5;
+		 }
+	if(rc_read_byte(REG_RC500_CONTROL)&BIT_CRYPTO1ON){
+		 #ifdef _RC_OP_LOCK_
+	   os_unlock();
+		 #endif
+		 return 0;   //ok
+		 }
+	//
+	#ifdef _RC_OP_LOCK_
+	os_unlock();
+	#endif
+	return (uint8_t)6;
+}
+
+
+
+/*==============================================================================================
+函数：rc_halta
+功能：
+================================================================================================*/
+//#define _DEBUG_RC_HALT_
+uint8_t rc_halta(void)
+{
+	uint8_t buf[2],status;
+	
+	#ifdef _RC_OP_LOCK_
+	os_lock();
+	#endif
+	rc_not_in_anticoll();
+	rc_crc_enable();
+	rc_oddpari_enable();
+	rc_idle();
+	rc_set_bitframe(0);
+	//
+	buf[0] = PICC_HALT;
+	buf[1] = 0x00;
+	rc_set_time_out(HALT_TIME_OUT);
+	status = rc_send_cmd(buf,2,NORMAL_IRQ_MASK);
+	if((status==0)||(status==STATUS_IO_TIMEOUT)){
+		 #ifdef _RC_OP_LOCK_
+	   os_unlock();
+		 #endif
+		 return 0;
+		 }
+	
+	#ifdef _DEBUG_RC_HALT_
+		printf("\x0d\x0a err halt: status=%02X",(uint8_t)status);
+	#endif
+	
+	#ifdef _RC_OP_LOCK_
+	os_unlock();
+	#endif
+	return 1;	
+}	
+
+
+/*==============================================================================================
+函数：rc_select_op_type
+功能：
+================================================================================================*/
+uint8_t rc_select_op_type(uint8_t op_type)
+{
+	switch(op_type){	
+	  case ISO14443A_M1_TYPE:
+	  	   rc_iso14443_typea_init();
+	  	   rc_select_mifare_auth();
+	       return 0;
+	  case ISO14443A_SH_TYPE:
+	  	   rc_iso14443_typea_init();
+	  	   rc_select_sh_auth(); 
+	       return 0;
+	  case ISO14443B_M4_TYPE:
+	  	   rc_iso14443_typeb_init();
+	       return 0;
+	  case ISO15693_ICODE1_TYPE:
+	  	   rc_iso15693_icode1_init();
+	       return 0;
+	  default:	
+	  	   break;
+	  }
+	return (uint8_t)-1;
+}	
+
+//2013/8/27 9:34:09
+/*==============================================================================================
+函数：
+功能：
+================================================================================================*/
+void rc_set_speed(uint8_t tx_speed,uint8_t rx_speed)
+{
+	uint8_t ch14,ch19,ch1a;
+	//
+	rx_speed = rx_speed;
+	ch14 = rc_read_byte(REG_RC500_CODER_CONTROL)&0x07;
+	ch19 = rc_read_byte(REG_RC500_RX_CONTROL1)&0x1f;
+	ch1a = rc_read_byte(REG_RC500_DECODER_CONTROL)&0xfe;
+	switch(tx_speed){
+		case 0: //106
+		case 1:
+			   rc_write_byte(REG_RC500_CODER_CONTROL,ch14|(3<<3));//0x14h
+			   break;
+		case 2: //212
+			   rc_write_byte(REG_RC500_CODER_CONTROL,ch14|(2<<3));
+			   break;
+		case 4: //424
+			   rc_write_byte(REG_RC500_CODER_CONTROL,ch14|(1<<3));
+			   break;
+		case 8: //848
+			   rc_write_byte(REG_RC500_CODER_CONTROL,ch14);
+			   break;
+		default:
+			   break;			
+		}
+	switch(rx_speed){
+		case 0:  //106
+		case 1:
+			   rc_write_byte(REG_RC500_RX_CONTROL1,ch19|0x60);//0x19h
+			   rc_write_byte(REG_RC500_DECODER_CONTROL,ch1a);//0x1ah
+			   break;
+		case 2: //212
+			   rc_write_byte(REG_RC500_RX_CONTROL1,ch19|0x40);//0x19h
+			   rc_write_byte(REG_RC500_DECODER_CONTROL,ch1a|0x01);//0x1ah
+			   break;
+		case 4: //424
+			   rc_write_byte(REG_RC500_RX_CONTROL1,ch19|0x20);//0x19h
+			   rc_write_byte(REG_RC500_DECODER_CONTROL,ch1a|0x01);//0x1ah
+			   break;
+		case 8: //848
+			   rc_write_byte(REG_RC500_RX_CONTROL1,ch19|0x00);//0x19h
+			   rc_write_byte(REG_RC500_DECODER_CONTROL,ch1a|0x01);//0x1ah
+			   break;
+		default:
+			   break;			
+		}
+	//
+	return;	
+}	
+
+
+/*==============================================================================================
+函数：
+功能：
+================================================================================================*/
+uint8_t rc_pps(uint8_t cid,uint8_t pps1,uint8_t *ppss)
+{
+	uint8_t buf[3],status;
+	uint8_t rece_bits;
+	//
+	rc_not_in_anticoll();
+	rc_crc_enable();
+	rc_oddpari_enable();
+	rc_idle();
+	rc_set_bitframe(0);
+	//
+	buf[0] = 0xd0|(cid&0x0f); //PPSS
+	buf[1] = 0x11;  //PPS0
+	buf[2] = pps1;
+	rc_set_time_out(WRITE2_TIME_OUT);
+	status = rc_send_cmd(buf,3,NORMAL_IRQ_MASK);
+	if(status!=0) return status;
+	rece_bits = rc_rece_bits();
+	if(rece_bits != 8) return 20;
+	rc_read_data_n(buf,1);
+	*ppss = buf[0];	
+	//
+	return 0;	
+}
+
+//end of file
+#endif

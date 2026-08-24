@@ -1,0 +1,86 @@
+一、新读写器的
+Err:send cmd,errflag=FF
+ Err:request 1,status=06
+spi.c(249):spidev_reg_write: spidev_reg_write reg = 0x11, val = 0x58
+try  82 
+spi.c(237):spidev_reg_read: spidev_reg_read reg = 0x14, val = 0xff
+spi.c(237):spidev_reg_read: spidev_reg_read reg = 0x19, val = 0xff
+spi.c(237):spidev_reg_read: spidev_reg_read reg = 0x1a, val = 0xff
+spi.c(249):spidev_reg_write: spidev_reg_write reg = 0x14, val = 0x1f
+spi.c(249):spidev_reg_write: spidev_reg_write reg = 0x19, val = 0x7f
+spi.c(249):spidev_reg_write: spidev_reg_write reg = 0x1a, val = 0xfe
+spi.c(237):spidev_reg_read: spidev_reg_read reg = 0x22, val = 0xff
+spi.c(249):spidev_reg_write: spidev_reg_write reg = 0x22, val = 0xf3
+spi.c(237):spidev_reg_read: spidev_reg_read reg = 0x22, val = 0xff
+spi.c(249):spidev_reg_write: spidev_reg_write reg = 0x22, val = 0xff
+spi.c(237):spidev_reg_read: spidev_reg_read reg = 0x09, val = 0xff
+spi.c(249):spidev_reg_write: spidev_reg_write reg = 0x09, val = 0xf7
+spi.c(237):spidev_reg_read: spidev_reg_read reg = 0x1a, val = 0xff
+spi.c(249):spidev_reg_write: spidev_reg_write reg = 0x1a, val = 0xdf
+spi.c(249):spidev_reg_write: spidev_reg_write reg = 0x0f, val = 0x07
+spi.c(237):spidev_reg_read: spidev_reg_read reg = 0x11, val = 0xff
+spi.c(249):spidev_reg_write: spidev_reg_write reg = 0x11, val = 0xff
+spi.c(249):spidev_reg_write: spidev_reg_write reg = 0x01, val = 0x00
+spi.c(249):spidev_reg_write: spidev_reg_write reg = 0x2a, val = 0x0b
+spi.c(249):spidev_reg_write: spidev_reg_write reg = 0x2b, val = 0x06
+spi.c(249):spidev_reg_write: spidev_reg_write reg = 0x2c, val = 0x28
+spi.c(249):spidev_reg_write: spidev_reg_write reg = 0x01, val = 0x00
+spi.c(249):spidev_reg_write: spidev_reg_write reg = 0x06, val = 0x7f
+spi.c(249):spidev_reg_write: spidev_reg_write reg = 0x07, val = 0x7f
+spi.c(237):spidev_reg_read: spidev_reg_read reg = 0x09, val = 0xff
+spi.c(249):spidev_reg_write: spidev_reg_write reg = 0x09, val = 0xff
+spi.c(249):spidev_reg_write: spidev_reg_write reg = 0x06, val = 0xa8
+spi.c(274):spidev_fifo_write: spidev_fifo_write len=1, data= 26
+spi.c(249):spidev_reg_write: spidev_reg_write reg = 0x01, val = 0x1e
+spi.c(237):spidev_reg_read: spidev_reg_read reg = 0x03, val = 0xff
+spi.c(237):spidev_reg_read: spidev_reg_read reg = 0x09, val = 0xff
+spi.c(249):spidev_reg_write: spidev_reg_write reg = 0x09, val = 0xff
+spi.c(237):spidev_reg_read: spidev_reg_read reg = 0x07, val = 0xff
+spi.c(237):spidev_reg_read: spidev_reg_read reg = 0x0a, val = 0xff
+
+
+
+二、3018
+==========================have card 19 --4400 
+spi.c(249):spidev_reg_write: spidev_reg_write reg = 0x11, val = 0x58
+try  19 
+spi.c(237):spidev_reg_read: spidev_reg_read reg = 0x14, val = 0x19
+spi.c(237):spidev_reg_read: spidev_reg_read reg = 0x19, val = 0x73
+spi.c(237):spidev_reg_read: spidev_reg_read reg = 0x1a, val = 0x08
+spi.c(249):spidev_reg_write: spidev_reg_write reg = 0x14, val = 0x19
+spi.c(249):spidev_reg_write: spidev_reg_write reg = 0x19, val = 0x73
+spi.c(249):spidev_reg_write: spidev_reg_write reg = 0x1a, val = 0x08
+spi.c(237):spidev_reg_read: spidev_reg_read reg = 0x22, val = 0x03
+spi.c(249):spidev_reg_write: spidev_reg_write reg = 0x22, val = 0x03
+spi.c(237):spidev_reg_read: spidev_reg_read reg = 0x22, val = 0x03
+spi.c(249):spidev_reg_write: spidev_reg_write reg = 0x22, val = 0x03
+spi.c(237):spidev_reg_read: spidev_reg_read reg = 0x09, val = 0x00
+spi.c(249):spidev_reg_write: spidev_reg_write reg = 0x09, val = 0x00
+spi.c(237):spidev_reg_read: spidev_reg_read reg = 0x1a, val = 0x08
+spi.c(249):spidev_reg_write: spidev_reg_write reg = 0x1a, val = 0x08
+spi.c(249):spidev_reg_write: spidev_reg_write reg = 0x0f, val = 0x07
+spi.c(237):spidev_reg_read: spidev_reg_read reg = 0x11, val = 0x58
+spi.c(249):spidev_reg_write: spidev_reg_write reg = 0x11, val = 0x5b
+spi.c(249):spidev_reg_write: spidev_reg_write reg = 0x01, val = 0x00
+spi.c(249):spidev_reg_write: spidev_reg_write reg = 0x2a, val = 0x0b
+spi.c(249):spidev_reg_write: spidev_reg_write reg = 0x2b, val = 0x06
+spi.c(249):spidev_reg_write: spidev_reg_write reg = 0x2c, val = 0x28
+spi.c(249):spidev_reg_write: spidev_reg_write reg = 0x01, val = 0x00
+spi.c(249):spidev_reg_write: spidev_reg_write reg = 0x06, val = 0x7f
+spi.c(249):spidev_reg_write: spidev_reg_write reg = 0x07, val = 0x7f
+spi.c(237):spidev_reg_read: spidev_reg_read reg = 0x09, val = 0x00
+spi.c(249):spidev_reg_write: spidev_reg_write reg = 0x09, val = 0x01
+spi.c(249):spidev_reg_write: spidev_reg_write reg = 0x06, val = 0xa8
+spi.c(274):spidev_fifo_write: spidev_fifo_write len=1, data= 26
+spi.c(249):spidev_reg_write: spidev_reg_write reg = 0x01, val = 0x1e
+spi.c(237):spidev_reg_read: spidev_reg_read reg = 0x03, val = 0x75
+spi.c(237):spidev_reg_read: spidev_reg_read reg = 0x03, val = 0x0d
+spi.c(237):spidev_reg_read: spidev_reg_read reg = 0x09, val = 0x00
+spi.c(249):spidev_reg_write: spidev_reg_write reg = 0x09, val = 0x04
+spi.c(237):spidev_reg_read: spidev_reg_read reg = 0x07, val = 0x1d
+spi.c(237):spidev_reg_read: spidev_reg_read reg = 0x0a, val = 0x40
+spi.c(237):spidev_reg_read: spidev_reg_read reg = 0x04, val = 0x02
+spi.c(237):spidev_reg_read: spidev_reg_read reg = 0x05, val = 0x60
+spi.c(261):spidev_fifo_read: spidev_fifo_read len=2, val= 44 00
+
+==========================have card 20 --4400 

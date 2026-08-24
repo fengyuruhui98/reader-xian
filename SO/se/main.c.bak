@@ -1,0 +1,53 @@
+/*
+ * RC531 testing utility (using spidev driver)
+ *
+ * Copyright (c) 2007  MontaVista Software, Inc.
+ * Copyright (c) 2007  Anton Vorontsov <avorontsov@ru.mvista.com>
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License.
+ *
+ * Cross-compile with cross-gcc -I/path/to/cross-kernel/include
+ */
+
+#include <stdint.h>
+#include <unistd.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <getopt.h>
+#include <fcntl.h>
+#include <sys/ioctl.h>
+#include <linux/types.h>
+#include <linux/spi/spidev.h>
+
+#include <string.h>
+#include "spi.h"
+
+
+
+int main(int argc, char *argv[])
+{
+int ret = 0;
+int spinum = 0;
+int speed = 200*1000; 
+char* dev   = NULL;
+char* baudrate   = NULL;
+
+    ret = SPI_Open();
+    
+    baudrate   = argv[1];
+    if (baudrate!=NULL)
+    {
+    	speed = atoi(baudrate);
+    }
+    spi_set_speed(speed);
+	printf("set_speed\n");
+	
+	spi_set_mode(ret);
+	printf("set mode\n");
+	fm_se_get_version();
+	
+	SPI_Close();
+	
+}

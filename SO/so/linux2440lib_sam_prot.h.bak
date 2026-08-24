@@ -1,0 +1,70 @@
+//sam_prot.h
+
+#ifndef _SAM_PROT_H_
+#define _SAM_PROT_H_
+//start of file
+
+#define STX   0x02
+#define ETX   0x03
+#define DLE   0x10
+#define ACK   0x06
+#define NAK   0x15 
+
+//预定义-----------------------------------------------------------------------
+#define SAM_PROT_WAIT_STX      0
+#define SAM_PROT_WAIT_LEN      1
+#define SAM_PROT_WAIT_DATA     2
+#define SAM_PROT_WAIT_ETX      3
+#define SAM_PROT_WAIT_LRC      4
+#define SAM_PROT_WAIT_ACK      5
+#define SAM_PROT_WAIT_PROCESS  6
+#define SAM_PROT_ERR           0x7f
+
+#define SAM_PROT_MAX_LEN       192
+
+#define SAM_PROT_SUB_STATE_WAIT_DLE   0
+#define SAM_PROT_SUB_STATE_WAIT_DATA  1
+
+#define SAM_UART_INDEX     UART3_INDEX
+
+//发送状态
+#define SAM_SEND_STATE_OK       0
+#define SAM_SEND_STATE_S0       1
+#define SAM_SEND_STATE_S0_SEND  2
+#define SAM_SEND_STATE_S0_WAIT  3
+#define SAM_SEND_STATE_S1       4
+#define SAM_SEND_STATE_S1_SEND  5
+#define SAM_SEND_STATE_S1_WAIT  6
+#define SAM_SEND_STATE_S2       7
+#define SAM_SEND_STATE_S2_SEND  8
+#define SAM_SEND_STATE_S2_WAIT  9
+#define SAM_SEND_STATE_ERR      10
+
+#define SAM_WAIT_ACK_TIME      50  //在50毫秒内必须应答
+#define SAM_CHAR_INTERVAL      50  //字符之间间隔不得超过50ms
+
+extern UBYTE   bpgSamReceBlock[SAM_PROT_MAX_LEN+1];
+extern UBYTE   bgSamReceLen;
+extern UBYTE   bgSamRecePtr;
+extern UBYTE   bgSamReceState,bgSamReceSubState;
+extern UBYTE   bgSamLrc;
+
+extern UBYTE  bpgSamSendBlock[SAM_PROT_MAX_LEN+1];
+extern UBYTE  bgSamSendLen;
+extern UBYTE  bgSamSendState;
+
+
+//函数定义-----------------------------------------------------------------------------
+void sam_prot_rece_reset(void);
+void sam_prot_send_reset(void);
+void sam_prot_gen_block(UBYTE *inbuf,UBYTE inbytes,UBYTE *outbuf,UWORD *outbytes);
+void sam_push_byte(UBYTE inbyte);
+void sam_prot_send_process(void);
+void sam_prot_rece_process(void);
+void sam_prot_start_send(UBYTE *inbuf,UBYTE inbytes);
+UBYTE sam_prot_rece_ready(void);
+void  sam_prot_rece_get(UBYTE *outbuf,UBYTE *outbytes);
+
+
+//end of file
+#endif

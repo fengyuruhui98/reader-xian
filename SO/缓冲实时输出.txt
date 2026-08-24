@@ -1,0 +1,106 @@
+标准输出(stdout)的缓冲原理
+
+缓冲类型分为三种：
+
+
+
+无缓冲
+
+行缓冲
+
+全缓冲
+
+
+
+
+stderr默认缓冲就是无缓冲。
+而stdout的缓冲类型与输出介质有关：
+
+
+
+屏幕或者终端：行缓冲
+
+重定向文件、管道：全缓冲
+
+
+
+于是，上面的现象就可以解释了，重定向到out文件时，是全缓冲，还没有写到文件中。如果把Sleep函数去掉，程序正常结束后，还是会将缓冲区的内容写入到out文件中。经过试验发现，正常结束程序（return、exit）时，操作系统会将缓冲中的数据写入到文件中；非正常结束程序（ctrl+c，kill）时，操作系统则不会讲缓冲中的数据写入到文件中。
+
+
+
+
+
+解决方法
+
+
+
+
+显示调用fflush
+
+
+这种方法的缺点有两个：效率、使用不方便。
+
+
+
+
+c函数setvbuf
+
+头文件：stdio.h 
+
+setvbuf的函数声明：
+
+
+void setbuf(FILE *stream, char *buf);
+void setbuffer(FILE *stream, char *buf, size_t size);
+void setlinebuf(FILE *stream);
+int setvbuf(FILE *stream, char *buf, int mode, size_t size);1234
+
+函数功能：设置标准输入输出的缓冲类型。 
+
+例如，我将程序修改为：
+
+#include <stdio.h>
+#include <unistd.h>
+int main()
+{
+    setvbuf(stdout, NULL, _IOLBF, 0); //设置stdout的缓冲类型为行缓冲
+    for(int i = 0; i < 10;i++)
+        printf("hello world\n");
+
+     sleep(1000000);
+     return 0;
+}
+123456789101112
+
+修改后的程序的stdout不论是屏幕输出还是重定向文件、管道都是行缓冲，遇到’\n’就会输出。
+
+
+
+
+
+stdbuf命令
+
+
+
+前面两种方法都是修改程序，如果觉得不想改程序，还可以使用stdbuff指令，例如：
+
+
+
+[liu.x@localhost test]$ stdbuf -oL ./test>>out1
+
+
+其中的参数，o表示输出流，L表示行缓冲。 这样主要遇到换行符，就会将缓冲输出到指定对象。
+
+
+
+
+结语
+
+stdout默认屏幕为行缓冲，重定向文件和重定向管道为全缓冲。 
+了解了三种缓冲模式，就可以根据需求任意实现。 
+但是，缓冲的好处是效率，如何平衡，自己权衡。
+--------------------- 
+作者：Frank_Liuxing 
+来源：CSDN 
+原文：https://blog.csdn.net/frank_liuxing/article/details/54017813 
+版权声明：本文为博主原创文章，转载请附上博文链接！

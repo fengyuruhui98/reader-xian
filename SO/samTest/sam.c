@@ -1,0 +1,253 @@
+#include <stdio.h>
+#include <string.h>
+#include <sys/time.h>
+
+#include "sam.h"
+#include "linux2440lib.h"
+
+//把16进制数据0xdd 0xff 发送到/dev/ttymxc0里去
+// echo -e -n "\xdd\xff" > /dev/ttymxc0
+//-e：表示便能“\”反斜杠，“\x”表示后边的数据为16进制，更多细节 man echo
+//-n：表示不添加换行符“0x0A”
+
+int TestSAM(int index, int initBaud, int maxBaud)
+{
+unsigned char chret, retry, i, j;
+unsigned char sambuf[257]; 
+unsigned char sambytes;
+unsigned char buf[257];
+unsigned char inlen;
+int  ret;
+int startUsec[200], endUsec;
+struct timeval tv1,tv2;
+struct timezone tz1,tz2;
+
+	{
+		if(sam_select(index) != 0)
+		{
+			printf("select index %d sam error \n", index);
+			return 0;
+		}
+		//
+		if(initBaud == 9600)
+			sam_set(index, SAM_ETU_372, 4);
+		else
+			sam_set(index, SAM_ETU_93, 4);
+				
+		for(retry = 0; retry < 3; retry++)
+		{
+		  	if((chret = sam_atr(index, sambuf, &sambytes)) != 0)
+		  	{
+		  		printf("%d sam atr return %02x\n", index, chret);
+		    	continue;
+		    }
+		    printf("	atr:");
+		    for(j = 0; j < sambytes; j++)
+		    	printf("%02x", sambuf[j]);
+		    printf("\n");
+		    if(maxBaud != initBaud)
+		   	{
+		   		printf("	need pts\n");
+		   		if(maxBaud == 38400)
+		   		{
+		    		ret = sam_pts(index, 0x13);		//38400
+				    sam_set(index, SAM_ETU_93, 4);	//38400
+		    	}else if(maxBaud == 115200)
+		    	{
+		    		ret = sam_pts(index, 0x18);
+				    sam_set(index, SAM_ETU_32, 4);	//115200
+		    	}else if(maxBaud == 57600)
+		    	{
+		    		ret = sam_pts(index, 0x16);
+				    sam_set(index, SAM_ETU_57600, 4);	//57600
+		    	}else
+		    		printf("un-support baud. so using initial baud %d running\n", initBaud);
+			    printf("sam pts return %d\n", ret);
+			}
+		    //ret = sam_pps0(i, 0x13, sambuf, &sambytes);
+		    //printf("sam pts return %d bytes %d\n", ret, sambytes);
+		    //for(j = 0; j < sambytes; j++)
+		    //	printf("%02x", sambuf[j]);
+		    //printf("\n");
+		    //sam_set(i, SAM_ETU_57600, 4);
+		    sleep(1);
+		    //连续取随机数
+		    for(i = 0; i < 100; i++)
+		    {
+		    	gettimeofday(&tv1,&tz1);
+			 	memcpy(buf,"\x00\x84\x00\x00\x08", 5);
+			  	inlen = 5;
+		  		if((chret = sam_apdu(index, buf, inlen, sambuf, &sambytes, 0, 0)) != 0)
+			  	{
+			  		printf("sam apdu get random failure .return %02x\n", chret);
+				    break;
+		    	}	
+			  	if((sambuf[sambytes - 2] != 0x90) || (sambuf[sambytes - 1] != 0x00))
+			  	{
+			  		printf("get random status un-9000 and len is %02x status: %02x %02x\n", sambytes, sambuf[0], sambuf[1]);
+				    continue;
+		  		}
+		  		gettimeofday(&tv2, &tz2);
+		  		startUsec[i] = ((tv2.tv_sec - tv1.tv_sec) * 1000) + (tv2.tv_usec - tv1.tv_usec)/1000;
+		  	}
+		  	if( i == 100)
+		  	{
+		  		endUsec = 0;
+		  		for(j = 0; j < 100; j++)
+		  			endUsec += startUsec[j];
+		  		endUsec = endUsec/ 100;
+		  		printf("sam get apdu random successfully. 100 times per-msecond %dms\n", endUsec);
+		  	}
+			break;
+		}
+	}
+}
+
+int TestAllSAM(int *initBaud)
+{
+unsigned char chret, retry, i, j, k;
+unsigned char sambuf[257]; 
+unsigned char sambytes;
+unsigned char buf[257];
+unsigned char inlen;
+int  ret;
+int startUsec[200], endUsec;
+struct timeval tv1,tv2;
+struct timezone tz1,tz2;
+
+	for(i = 0; i < 8; i++)
+	{
+		if(sam_select(i) != 0)
+		{
+			printf("select index %d sam error \n", i);
+			return 0;
+		}
+		//
+		if(initBaud[i] == 9600)
+			sam_set(i, SAM_ETU_372, 4);
+		else
+			sam_set(i, SAM_ETU_93, 4);
+				
+		for(retry = 0; retry < 3; retry++)
+		{
+		  	if((chret = sam_atr(i, sambuf, &sambytes)) != 0)
+		  	{
+		  		printf("%d sam atr return %02x\n", index, chret);
+		    	continue;
+		    }
+		    printf("	SAM Index %d atr:", i);
+		    for(j = 0; j < sambytes; j++)
+		    	printf("%02x", sambuf[j]);
+		    printf("\n");
+		    break;
+		}
+		sleep(1);
+	}
+	printf("All sam atr finished\n\n\n");
+	for(k = 0; k < 8; k++)
+	{
+		    //连续取随机数
+		    for(i = 0; i < 100; i++)
+		    {
+		    	gettimeofday(&tv1,&tz1);
+			 	memcpy(buf,"\x00\x84\x00\x00\x08", 5);
+			  	inlen = 5;
+		  		if((chret = sam_apdu(k, buf, inlen, sambuf, &sambytes, 0, 0)) != 0)
+			  	{
+			  		printf("	SAM Index %d sam apdu get random failure .return %02x\n", k, chret);
+				    break;
+		    	}	
+			  	if((sambuf[sambytes - 2] != 0x90) || (sambuf[sambytes - 1] != 0x00))
+			  	{
+			  		printf("SAM Index %d get random(%d) status un-9000 and len is %02x status: %02x %02x\n", k, i, sambytes, sambuf[0], sambuf[1]);
+				    continue;
+		  		}
+		  		gettimeofday(&tv2, &tz2);
+		  		startUsec[i] = ((tv2.tv_sec - tv1.tv_sec) * 1000) + (tv2.tv_usec - tv1.tv_usec)/1000;
+		  	}
+		  	sleep(1);
+		  	if( i == 100)
+		  	{
+		  		endUsec = 0;
+		  		for(j = 0; j < 100; j++)
+		  			endUsec += startUsec[j];
+		  		endUsec = endUsec/ 100;
+		  		printf("	SAM Index %d sam get apdu random successfully. 100 times per-msecond %dms\n", k, endUsec);
+		  	}
+	}
+}
+
+int TestSAMApdu(int *initBaud)
+{
+unsigned char chret, retry, i, j, k;
+unsigned char sambuf[257]; 
+unsigned char sambytes;
+unsigned char buf[257];
+unsigned char inlen;
+int  ret;
+int startUsec[200], endUsec;
+struct timeval tv1,tv2;
+struct timezone tz1,tz2;
+
+	sam_select(0);
+//	for(i = 0; i < 8; i++)
+//	{
+//		if(sam_select(i) != 0)
+//		{
+//			printf("select index %d sam error \n", i);
+//			return 0;
+//		}
+//		//
+//		if(initBaud[i] == 9600)
+//			sam_set(i, SAM_ETU_372, 4);
+//		else
+//			sam_set(i, SAM_ETU_93, 4);
+//				
+//		for(retry = 0; retry < 3; retry++)
+//		{
+//		  	if((chret = sam_atr(i, sambuf, &sambytes)) != 0)
+//		  	{
+//		  		printf("%d sam atr return %02x\n", index, chret);
+//		    	continue;
+//		    }
+//		    printf("	SAM Index %d atr:", i);
+//		    for(j = 0; j < sambytes; j++)
+//		    	printf("%02x", sambuf[j]);
+//		    printf("\n");
+//		    break;
+//		}
+//		sleep(1);
+//	}
+	printf("test sam apdu finished\n\n\n");
+	for(k = 0; k < 8; k++)
+	{
+		    //连续取随机数
+		    for(i = 0; i < 100; i++)
+		    {
+		    	gettimeofday(&tv1,&tz1);
+			 	memcpy(buf,"\x00\x84\x00\x00\x08", 5);
+			  	inlen = 5;
+		  		if((chret = sam_apdu(k, buf, inlen, sambuf, &sambytes, 0, 0)) != 0)
+			  	{
+			  		printf("	SAM Index %d sam apdu get random failure .return %02x\n", k, chret);
+				    break;
+		    	}	
+			  	if((sambuf[sambytes - 2] != 0x90) || (sambuf[sambytes - 1] != 0x00))
+			  	{
+			  		printf("SAM Index %d get random(%d) status un-9000 and len is %02x status: %02x %02x\n", k, i, sambytes, sambuf[0], sambuf[1]);
+				    continue;
+		  		}
+		  		gettimeofday(&tv2, &tz2);
+		  		startUsec[i] = ((tv2.tv_sec - tv1.tv_sec) * 1000) + (tv2.tv_usec - tv1.tv_usec)/1000;
+		  	}
+		  	sleep(1);
+		  	if( i == 100)
+		  	{
+		  		endUsec = 0;
+		  		for(j = 0; j < 100; j++)
+		  			endUsec += startUsec[j];
+		  		endUsec = endUsec/ 100;
+		  		printf("	SAM Index %d sam get apdu random successfully. 100 times per-msecond %dms\n", k, endUsec);
+		  	}
+	}
+}

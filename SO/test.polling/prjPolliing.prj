@@ -1,0 +1,36 @@
+[Project ID]
+Signature=UE Proj: v.1
+[Open Files]
+Open File0=D:\embed-linux-reader\4418\libso\test.polling\Makefile
+Open File Pos0=105
+Open File Line0=0
+Open File Window Pos0=0,1,-1,-1,-8,-31,26,26,899,454
+Open File1=D:\embed-linux-reader\4418\libso\test.polling\main.c
+Open File Pos1=1148
+Open File Line1=835
+Open File Window Pos1=0,1,-1,-1,-8,-31,52,52,929,484
+Open File2=D:\embed-linux-reader\4418\libso\test.polling\linux2440lib.h
+Open File Pos2=379
+Open File Line2=0
+Open File Window Pos2=0,1,-1,-1,-8,-31,78,78,955,510
+Open File3=D:\embed-linux-reader\4418\libso\test.polling\polling.c
+Open File Pos3=4323
+Open File Line3=5605
+活动文件索引=3
+Open File Window Pos3=2,3,-1,-1,-8,-31,104,104,981,536
+Open File4=
+活动文件显示模式=3
+[工程信息]
+使用相对目录=1
+相对到工程文件=1
+工程开始=E307050001000D000E0021001500000041
+包括子目录=1
+工程标记文件=
+工程字词文件=
+Filter=
+创建标记文件=0
+工作时间=13623
+[Files]
+0=main.c
+1=Makefile
+2=linux2440lib.h

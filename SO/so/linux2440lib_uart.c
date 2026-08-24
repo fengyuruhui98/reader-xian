@@ -1,0 +1,311 @@
+//linux2440lib_uart.c
+
+#ifndef _LINUX2440LIB_UART_C_
+#define _LINUX2440LIB_UART_C_
+//start of file
+
+int gUartHandle[MAX_UART_INDEX];
+//
+CYCLE_BUF gUartReceCbuf[MAX_UART_INDEX];
+UBYTE bpgUartReceBuf[MAX_UART_INDEX][256+1];
+//
+
+/*====================================================================================
+函数：
+功能：
+======================================================================================*/
+void uart_init(void)
+{
+int i;
+	//
+	for(i=0;i<MAX_UART_INDEX;i++){
+		gUartHandle[i] = -1;
+		cbuf_init(&gUartReceCbuf[i],256,bpgUartReceBuf[i]);
+	}
+	//	
+	return;
+}
+
+/*====================================================================================
+函数：
+功能：
+======================================================================================*/
+int baud_convert(long baud_rate)
+{
+	switch(baud_rate){
+		case 2400:
+			   return B2400;
+		case 4800:
+			   return B4800;
+		case 9600:
+			   return B9600;
+		case 19200:
+			   return B19200;
+		case 38400:
+			   return B38400;
+		case 57600:
+			   return B57600;
+		case 115200:
+			   return B115200;
+		case 230400:
+			   return B230400;
+		case 460800:
+				return B460800;
+		case 921600:
+				return B921600;
+		default:
+			   break;
+	  }
+	return B9600;
+}
+
+
+/*====================================================================================
+函数：
+功能：
+======================================================================================*/
+int uart_open(int uart_index,int baudrate)
+{
+char dev_name[64];
+int fd;
+struct termios newtio;
+//int rtn;
+//
+	if(uart_index >= MAX_UART_INDEX) return -1;
+	if(gUartHandle[uart_index] != -1){
+		close(gUartHandle[uart_index]);
+		gUartHandle[uart_index] = -1;
+	}
+	sprintf(dev_name,"/dev/ttyAMA%d",uart_index);
+	//
+	fd = open(dev_name,O_RDWR|O_NOCTTY|O_NONBLOCK|O_NDELAY);
+	if(fd == -1){
+		printf("\nErr:Uart %s failure", dev_name);
+		sprintf(dev_name, "/dev/ttymxc%d", uart_index);
+		fd = open(dev_name, O_RDWR|O_NOCTTY|O_NONBLOCK|O_NDELAY);
+		if(fd == -1)
+		{
+			printf("ERR: UART %s failure\n", dev_name);
+			return -1;
+		}
+	}
+	printf("\nOK:Uart %s\n", dev_name);	
+	gUartHandle[uart_index] = fd;
+	//
+	//set the port to raw I/O
+	tcgetattr(fd,&newtio);
+	newtio.c_cflag = (CS8|CREAD|CLOCAL);      //8位
+	newtio.c_iflag = 0;
+	newtio.c_oflag = 0;
+	newtio.c_lflag = 0;
+	newtio.c_cc[VINTR]    = 0;
+	newtio.c_cc[VQUIT]    = 0;
+	newtio.c_cc[VERASE]   = 0;
+	newtio.c_cc[VKILL]    = 0;
+	newtio.c_cc[VEOF]     = 4;
+	newtio.c_cc[VTIME]    = 0;
+	newtio.c_cc[VMIN]     = 1;
+	newtio.c_cc[VSWTC]    = 0;
+	newtio.c_cc[VSTART]   = 0;
+	newtio.c_cc[VSTOP]    = 0;
+	newtio.c_cc[VSUSP]    = 0;
+	newtio.c_cc[VEOL]     = 0;
+	newtio.c_cc[VREPRINT] = 0;
+	newtio.c_cc[VDISCARD] = 0;
+	newtio.c_cc[VWERASE]  = 0;
+	newtio.c_cc[VLNEXT]   = 0;
+	newtio.c_cc[VEOL2]    = 0;
+	cfsetospeed(&newtio, baud_convert(baudrate));
+	cfsetispeed(&newtio, baud_convert(baudrate));
+	tcsetattr(fd, TCSANOW, &newtio);
+	//
+	fcntl(fd,F_SETFL,FNDELAY); //read函数立即返回
+	//	
+	return;	
+}	
+
+/*====================================================================================
+函数：
+功能：
+======================================================================================*/
+int uart_close(int uart_index)
+{
+	if(uart_index >= MAX_UART_INDEX) return -1;
+	if(gUartHandle[uart_index] != -1){
+		close(gUartHandle[uart_index]);
+		gUartHandle[uart_index] = -1;
+	}	
+	return 0;
+}	
+
+/*====================================================================================
+函数：
+功能：
+======================================================================================*/
+UBYTE uart_rece_is_empty(UBYTE index)
+{
+int ret,i;
+char buf[33];
+
+	//先检查接收数据
+	index = index%MAX_UART_INDEX;
+	if(gUartHandle[index] == -1) return -1;
+	label_read:	
+	ret = read(gUartHandle[index],buf,32);
+	if(ret<=0) goto label_check;
+	for(i=0;i<ret;i++){
+		//printf("<%02X>",(UBYTE)buf[i]);	
+		cbuf_put_byte(&gUartReceCbuf[index],buf[i]);
+	}
+	if(ret == 32) goto label_read;
+	
+	//检查接受缓冲区
+	label_check:
+	return cbuf_is_empty(&gUartReceCbuf[index]);	
+}	
+
+/*====================================================================================
+函数：
+功能：
+======================================================================================*/
+UBYTE uart_send_is_full(UBYTE index)
+{
+	return 0;
+}	
+
+/*====================================================================================
+函数：
+功能：
+======================================================================================*/
+void uart_sendbuf_clr(UBYTE index)
+{
+	index = index%MAX_UART_INDEX;
+	if(gUartHandle[index] == -1) return;
+
+	tcflush(gUartHandle[index],TCOFLUSH);
+	return;	
+}	
+
+/*====================================================================================
+函数：
+功能：
+======================================================================================*/
+UBYTE uart_send_is_empty(UBYTE index)
+{
+	return 1;	
+}
+
+/*====================================================================================
+函数：
+功能：
+======================================================================================*/
+void uart_recebuf_clr(UBYTE index)
+{
+	index = index%MAX_UART_INDEX;
+	if(gUartHandle[index] == -1) return;
+	cbuf_clr(&gUartReceCbuf[index]);
+
+	tcflush(gUartHandle[index],TCIFLUSH);
+	return;	
+}	
+
+/*====================================================================================
+函数：
+功能：
+======================================================================================*/
+void uart_int_enable(UBYTE index)
+{
+	return;	
+}
+
+/*====================================================================================
+函数：
+功能：
+======================================================================================*/
+void uart_int_disable(UBYTE index)
+{
+	return;
+}
+
+/*====================================================================================
+函数：
+功能：
+======================================================================================*/
+UBYTE uart_put_byte(UBYTE index,UBYTE inbyte)
+{
+int i,ret;
+	//	
+	index = index%MAX_UART_INDEX;
+	if(gUartHandle[index] == -1) return -1;
+	//
+	for(i=0;i<5;i++){	
+		ret = write(gUartHandle[index],&inbyte,1);
+		if(ret == 1) return 0;
+		usleep(1000);
+	}	
+	//
+	return 0;
+}	
+ 
+/*====================================================================================
+函数：
+功能：
+======================================================================================*/
+UBYTE uart_put_byte_safe(UBYTE index,UBYTE inbyte)
+{
+	return uart_put_byte(index,inbyte);
+}	
+
+/*====================================================================================
+函数：
+功能：
+======================================================================================*/
+UBYTE uart_put_bytes(UBYTE index,UBYTE *inbuf,UWORD inbytes,UWORD time_out)
+{
+int i,ret,ptr;
+	//	
+	index = index%MAX_UART_INDEX;
+	if(gUartHandle[index] == -1) {return -1;}
+	//
+	for(i=0,ptr=0;i<time_out;i++){	
+		ret = write(gUartHandle[index],&inbuf[ptr],inbytes);
+		if((inbytes-ret) == 0) return 0;
+		inbytes -= ret;
+		ptr += ret;	
+		usleep(1000);
+	}	
+	//
+	return 0;	
+}	       
+
+/*====================================================================================
+函数：
+功能：
+======================================================================================*/
+UBYTE uart_get_byte(UBYTE index)
+{
+int ret,i;
+char buf[33];
+
+	//先检查接收数据
+	index = index%MAX_UART_INDEX;
+	if(gUartHandle[index] == -1) return 0;
+	label_read:	
+	ret = read(gUartHandle[index],buf,32);
+	if(ret==0) goto label_get;
+	
+	for(i=0;i<ret;i++){
+		//printf("<%02X>",(UBYTE)buf[i]);	 	
+		cbuf_put_byte(&gUartReceCbuf[index],buf[i]);
+	}
+	if(ret == 32) goto label_read;
+	
+	// 
+label_get:
+	return cbuf_get_byte(&gUartReceCbuf[index]);
+}	
+
+
+
+//end of file
+#endif

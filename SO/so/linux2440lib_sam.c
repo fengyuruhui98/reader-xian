@@ -1,0 +1,137 @@
+//linux2440lib_sam.c
+#include <sys/time.h>
+#ifndef _LINUX2440LIB_SAM_C_
+#define _LINUX2440LIB_SAM_C_
+//start of file
+
+UBYTE bgSamIndex=0;
+
+/*======================================================================
+函数：
+功能：
+========================================================================*/
+UBYTE sam_select(UBYTE index)
+{
+	InitModule();
+	bgSamIndex = index%MAX_SAM_INDEX;
+	return 0;	
+}
+	
+/*======================================================================
+函数：
+功能：
+========================================================================*/
+UBYTE sam_atr(UBYTE channel,UBYTE *outbuf,UBYTE *outbytes)
+{
+	return sam_atr0(channel,outbuf,outbytes);	
+}
+	
+/*======================================================================
+函数：
+功能：
+========================================================================*/
+int sam_pts(int channel,int ta1)
+{
+UBYTE outbuf[100];
+UBYTE outbytes;
+
+	return sam_pps0(channel,ta1,outbuf,&outbytes);	
+}
+	
+/*======================================================================
+函数：
+功能：
+========================================================================*/
+UBYTE sam_apdu(UBYTE channel, UBYTE *inbuf,UBYTE inbytes,UBYTE *outbuf,UBYTE *outbytes,UWORD timeout, UBYTE expectlen)
+{
+UBYTE ret;
+
+	timeout = timeout;
+	bpgApduExpectLen = expectlen;
+
+
+
+//if(bpgApduExpectLen) {
+//	  ret = sam_apdu0_ext(channel,bpgApduExpectLen,inbuf,inbytes,outbuf,outbytes);
+//	  clr_apdu_expect_len();
+//	  return ret;
+//} 
+//else {	 
+    //return sam_apdu0(channel,inbuf,inbytes,outbuf,outbytes);
+    return sam_apdu1(channel,expectlen, inbuf,inbytes,outbuf,outbytes); //2014/1/14 13:29:42
+//  }	
+}	
+
+/*======================================================================
+函数：
+功能：
+========================================================================*/
+UBYTE sam_apdu_ext(UBYTE channel, UBYTE *inbuf,UBYTE inbytes,UBYTE *outbuf,UBYTE *outbytes,UWORD timeout, UBYTE expectlen)
+{
+int ret;
+
+	timeout = timeout;
+	if(expectlen) {
+		return (UBYTE)sam_apdu0_ext(channel,expectlen,inbuf,inbytes,outbuf,outbytes);	
+	}
+	else {
+		expectlen = expectlen;
+		//return (UBYTE)sam_apdu0(channel,inbuf,inbytes,outbuf,outbytes);	
+		return (UBYTE)sam_apdu1(channel,expectlen, inbuf,inbytes,outbuf,outbytes);	//2014/1/14 
+	}
+}
+
+/*======================================================================
+函数：
+功能：
+========================================================================*/
+UBYTE linux_sam_select(UBYTE sam_index)
+{
+	return sam_select(sam_index);	
+}	
+
+/*======================================================================
+函数：
+功能：
+========================================================================*/
+UBYTE linux_sam_set_speed(UBYTE sam_index,UBYTE speed)
+{
+UBYTE etu;
+	//
+	etu = SAM_ETU_93;
+	if(speed == 0) etu = SAM_ETU_93;
+	else if(speed == 1) etu = SAM_ETU_372;
+	else if(speed == 2) etu = SAM_ETU_31;
+	else if(speed == 3) etu = SAM_ETU_62;		
+	sam_set(sam_index,etu,4);
+	//
+	return 0;
+}	
+
+/*======================================================================
+函数：
+功能：
+========================================================================*/
+UBYTE linux_sam_atr(UBYTE *outbuf,UBYTE *outbytes)
+{
+	return sam_atr0(bgSamIndex,outbuf,outbytes);
+}	
+
+/*======================================================================
+函数：
+功能：
+========================================================================*/
+UBYTE linux_sam_apdu(UBYTE *inbuf,UBYTE inbytes,UBYTE *outbuf,UBYTE *outbytes)
+{
+	return sam_apdu0(bgSamIndex,inbuf,inbytes,outbuf,outbytes);	
+	//return sam_apdu1(bgSamIndex,inbuf,inbytes,outbuf,outbytes);	 //2014/1/14 11:06:03
+}	
+
+int linux_sam_pps(UBYTE index,UBYTE ta1,UBYTE *obuf,UBYTE *obytes)
+{
+	return sam_pps0(index,ta1,obuf,obytes);
+}
+
+//end of file
+#endif
+

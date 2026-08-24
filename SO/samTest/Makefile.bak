@@ -1,0 +1,19 @@
+CC=arm-linux-gcc
+OBJS=main.o sam.o 
+# for .a or .so:-L libpath  -llibname  sz_m1_operation.o  sz_tong_operation.o  xa_m1_operation.o structbit.o 
+LIBS= -lpthread
+#-lrt -fpack-struct -DDEBUG_PRINT=1
+#DEG=-DDEBUG_PRINT=1
+
+1:samTest
+samTest: $(OBJS)
+	$(CC)  -o samTest $(OBJS) $(LIBS) -L. -linux4418_493
+
+main.o: main.c
+	$(CC) -c main.c -o main.o
+
+sam.o:sam.c sam.h
+	$(CC) -c  $(DEG) sam.c -o sam.o
+
+clean:
+	rm -f *.o
