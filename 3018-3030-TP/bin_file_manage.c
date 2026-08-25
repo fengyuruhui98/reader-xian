@@ -727,7 +727,33 @@ long i, j;
 			fclose(intFile);
 			return 1;
 		}
-		fread(tpBlacklist1104.CardBlack_val.CardBlacklist_val, sizeof(CardBlacklist_t), tpBlacklist1104.CardBlack_val.blacknum, intFile);
+		//20260826 P0-2: zero after malloc - when the new list is shorter than the old one,
+		//uncovered slots keep stale entries (ghost slots); combined with P0-1's out-of-range
+		//upper bound this falsely matched normal cards and locked them.
+		memset(tpBlacklist1104.CardBlack_val.CardBlacklist_val, 0x00, sizeof(CardBlacklist_t) * tpBlacklist1104.CardBlack_val.blacknum);
+		if(fread(tpBlacklist1104.CardBlack_val.CardBlacklist_val, sizeof(CardBlacklist_t), tpBlacklist1104.CardBlack_val.blacknum, intFile) != (size_t)tpBlacklist1104.CardBlack_val.blacknum)
+		{
+			//20260826 P0-2: incomplete read - void the whole list; rather miss than falsely lock
+			PRINTK("1104 cardblack list read incomplete, blacklist disabled\n");
+			tpBlacklist1104.CardBlack_val.blacknum = 0;
+			free(tpBlacklist1104.CardBlack_val.CardBlacklist_val);
+			tpBlacklist1104.CardBlack_val.CardBlacklist_val = NULL;
+		}
+		else
+		{
+			//20260826 P0-2: binary search requires strictly ascending CardID; void on disorder
+			for(i = 1; i < tpBlacklist1104.CardBlack_val.blacknum; i++)
+			{
+				if(tpBlacklist1104.CardBlack_val.CardBlacklist_val[i].CardID <= tpBlacklist1104.CardBlack_val.CardBlacklist_val[i - 1].CardID)
+				{
+					PRINTK("1104 cardblack list not ascending at index %d, blacklist disabled\n", i);
+					tpBlacklist1104.CardBlack_val.blacknum = 0;
+					free(tpBlacklist1104.CardBlack_val.CardBlacklist_val);
+					tpBlacklist1104.CardBlack_val.CardBlacklist_val = NULL;
+					break;
+				}
+			}
+		}
 #ifdef	DEBUG_1104_PRINT
 		for(i = 0; i < tpBlacklist1104.CardBlack_val.blacknum; i++)
 			PRINTK("cardid %08 lifecycle %04x cardActionCode %02x cardStatusCode %02x\n", 
@@ -754,7 +780,16 @@ long i, j;
 			fclose(intFile);
 			return 1;
 		}
-		fread(tpBlacklist1104.SectionCardBlack_val.SectionCardBlacklist_val, sizeof(SectionCardBlacklist_t), tpBlacklist1104.SectionCardBlack_val.sectionnum, intFile);
+		//20260826 P0-2: zero after malloc (ghost slots) + incomplete read voids the list
+		memset(tpBlacklist1104.SectionCardBlack_val.SectionCardBlacklist_val, 0x00, sizeof(SectionCardBlacklist_t) * tpBlacklist1104.SectionCardBlack_val.sectionnum);
+		if(fread(tpBlacklist1104.SectionCardBlack_val.SectionCardBlacklist_val, sizeof(SectionCardBlacklist_t), tpBlacklist1104.SectionCardBlack_val.sectionnum, intFile) != (size_t)tpBlacklist1104.SectionCardBlack_val.sectionnum)
+		{
+			//20260826 P0-2: incomplete read - void the whole list; rather miss than falsely lock
+			PRINTK("1104 section black list read incomplete, blacklist disabled\n");
+			tpBlacklist1104.SectionCardBlack_val.sectionnum = 0;
+			free(tpBlacklist1104.SectionCardBlack_val.SectionCardBlacklist_val);
+			tpBlacklist1104.SectionCardBlack_val.SectionCardBlacklist_val = NULL;
+		}
 #ifdef	DEBUG_1104_PRINT
 		for(i = 0; i < tpBlacklist1104.SectionCardBlack_val.sectionnum; i++)
 			PRINTK("start CardID %08x end CardId %08x cardActionCode %02x cardStatusCode %02x\n", 
@@ -781,7 +816,16 @@ long i, j;
 			fclose(intFile);
 			return 1;
 		}
-		fread(tpBlacklist1104.ProductBlack_val.ProductBlacklist_val, sizeof(ProductBlacklist_t), tpBlacklist1104.ProductBlack_val.productnum, intFile);
+		//20260826 P0-2: zero after malloc (ghost slots) + incomplete read voids the list
+		memset(tpBlacklist1104.ProductBlack_val.ProductBlacklist_val, 0x00, sizeof(ProductBlacklist_t) * tpBlacklist1104.ProductBlack_val.productnum);
+		if(fread(tpBlacklist1104.ProductBlack_val.ProductBlacklist_val, sizeof(ProductBlacklist_t), tpBlacklist1104.ProductBlack_val.productnum, intFile) != (size_t)tpBlacklist1104.ProductBlack_val.productnum)
+		{
+			//20260826 P0-2: incomplete read - void the whole list; rather miss than falsely lock
+			PRINTK("1104 product black list read incomplete, blacklist disabled\n");
+			tpBlacklist1104.ProductBlack_val.productnum = 0;
+			free(tpBlacklist1104.ProductBlack_val.ProductBlacklist_val);
+			tpBlacklist1104.ProductBlack_val.ProductBlacklist_val = NULL;
+		}
 #ifdef	DEBUG_1104_PRINT
 		for(i = 0; i < tpBlacklist1104.ProductBlack_val.productnum; i++)
 		{

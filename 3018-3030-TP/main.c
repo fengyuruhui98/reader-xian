@@ -124,6 +124,7 @@ long 	mon;
 	//memset(&tpSystem1101.paratitle.format, 0x00, sizeof(tpSystem1101));
 	tp_ver = 0x2270714;//修改免费出站票、福利票进站时间限制
 	tp_ver = 0x2280714;//修改交通部本地卡异地卡历史交易完整性检查,修改区域拒绝判断失效问题,修改员工卡有效期检查,进出站检查有效期
+	tp_ver = 0x2290826;//20260826 P0 keep-fallback: blacklist binary bound/zero buffers/section check/no-write blacklist/defer no-write/0715 hardened/recovery blocks enabled(P1-1)
 	PACC_1101_SystemParameter();
 	PACC_1102_Business();
 	PACC_1104_Blacklist();

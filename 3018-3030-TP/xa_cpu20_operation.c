@@ -910,6 +910,21 @@ unsigned short cpulen;
 function:read the file 1d
 parameter:
 */
+
+//20260826: employee-ticket productId whitelist for 1D fallback repair
+//TODO: fill from issue data, e.g. {0x1234, 0x5678, 0}; {0} means repair disabled (safe default)
+static const unsigned short emp_product_ids[] = {0x0000};
+
+static char is_employee_ticket(unsigned short pid)
+{
+	int i;
+	for(i = 0; emp_product_ids[i] != 0; i++)
+	{
+		if(emp_product_ids[i] == pid)
+			return 1;
+	}
+	return 0;
+}
 char CPU_GetFiles1d(unsigned char *out_buf)
 {
 int ret, i;
@@ -959,31 +974,57 @@ unsigned long lnsecondtime;
 	tpfile1d.validityDuration = (xaFile1C._File1C.validityDuration_1 << 5) + xaFile1C._File1C.validityDuration;
 	tpfile1d.checksum = xaFile1C._File1C.checksum;
 
-	/********************20260715判断员工卡有效期开始时间字段是否改变******************************** */
+	/********************20260715 check employee-card validity-start field (20260826 keep fallback, hardened) ****************** */
 	xa_MinuteTolocaltime(&startbcdtime[0], tpfile05.cardBaseDateTime, tpfile1d.validityStartDateTime, &lnsecondtime);
 	if(tpfile1d.activated == 1 && (memcmp(tpCPU.time_bcd, startbcdtime, 4) < 0))
 	{
-		tpfile1d.validityDurationType = 0x03;  //类型：月
-		tpfile1d.validityDuration = 0x18;		//24个月
+		//20260826 keep-fallback hardening:
+		//1) ticket gate: repair only employee period tickets (whitelist above), others log only
+		if((tpfile05.productCategory != XA_FEETYPE_PERIOD) || (!is_employee_ticket(tpfile05.productId)))
+		{
+			PRINTK("1D-SUSPECT-NOT-EMPLOYEE logicID %08lx productId %04x category %02x\n",
+				(unsigned long)ByteToLong(NULL, &cpu_05_data[4]),
+				(unsigned int)tpfile05.productId, (unsigned int)tpfile05.productCategory);
+		}
+		else
+		{
+			//2) repair values: keep original hardcoded 0x03(month)/0x18(24 months);
+			//   exact per-card values must come from issue records (see docs 05 section 3)
+			tpfile1d.validityDurationType = 0x03;  //type: month
+			tpfile1d.validityDuration = 0x18;		//24 months
 
-		xaFile1C._File1C.validityDurationType = tpfile1d.validityDurationType ;
+			xaFile1C._File1C.validityDurationType = tpfile1d.validityDurationType ;
 
-		full_duration = tpfile1d.validityDuration; 
-		xaFile1C._File1C.validityDuration_1 = (full_duration >> 5) & 0x03; 
-		xaFile1C._File1C.validityDuration = full_duration & 0x1F;          
+			full_duration = tpfile1d.validityDuration; 
+			xaFile1C._File1C.validityDuration_1 = (full_duration >> 5) & 0x03; 
+			xaFile1C._File1C.validityDuration = full_duration & 0x1F;          
 
-		memset(start_timebcd, 0x00, 7);
-		memcpy(start_timebcd, tpCPU.time_bcd, 7);
-		xa_localtimeToMinute(start_timebcd, tpfile05.cardBaseDateTime, &tpfile1d.validityStartDateTime);
-		xaFile1C._File1C.validityStartDateTime_1 = (tpfile1d.validityStartDateTime >> 16) & 0x3F;
-		xaFile1C._File1C.validityStartDateTime_2 = (tpfile1d.validityStartDateTime >> 8) & 0xFF;
-		xaFile1C._File1C.validityStartDateTime = tpfile1d.validityStartDateTime & 0xFF;
+			memset(start_timebcd, 0x00, 7);
+			memcpy(start_timebcd, tpCPU.time_bcd, 7);
+			xa_localtimeToMinute(start_timebcd, tpfile05.cardBaseDateTime, &tpfile1d.validityStartDateTime);
+			xaFile1C._File1C.validityStartDateTime_1 = (tpfile1d.validityStartDateTime >> 16) & 0x3F;
+			xaFile1C._File1C.validityStartDateTime_2 = (tpfile1d.validityStartDateTime >> 8) & 0xFF;
+			xaFile1C._File1C.validityStartDateTime = tpfile1d.validityStartDateTime & 0xFF;
 
-		memcpy(cpu_1d_data, xaFile1C.buff, 16);
+			memcpy(cpu_1d_data, xaFile1C.buff, 16);
 
-		if(0 != (chCode = xa_update_file_1d(cpu_1d_data, out_buf)))
-			return chCode;
-
+			//3) write failure must NOT reject the transaction (old code returned chCode);
+			//   log only and continue
+			if(0 != (chCode = xa_update_file_1d(cpu_1d_data, out_buf)))
+			{
+				PRINTK("1D-FALLBACK-REPAIR-WRITE-FAIL logicID %08lx chCode %02x\n",
+					(unsigned long)ByteToLong(NULL, &cpu_05_data[4]), (unsigned int)chCode);
+			}
+			else
+			{
+				//4) repair success log: card id / old-new start date / duration, for backend reconcile
+				PRINTK("1D-FALLBACK-REPAIRED logicID %08lx oldStart %02x%02x%02x%02x newStart %02x%02x%02x%02x durType %02x dur %02x\n",
+					(unsigned long)ByteToLong(NULL, &cpu_05_data[4]),
+					startbcdtime[0], startbcdtime[1], startbcdtime[2], startbcdtime[3],
+					tpCPU.time_bcd[0], tpCPU.time_bcd[1], tpCPU.time_bcd[2], tpCPU.time_bcd[3],
+					tpfile1d.validityDurationType, tpfile1d.validityDuration);
+			}
+		}
 	}
 	/******************************************************* */
 #ifdef DEBUG_PRINT_EM
@@ -1325,7 +1366,13 @@ unsigned long lngLogicID;
 		return CE_CARDSTATUS;
 	//card logic black list
 	lngLogicID = ByteToLong(NULL, &cpu_05_data[4]);
-	if(0 != (chCode = check_metro_Black_Lock(lngLogicID, 0, cmd_buf, out_buf, out_len)))
+	//20260826 P0-4: blnBlock 0 -> 0xff. A blacklist hit still returns CE_BLACKLIST(0x01)
+	//(gate behavior unchanged), but the TP no longer writes file15/17 on the card and no
+	//longer triggers the in-card Applet-linked lock - one false hit can no longer destroy a
+	//card (same root as the 0x03/0x08 gates). If business confirms real blacklist cards must
+	//be locked on card at entry, restore the write path only with an explicit authorization
+	//bit agreed with the backend (see docs 04 section 4.4).
+	if(0 != (chCode = check_metro_Black_Lock(lngLogicID, 0xff, cmd_buf, out_buf, out_len)))
 		return chCode;
 
 	tpCPU.tranamount = 0;
@@ -2013,6 +2060,7 @@ unsigned char out_buffEnd[1024], cpu_1d_data_end[16];
 	TestLog(cpu_15_data,"FE:",16);
 #endif
 
+	//20260826 P1-2: baseline taken after CPU_GetFiles1d read (0715 fallback may have repaired first); recovery rolls back to this value
 	beforeStartTransTime = tpfile1d.validityStartDateTime;
 
 	tpTxnProductPassEntry.SysProductCom_val.Ptsn = toMoto(tpfile1d.transactionSequenceNumber);
@@ -3199,6 +3247,7 @@ unsigned char out_buffEnd[1024], cpu_1d_data_end[16];
 		TestLog(cpu_15_data,"FE:",16);
     #endif
 
+	//20260826 P1-2: baseline taken after CPU_GetFiles1d read (0715 fallback may have repaired first); recovery rolls back to this value
 	beforeStartTransTime = tpfile1d.validityStartDateTime;
 	//	
 	tpTxnProductPassExit.SysProductCom_val.productActionSequenceNumber = toMoto(tpfile1d.actionSequenceNumber);
@@ -3943,6 +3992,7 @@ unsigned char   out_buffEnd[1024], cpu_1d_data_end[16];
 		return chCode;
 
 
+	//20260826 P1-2: baseline taken after CPU_GetFiles1d read (0715 fallback may have repaired first); recovery rolls back to this value
 	beforeStartTransTime = tpfile1d.validityStartDateTime;
 
 	tpTxnProductPassCompensate.SysProductCom_val.invoicePrinted = toMoto(tpfile1d.invoicePrinted);
@@ -5788,7 +5838,8 @@ unsigned short cpulen;
 	memset(buf, 0x00, 80);
 	memcpy(&buf[8], "\x04\xd6\x95\x00", 4);
 	buf[12] = 16 + 4;
-	memcpy(&buf[13], cpu_15_data, 16);
+	//20260826 P1-1: use file_buf param so the 5 recovery blocks actually roll back (NULL keeps old behavior)
+	memcpy(&buf[13], (file_buf == NULL) ? cpu_15_data : file_buf, 16);
 	memcpy(buf, cpurandom, 8);
 	buf[5 + 8 + 16] = 0x80;	
 	//cal mac
@@ -6010,7 +6061,8 @@ unsigned short cpulen;
 	memcpy(&buf[8], "\x04\xD6\x00\x00", 4);
 	buf[10] = 0x1C | 0x80;
 	buf[12] = XA_CPU_1C_LEN + 4;
-	memcpy(&buf[13], cpu_1c_data, XA_CPU_1C_LEN);
+	//20260826 P1-1: use file_buf param so the 5 recovery blocks actually roll back (NULL keeps old behavior)
+	memcpy(&buf[13], (file_buf == NULL) ? cpu_1c_data : file_buf, XA_CPU_1C_LEN);
 	memcpy(buf, cpurandom, 8);
 	buf[5 + 8 + 16] = 0x80;	
 	//cal mac
@@ -6084,7 +6136,8 @@ unsigned short cpulen;
 	memcpy(&buf[8], "\x04\xd6\x00\x00", 4);
 	buf[10] = 0x1D | 0x80;
 	buf[12] = XA_CPU_1D_LEN + 4;
-	memcpy(&buf[13], cpu_1d_data, XA_CPU_1D_LEN);
+	//20260826 P1-1: use file_buf param so the 5 recovery blocks actually roll back (NULL keeps old behavior)
+	memcpy(&buf[13], (file_buf == NULL) ? cpu_1d_data : file_buf, XA_CPU_1D_LEN);
 	memcpy(buf, cpurandom, 8);
 	buf[5 + 8 + 16] = 0x80;	
 	//cal mac
@@ -6418,14 +6471,14 @@ unsigned char buf[100], start_timebcd[7];
 		memcpy(out_buf, "\x53\x3d\x03\x21", 4);
 		if(memcmp(tpCPU.time_bcd, start_timebcd, 4) > 0)
 		{
-			xa_localtimeToMinute(tpCPU.time_bcd, tpfile05.cardBaseDateTime, &tpfile1c.validityStartDateTime);
-			//
-			xaFile1C._File1C.validityStartDateTime_1 = (tpfile1c.validityStartDateTime >> 16) & 0x3F;
-			xaFile1C._File1C.validityStartDateTime_2 = (tpfile1c.validityStartDateTime >> 8) & 0xFF;
-			xaFile1C._File1C.validityStartDateTime = tpfile1c.validityStartDateTime & 0xFF;
-			memcpy(cpu_1c_data, xaFile1C.buff, 16);
-			if(0 != (chCode = xa_update_file_1c(cpu_1c_data, out_buf)))
-				return chCode;
+			//20260826 P0-5: remove the "rewrite card then reject" defer date change.
+			//Old code rewrote validityStartDateTime to the current time and wrote file1C here, then
+			//fell through into the PERIOD branch and finally returned CE_NON_FEETYPE - card rewritten,
+			//transaction rejected. Defer values must come from the backend as a complete correct 1C
+			//record (incl. checksum, see P1-4) written via the repair command; the TP no longer
+			//fabricates them on the spot.
+			PRINTK("defer TIMES expired, no card write, logicID %08lx\n", ByteToLong(NULL, &cpu_05_data[4]));
+			return CE_NON_FEETYPE;
 		}else
 		{
 			return CE_NONACTIVED;
@@ -6472,7 +6525,11 @@ unsigned long lngstation;
     blnBlacklist = blnSectionBlacklist = 0xFF;
     //use the binary method to find the BLACK No
     lngCSCLowIndex = 0;
-    lngCSCHighIndex = tpBlacklist1104.CardBlack_val.blacknum;
+    //20260826 P0-1: upper bound must be blacknum-1 (valid index range [0, blacknum-1]).
+    //Old value blacknum let mid read past the list end into ghost slots when the card id is
+    //larger than every entry; combined with P0-2's non-reset buffer this falsely matched and
+    //silently locked normal cards (root of the 0x03/0x08 gates).
+    lngCSCHighIndex = tpBlacklist1104.CardBlack_val.blacknum - 1;
 //    PRINTK("lowindex %08x highindex %08x\n", lngCSCLowIndex, lngCSCHighIndex);
     if(tpBlacklist1104.CardBlack_val.blacknum != 0)
     {
@@ -6505,9 +6562,10 @@ unsigned long lngstation;
 	        //
 	            blnBlacklist = 0;
 	            tpfile15.cardStatus = tpBlacklist1104.CardBlack_val.CardBlacklist_val[lngCSCMidIndex].cardStatusCode;
+	            //20260826 P0-3: single-card hit must leave a log (card id + status), for backend attribution
+	            PRINTK("CARD-BLACK-HIT logicID %08lx status %02x\n", logicID, tpfile15.cardStatus);
 	            break;
 	        }
-	        lngCSCMidIndex = (lngCSCLowIndex + lngCSCHighIndex) / 2;
 	    }
 	}
 #ifdef	DEBUG_PRINT
@@ -6521,11 +6579,22 @@ unsigned long lngstation;
     {
     	for(lngCSCMidIndex = 0; lngCSCMidIndex < lngCSCHighIndex; lngCSCMidIndex++)
     	{
+    		//20260826 P0-3: skip invalid ranges (Start==0 or Start>End), they would lock a whole id block
+    		if((tpBlacklist1104.SectionCardBlack_val.SectionCardBlacklist_val[lngCSCMidIndex].StartCardID == 0)
+    			|| (tpBlacklist1104.SectionCardBlack_val.SectionCardBlacklist_val[lngCSCMidIndex].StartCardID >
+    			    tpBlacklist1104.SectionCardBlack_val.SectionCardBlacklist_val[lngCSCMidIndex].EndCardID))
+    			continue;
     		if((logicID >= tpBlacklist1104.SectionCardBlack_val.SectionCardBlacklist_val[lngCSCMidIndex].StartCardID)
     			&& (logicID <= tpBlacklist1104.SectionCardBlack_val.SectionCardBlacklist_val[lngCSCMidIndex].EndCardID))
     		{
     			blnSectionBlacklist = 0;
     			tpfile15.cardStatus = tpBlacklist1104.SectionCardBlack_val.SectionCardBlacklist_val[lngCSCMidIndex].cardStatusCode;
+    			//20260826 P0-3: section hit must leave a log (range + card id + status) for backend list-data audit
+    			PRINTK("SECTION-BLACK-HIT logicID %08lx range %08lx-%08lx status %02x\n",
+    				logicID,
+    				(unsigned long)tpBlacklist1104.SectionCardBlack_val.SectionCardBlacklist_val[lngCSCMidIndex].StartCardID,
+    				(unsigned long)tpBlacklist1104.SectionCardBlack_val.SectionCardBlacklist_val[lngCSCMidIndex].EndCardID,
+    				tpBlacklist1104.SectionCardBlack_val.SectionCardBlacklist_val[lngCSCMidIndex].cardStatusCode);
     			break;
     		}
     	}
@@ -6540,9 +6609,20 @@ unsigned long lngstation;
     	return 0;
     }
     //not block card only display message
+    //20260826 P0-4: every hit must leave a log - card id, hit mechanism (single/section), status, station
     if(blnBlock)
+    {
+    	PRINTK("BLACK-HIT-NOWRITE logicID %08lx single %02x section %02x status %02x station %02x%02x\n",
+    		logicID, blnBlacklist, blnSectionBlacklist, tpfile15.cardStatus,
+    		tpCPU.curstation[0], tpCPU.curstation[1]);
     	return CE_BLACKLIST;
+    }
 	//
+	//20260826 P0-4: write-lock path log (entry now passes 0xff; this path only runs if explicit
+	//authorization is restored later)
+	PRINTK("BLACK-LOCK-WRITE logicID %08lx single %02x section %02x status %02x station %02x%02x\n",
+		logicID, blnBlacklist, blnSectionBlacklist, tpfile15.cardStatus,
+		tpCPU.curstation[0], tpCPU.curstation[1]);
 	tpTxnCardBlock.SysComHdr_val.formatVersion = toMoto(1);
 	tpTxnCardBlock.SysComHdr_val.txnDateTime = toMoto(tpCPU.lowsecond + TIME2000 - ZONE8);
 	tpTxnCardBlock.SysComHdr_val.udsn = ByteToLong(NULL, &cmd_buf[13]);
